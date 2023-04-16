@@ -1,7 +1,16 @@
 blas
 =====
 
-This project is a continuation of ddgud's BLAS wrapper. It features scheduling control (execution in dirty/clean nifs), as well as type checking, and array overflow detection (to avoid sigsev related crashes). It is written on top of openblas; using another cblas implementation will require modifying linking options in c_src/Makefile, and possibly include options in file c_src/eblas.h.
+This project is a NIF based wrapper of the Basic Linear Algebra Subprograms, which provides algorithms fine-tuned for a large variety of hardware.
+
+This implementation uses [openblas](https://github.com/xianyi/OpenBLAS). Other cblas implementations can be used, but will need modifictations of c_src/Makefile linking options and c_src/eblas.h include options.
+
+API
+----
+The following sites provide a clear BLAS API:
+- [netlib's](https://netlib.org/blas/) concise reference.
+- [intel's](https://www.intel.com/content/www/us/en/content-details/671183/developer-reference-for-intel-math-kernel-library-intel-mkl-11-3-c.html?wapkw=BLAS%20mlk) complete reference.
+- [IBM's](https://www.ibm.com/docs/en) reference, with clear examples.
 
 Usage
 -----
@@ -15,7 +24,7 @@ Tuple contains, in sequence, a BLAS function name (represented as an atom), foll
 Examples
 -----
 
-caxpy: single complex numbers, complex numbers: alpha*x + y
+[caxpy](https://www.ibm.com/docs/en/essl/6.1?topic=vss-saxpy-daxpy-caxpy-zaxpy-multiply-vector-by-scalar-add-vector-store-in-vector): single Complex numbers, Alpha*x Plus Y:
 
 ```erlang
 Alpha = blas:ltb(c, [1,0]),
@@ -26,7 +35,7 @@ ok    = blas:run({caxpy, 3, Alpha, X, 1, Y, 1}),
 io:format("Result: ~p~n", [blas:to_list(c, Y)]).
 ```
 
-stpmv: single real numbers, triangular packed matrix, Matrix*Vector operation.
+[stpmv](https://www.ibm.com/docs/en/essl/6.1?topic=mvs-strmv-dtrmv-ctrmv-ztrmv-stpmv-dtpmv-ctpmv-ztpmv-matrix-vector-product-triangular-matrix-its-transpose-its-conjugate-transpose): Single real numbers, Triangular Packed Matrix, Matrix*Vector operation.
 
 ```erlang
 N  = 3,
