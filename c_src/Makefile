@@ -1,3 +1,4 @@
+# Source: https://github.com/dgud/blas/blob/master/c_src/Makefile
 
 C_SRC_OUTPUT = ../priv/eblas.so
 
@@ -12,12 +13,12 @@ else ifeq ($(UNAME_SYS), FreeBSD)
 	CFLAGS ?= -O3 -std=c99 -finline-functions -Wall -Wmissing-prototypes
 else ifeq ($(UNAME_SYS), Linux)
 	CC ?= gcc
-	CFLAGS ?= -O3 -std=c99 -finline-functions -Wall -Wmissing-prototypes
+	CFLAGS ?= -O3 -std=c99 -finline-functions -Wall -Wmissing-prototypes 
 endif
 
 $(C_SRC_OUTPUT): *.c
 	$(CC) $(CFLAGS) *.c -g -fPIC -shared -o $(C_SRC_OUTPUT) -I $(ERL_INCLUDE_DIR) \
-		$(C_SRC_OPTS) -L/usr/lib -l:libcblas.so.3 -l:libatlas.so.3
+		$(C_SRC_OPTS) -L/usr/lib -lopenblas
 
 clean:
 	rm -f $(C_SRC_OUTPUT)
