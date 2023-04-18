@@ -1,8 +1,9 @@
-{application,blas,
-             [{description,"Erlang blas api"},
-              {vsn,"0.3.1"},
-              {modules,[blas,chain]},
-              {registered,[]},
-              {applications,[kernel,stdlib]},
-              {licenses,["BSD"]},
-              {links,[{"Github","https://github.com/dgud/blas"}]}]}.
+{application, blas, [
+    {description,"Erlang BLAS wrapper."},
+    {vsn,"1.0.0"},
+    {modules,[blas,chain]},
+    {registered,[]},
+    {applications,[kernel,stdlib]},
+    {licenses,["Apache-2.0"]},
+    {links,[{"Github","https://github.com/erlef/blas"}]}
+]}.
