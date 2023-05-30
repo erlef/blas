@@ -3,6 +3,6 @@
               {vsn,"0.3.1"},
               {modules,[blas,chain]},
               {registered,[]},
-              {applications,[kernel,stdlib]},
+              {applications,[kernel, stdlib, grisp]},
               {licenses,["BSD"]},
               {links,[{"Github","https://github.com/dgud/blas"}]}]}.

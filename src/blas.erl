@@ -9,7 +9,7 @@
 -on_load(on_load/0).
 
 on_load()->
-    LibBaseName = "eblas",
+    LibBaseName = "eblas_nif",
     PrivDir = code:priv_dir(blas),
     Lib = filename:join([PrivDir, LibBaseName]),
     erlang:load_nif(Lib, {0.1}).
