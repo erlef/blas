@@ -12,6 +12,7 @@ ERL_NIF_TERM atomRowMajor, atomColMajor, atomNoTrans, atomTrans, atomConjTrans, 
 typedef enum types {e_int, e_uint, e_float, e_double, e_ptr, e_cste_ptr, e_float_complex, e_double_complex, e_layout, e_transpose, e_uplo, e_diag, e_side, e_end} etypes;
 int translate(ErlNifEnv* env, const ERL_NIF_TERM* terms, const etypes* format, ...);
 
+int blas_load(ErlNifEnv*, void**, ERL_NIF_TERM);
 
 
 // C binary definition
@@ -23,7 +24,7 @@ typedef struct{
     unsigned char* ptr;
 } c_binary;
 
-inline void* get_ptr(c_binary cb){return (void*) cb.ptr + cb.offset;}
+inline void* get_ptr(c_binary cb){return (void*) ((char*)cb.ptr + cb.offset);}
 int get_c_binary(ErlNifEnv* env, const ERL_NIF_TERM term, c_binary* result);
 int in_bounds(int elem_size, int n_elem, int inc, c_binary b);
 
@@ -48,7 +49,7 @@ typedef struct{
     etypes type;
 } cste_c_binary;
 
-inline const void* get_cste_ptr(cste_c_binary cb){return (void*) cb.ptr + cb.offset;}
+inline const void* get_cste_ptr(cste_c_binary cb){return (void*) ((char*)cb.ptr + cb.offset);}
 float get_cste_float(cste_c_binary cb);
 double get_cste_double(cste_c_binary cb);
 int get_cste_binary(ErlNifEnv* env, const ERL_NIF_TERM term, cste_c_binary* result);
@@ -95,175 +96,175 @@ inline errors test_n_arg(int narg, int expected){
 typedef enum sizes {s_bytes=4, d_bytes=8, c_bytes=8, z_bytes=16, no_bytes=0} size_in_bytes;
 
 typedef enum BLAS_NAMES {
-    saxpy=210727551034,
-    daxpy=210709762219,
-    caxpy=210708576298,
-    zaxpy=210735852481,
-    scopy=210727613107,
-    dcopy=210709824292,
-    ccopy=210708638371,
-    zcopy=210735914554,
-    sswap=210728196307,
-    dswap=210710407492,
-    cswap=210709221571,
-    zswap=210736497754,
-    sscal=210728174523,
-    dscal=210710385708,
-    cscal=210709199787,
-    csscal=6953404169886,
-    zscal=210736475970,
-    zdscal=6954286495110,
-    sdot=6385686335,
-    ddot=6385147280,
-    cdotu=210708674436,
-    zdotu=210735950619,
-    cdotc=210708674418,
-    zdotc=210735950601,
-    dsdot=210710387267,
-    sdsdot=6954012548918,
-    snrm2=210728011511,
-    dnrm2=210710222696,
-    scnrm2=6954011198426,
-    dznrm2=6953451443714,
-    sasum=210727545742,
-    dasum=210709756927,
-    scasum=6954010732657,
-    dzasum=6953450977945,
-    isamax=6953638346280,
-    idamax=6953620557465,
-    icamax=6953619371544,
-    izamax=6953646647727,
-    srot=6385701581,
-    drot=6385162526,
-    csrot=210709216592,
-    zdrot=210735953720,
-    srotg=210728152276,
-    drotg=210710363461,
-    crotg=210709177540,
-    zrotg=210736453723,
-    srotmg=6954029025409,
-    drotmg=6953441994514,
-    srotm=210728152282,
-    drotm=210710363467,
-    isamin=6953638346534,
-    idamin=6953620557719,
-    icamin=6953619371798,
-    izamin=6953646647981,
-    ismax=210716326215,
-    idmax=210715787160,
-    icmax=210715751223,
-    izmax=210716577774,
-    ismin=210716326469,
-    idmin=210715787414,
-    icmin=210715751477,
-    izmin=210716578028,
-    sgemv=210727745863,
-    dgemv=210709957048,
-    cgemv=210708771127,
-    zgemv=210736047310,
-    sgbmv=210727742596,
-    dgbmv=210709953781,
-    cgbmv=210708767860,
-    zgbmv=210736044043,
-    ssbmv=210728173840,
-    dsbmv=210710385025,
-    sger=6385689270,
-    dger=6385150215,
-    strmv=210728227201,
-    dtrmv=210710438386,
-    ctrmv=210709252465,
-    ztrmv=210736528648,
-    strsv=210728227399,
-    dtrsv=210710438584,
-    ctrsv=210709252663,
-    ztrsv=210736528846,
-    strsm=210728227390,
-    dtrsm=210710438575,
-    ctrsm=210709252654,
-    ztrsm=210736528837,
-    cgeru=210708771291,
-    cgerc=210708771273,
-    zgeru=210736047474,
-    zgerc=210736047456,
-    sgemm=210727745854,
-    dgemm=210709957039,
-    cgemm=210708771118,
-    cgemm3m=229461851749294,
-    zgemm=210736047301,
-    zgemm3m=229491555512581,
-    stbmv=210728209777,
-    dtbmv=210710420962,
-    ctbmv=210709235041,
-    ztbmv=210736511224,
-    stbsv=210728209975,
-    dtbsv=210710421160,
-    ctbsv=210709235239,
-    ztbsv=210736511422,
-    stpmv=210728225023,
-    dtpmv=210710436208,
-    ctpmv=210709250287,
-    ztpmv=210736526470,
-    stpsv=210728225221,
-    dtpsv=210710436406,
-    ctpsv=210709250485,
-    ztpsv=210736526668,
-    ssymv=210728198887,
-    dsymv=210710410072,
-    chemv=210708807064,
-    zhemv=210736083247,
-    sspmv=210728189086,
-    dspmv=210710400271,
-    sspr=6385702701,
-    dspr=6385163646,
-    chpr=6385115730,
-    zhpr=6385942281,
-    sspr2=210728189183,
-    dspr2=210710400368,
-    chpr2=210708819140,
-    zhpr2=210736095323,
-    chbmv=210708803797,
-    zhbmv=210736079980,
-    chpmv=210708819043,
-    zhpmv=210736095226,
-    cher=6385115367,
-    zher=6385941918,
-    chemm=210708807055,
-    zhemm=210736083238,
-    cherk=210708807218,
-    zherk=210736083401,
-    cher2k=6953390636420,
-    zher2k=6954290750459,
-    ssymm=210728198878,
-    dsymm=210710410063,
-    csymm=210709224142,
-    zsymm=210736500325,
-    ssyrk=210728199041,
-    dsyrk=210710410226,
-    csyrk=210709224305,
-    zsyrk=210736500488,
-    ssyr2k=6954030566579,
-    dsyr2k=6953443535684,
-    csyr2k=6953404400291,
-    zsyr2k=6954304514330,
-    ssum=6385702861,
-    dsum=6385163806,
-    dzsum=210710655352,
-    scsum=210727617616,
-    cher2=210708807161,
-    zher2=210736083344,
-    strmm=210728227192,
-    dtrmm=210710438377,
-    ctrmm=210709252456,
-    ztrmm=210736528639,
-    ssyr=6385702998,
-    dsyr=6385163943,
-    ssyr2=210728198984,
-    dsyr2=210710410169,
+    saxpy=210727551034UL,
+    daxpy=210709762219UL,
+    caxpy=210708576298UL,
+    zaxpy=210735852481UL,
+    scopy=210727613107UL,
+    dcopy=210709824292UL,
+    ccopy=210708638371UL,
+    zcopy=210735914554UL,
+    sswap=210728196307UL,
+    dswap=210710407492UL,
+    cswap=210709221571UL,
+    zswap=210736497754UL,
+    sscal=210728174523UL,
+    dscal=210710385708UL,
+    cscal=210709199787UL,
+    csscal=6953404169886UL,
+    zscal=210736475970UL,
+    zdscal=6954286495110UL,
+    sdot=6385686335UL,
+    ddot=6385147280UL,
+    cdotu=210708674436UL,
+    zdotu=210735950619UL,
+    cdotc=210708674418UL,
+    zdotc=210735950601UL,
+    dsdot=210710387267UL,
+    sdsdot=6954012548918UL,
+    snrm2=210728011511UL,
+    dnrm2=210710222696UL,
+    scnrm2=6954011198426UL,
+    dznrm2=6953451443714UL,
+    sasum=210727545742UL,
+    dasum=210709756927UL,
+    scasum=6954010732657UL,
+    dzasum=6953450977945UL,
+    isamax=6953638346280UL,
+    idamax=6953620557465UL,
+    icamax=6953619371544UL,
+    izamax=6953646647727UL,
+    srot=6385701581UL,
+    drot=6385162526UL,
+    csrot=210709216592UL,
+    zdrot=210735953720UL,
+    srotg=210728152276UL,
+    drotg=210710363461UL,
+    crotg=210709177540UL,
+    zrotg=210736453723UL,
+    srotmg=6954029025409UL,
+    drotmg=6953441994514UL,
+    srotm=210728152282UL,
+    drotm=210710363467UL,
+    isamin=6953638346534UL,
+    idamin=6953620557719UL,
+    icamin=6953619371798UL,
+    izamin=6953646647981UL,
+    ismax=210716326215UL,
+    idmax=210715787160UL,
+    icmax=210715751223UL,
+    izmax=210716577774UL,
+    ismin=210716326469UL,
+    idmin=210715787414UL,
+    icmin=210715751477UL,
+    izmin=210716578028UL,
+    sgemv=210727745863UL,
+    dgemv=210709957048UL,
+    cgemv=210708771127UL,
+    zgemv=210736047310UL,
+    sgbmv=210727742596UL,
+    dgbmv=210709953781UL,
+    cgbmv=210708767860UL,
+    zgbmv=210736044043UL,
+    ssbmv=210728173840UL,
+    dsbmv=210710385025UL,
+    sger=6385689270UL,
+    dger=6385150215UL,
+    strmv=210728227201UL,
+    dtrmv=210710438386UL,
+    ctrmv=210709252465UL,
+    ztrmv=210736528648UL,
+    strsv=210728227399UL,
+    dtrsv=210710438584UL,
+    ctrsv=210709252663UL,
+    ztrsv=210736528846UL,
+    strsm=210728227390UL,
+    dtrsm=210710438575UL,
+    ctrsm=210709252654UL,
+    ztrsm=210736528837UL,
+    cgeru=210708771291UL,
+    cgerc=210708771273UL,
+    zgeru=210736047474UL,
+    zgerc=210736047456UL,
+    sgemm=210727745854UL,
+    dgemm=210709957039UL,
+    cgemm=210708771118UL,
+    cgemm3m=229461851749294UL,
+    zgemm=210736047301UL,
+    zgemm3m=229491555512581UL,
+    stbmv=210728209777UL,
+    dtbmv=210710420962UL,
+    ctbmv=210709235041UL,
+    ztbmv=210736511224UL,
+    stbsv=210728209975UL,
+    dtbsv=210710421160UL,
+    ctbsv=210709235239UL,
+    ztbsv=210736511422UL,
+    stpmv=210728225023UL,
+    dtpmv=210710436208UL,
+    ctpmv=210709250287UL,
+    ztpmv=210736526470UL,
+    stpsv=210728225221UL,
+    dtpsv=210710436406UL,
+    ctpsv=210709250485UL,
+    ztpsv=210736526668UL,
+    ssymv=210728198887UL,
+    dsymv=210710410072UL,
+    chemv=210708807064UL,
+    zhemv=210736083247UL,
+    sspmv=210728189086UL,
+    dspmv=210710400271UL,
+    sspr=6385702701UL,
+    dspr=6385163646UL,
+    chpr=6385115730UL,
+    zhpr=6385942281UL,
+    sspr2=210728189183UL,
+    dspr2=210710400368UL,
+    chpr2=210708819140UL,
+    zhpr2=210736095323UL,
+    chbmv=210708803797UL,
+    zhbmv=210736079980UL,
+    chpmv=210708819043UL,
+    zhpmv=210736095226UL,
+    cher=6385115367UL,
+    zher=6385941918UL,
+    chemm=210708807055UL,
+    zhemm=210736083238UL,
+    cherk=210708807218UL,
+    zherk=210736083401UL,
+    cher2k=6953390636420UL,
+    zher2k=6954290750459UL,
+    ssymm=210728198878UL,
+    dsymm=210710410063UL,
+    csymm=210709224142UL,
+    zsymm=210736500325UL,
+    ssyrk=210728199041UL,
+    dsyrk=210710410226UL,
+    csyrk=210709224305UL,
+    zsyrk=210736500488UL,
+    ssyr2k=6954030566579UL,
+    dsyr2k=6953443535684UL,
+    csyr2k=6953404400291UL,
+    zsyr2k=6954304514330UL,
+    ssum=6385702861UL,
+    dsum=6385163806UL,
+    dzsum=210710655352UL,
+    scsum=210727617616UL,
+    cher2=210708807161UL,
+    zher2=210736083344UL,
+    strmm=210728227192UL,
+    dtrmm=210710438377UL,
+    ctrmm=210709252456UL,
+    ztrmm=210736528639UL,
+    ssyr=6385702998UL,
+    dsyr=6385163943UL,
+    ssyr2=210728198984UL,
+    dsyr2=210710410169UL,
     blas_name_end=0
 } blas_names;
 
-size_in_bytes pick_size(long unsigned hash);
-size_in_bytes pick_size(long unsigned hash){
+size_in_bytes pick_size(long int hash);
+size_in_bytes pick_size(long int hash){
     size_in_bytes type;
 
      switch(hash){
@@ -625,7 +626,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
     narg--;
     elements++;
 
-    unsigned long hash_name = hash(name);
+    long int hash_name = hash(name);
 
     size_in_bytes type = pick_size(hash_name);
     if(type == no_bytes)
@@ -729,10 +730,10 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             double f_result;
             double d_result;
             double ds_result;
-            openblas_complex_float  c_result;
-            openblas_complex_double z_result;
-            openblas_complex_float  cd_result;
-            openblas_complex_double zd_result;
+            complex float c_result;
+            complex double z_result;
+            complex float cd_result;
+            complex double zd_result;
 
             if( !(error = narg == 5? 0:ERROR_N_ARG)
                 && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_int, e_cste_ptr, e_int, e_end}, &n, &x, &incx, &y, &incy))
@@ -742,10 +743,10 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
                     case sdot:  f_result  = cblas_sdot (n, get_cste_ptr(x), incx, get_cste_ptr(y), incy); set_cste_c_binary(&dot_result, e_double, (unsigned char*) &f_result);  break;
                     case ddot:  d_result  = cblas_ddot (n, get_cste_ptr(x), incx, get_cste_ptr(y), incy); set_cste_c_binary(&dot_result, e_double, (unsigned char*) &d_result);  break;
                     case dsdot: ds_result = cblas_dsdot(n, get_cste_ptr(x), incx, get_cste_ptr(y), incy); set_cste_c_binary(&dot_result, e_double, (unsigned char*) &ds_result); break;
-                    case cdotu: c_result  = cblas_cdotu(n, get_cste_ptr(x), incx, get_cste_ptr(y), incy); set_cste_c_binary(&dot_result, e_float_complex,  (unsigned char*) &c_result);  break;
-                    case zdotu: z_result  = cblas_zdotu(n, get_cste_ptr(x), incx, get_cste_ptr(y), incy); set_cste_c_binary(&dot_result, e_double_complex, (unsigned char*) &z_result);  break;
-                    case cdotc: cd_result = cblas_cdotc(n, get_cste_ptr(x), incx, get_cste_ptr(y), incy); set_cste_c_binary(&dot_result, e_float_complex,  (unsigned char*) &cd_result); break;
-                    case zdotc: zd_result = cblas_zdotc(n, get_cste_ptr(x), incx, get_cste_ptr(y), incy); set_cste_c_binary(&dot_result, e_double_complex, (unsigned char*) &zd_result); break;
+                    //case cdotu: c_result  = cblas_cdotu(n, get_cste_ptr(x), incx, get_cste_ptr(y), incy); set_cste_c_binary(&dot_result, e_float_complex,  (unsigned char*) &c_result);  break;
+                    //case zdotu: z_result  = cblas_zdotu(n, get_cste_ptr(x), incx, get_cste_ptr(y), incy); set_cste_c_binary(&dot_result, e_double_complex, (unsigned char*) &z_result);  break;
+                    //case cdotc: cd_result = cblas_cdotc(n, get_cste_ptr(x), incx, get_cste_ptr(y), incy); set_cste_c_binary(&dot_result, e_float_complex,  (unsigned char*) &cd_result); break;
+                    //case zdotc: zd_result = cblas_zdotc(n, get_cste_ptr(x), incx, get_cste_ptr(y), incy); set_cste_c_binary(&dot_result, e_double_complex, (unsigned char*) &zd_result); break;
                     default: error = ERROR_NOT_FOUND; break;
                 }
 
@@ -801,15 +802,15 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
                     case scasum: d_result  = cblas_scasum(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_double, (unsigned char*) &d_result);  break;
                     case dzasum: d_result  = cblas_dzasum(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_double, (unsigned char*) &d_result);  break;
 
-                    case isamax: i_result  = cblas_isamax(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_int, (unsigned char*) &i_result);  break;
-                    case idamax: i_result  = cblas_idamax(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_int, (unsigned char*) &i_result);  break;
-                    case icamax: i_result  = cblas_icamax(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_int, (unsigned char*) &i_result);  break;
-                    case izamax: i_result  = cblas_izamax(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_int, (unsigned char*) &i_result);  break;
+                    //case isamax: i_result  = cblas_isamax(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_int, (unsigned char*) &i_result);  break;
+                    //case idamax: i_result  = cblas_idamax(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_int, (unsigned char*) &i_result);  break;
+                    //case icamax: i_result  = cblas_icamax(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_int, (unsigned char*) &i_result);  break;
+                    //case izamax: i_result  = cblas_izamax(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_int, (unsigned char*) &i_result);  break;
 
-                    case isamin: i_result  = cblas_isamin(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_int, (unsigned char*) &i_result);  break;
-                    case idamin: i_result  = cblas_idamin(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_int, (unsigned char*) &i_result);  break;
-                    case icamin: i_result  = cblas_icamin(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_int, (unsigned char*) &i_result);  break;
-                    case izamin: i_result  = cblas_izamin(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_int, (unsigned char*) &i_result);  break;
+                    //case isamin: i_result  = cblas_isamin(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_int, (unsigned char*) &i_result);  break;
+                    //case idamin: i_result  = cblas_idamin(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_int, (unsigned char*) &i_result);  break;
+                    //case icamin: i_result  = cblas_icamin(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_int, (unsigned char*) &i_result);  break;
+                    //case izamin: i_result  = cblas_izamin(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_int, (unsigned char*) &i_result);  break;
 
                     //case ismax: i_result  = cblas_ismax(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_int, (unsigned char*) &i_result);  break;
                     //case idmax: i_result  = cblas_idmax(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_int, (unsigned char*) &i_result);  break;
@@ -829,7 +830,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
 
         break;}
 
-        case srot: case drot: case csrot: case zdrot:  {
+        case srot: case drot: { //case csrot: case zdrot:  {
             int n;  c_binary x; int incx; c_binary y; int incy; cste_c_binary c; cste_c_binary s;
 
             if( !(error = narg == 7? 0:ERROR_N_ARG)
@@ -839,8 +840,8 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
                 switch(hash_name){
                     case srot:  cblas_srot(n, get_ptr(x),  incx, get_ptr(y), incy, get_cste_float(c), get_cste_float(s)); break;
                     case drot:  cblas_drot(n, get_ptr(x),  incx, get_ptr(y), incy, get_cste_double(c), get_cste_double(s)); break;
-                    case csrot: cblas_csrot(n, get_ptr(x), incx, get_ptr(y), incy, get_cste_float(c), get_cste_float(s)); break;
-                    case zdrot: cblas_zdrot(n, get_ptr(x), incx, get_ptr(y), incy, get_cste_double(c), get_cste_double(s)); break;
+                    //case csrot: cblas_csrot(n, get_ptr(x), incx, get_ptr(y), incy, get_cste_float(c), get_cste_float(s)); break;
+                    //case zdrot: cblas_zdrot(n, get_ptr(x), incx, get_ptr(y), incy, get_cste_double(c), get_cste_double(s)); break;
                     default: error = ERROR_NOT_FOUND; break;
                 }
 
@@ -849,7 +850,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
 
         break;}
 
-        case srotg: case drotg: case crotg: case zrotg:  {
+        case srotg: case drotg:{//} case crotg: case zrotg:  {
             c_binary a; c_binary b; c_binary c; c_binary s;
 
             if( !(error = narg == 4? 0:ERROR_N_ARG)
@@ -859,8 +860,8 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
                 switch(hash_name){
                     case srotg: cblas_srotg(get_ptr(a), get_ptr(b), get_ptr(c), get_ptr(s)); break;
                     case drotg: cblas_drotg(get_ptr(a), get_ptr(b), get_ptr(c), get_ptr(s)); break;
-                    case crotg: cblas_crotg(get_ptr(a), get_ptr(b), get_ptr(c), get_ptr(s)); break;
-                    case zrotg: cblas_zrotg(get_ptr(a), get_ptr(b), get_ptr(c), get_ptr(s)); break;
+                    //case crotg: cblas_crotg(get_ptr(a), get_ptr(b), get_ptr(c), get_ptr(s)); break;
+                    //case zrotg: cblas_zrotg(get_ptr(a), get_ptr(b), get_ptr(c), get_ptr(s)); break;
                     default: error = ERROR_NOT_FOUND; break;
                 }
 
