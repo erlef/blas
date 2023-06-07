@@ -1,0 +1,1236 @@
+,fct_name,return_type,e_name,arg_pos,arg_type,arg_name
+0,cblas_sdsdot,float,sdsdot,0,const int,N
+1,cblas_sdsdot,float,sdsdot,1,const float,alpha
+2,cblas_sdsdot,float,sdsdot,2,const float*,X
+3,cblas_sdsdot,float,sdsdot,3,const int,incX
+4,cblas_sdsdot,float,sdsdot,4,const float*,Y
+5,cblas_sdsdot,float,sdsdot,5,const int,incY
+6,cblas_dsdot,double,dsdot,0,const int,N
+7,cblas_dsdot,double,dsdot,1,const float*,X
+8,cblas_dsdot,double,dsdot,2,const int,incX
+9,cblas_dsdot,double,dsdot,3,const float*,Y
+10,cblas_dsdot,double,dsdot,4,const int,incY
+11,cblas_sdot,float,sdot,0,const int,N
+12,cblas_sdot,float,sdot,1,const float*,X
+13,cblas_sdot,float,sdot,2,const int,incX
+14,cblas_sdot,float,sdot,3,const float*,Y
+15,cblas_sdot,float,sdot,4,const int,incY
+16,cblas_ddot,double,ddot,0,const int,N
+17,cblas_ddot,double,ddot,1,const double*,X
+18,cblas_ddot,double,ddot,2,const int,incX
+19,cblas_ddot,double,ddot,3,const double*,Y
+20,cblas_ddot,double,ddot,4,const int,incY
+21,cblas_cdotu_sub,void,cdotu,0,const int,N
+22,cblas_cdotu_sub,void,cdotu,1,const void*,X
+23,cblas_cdotu_sub,void,cdotu,2,const int,incX
+24,cblas_cdotu_sub,void,cdotu,3,const void*,Y
+25,cblas_cdotu_sub,void,cdotu,4,const int,incY
+26,cblas_cdotu_sub,void,cdotu,5,void*,dotu
+27,cblas_cdotc_sub,void,cdotc,0,const int,N
+28,cblas_cdotc_sub,void,cdotc,1,const void*,X
+29,cblas_cdotc_sub,void,cdotc,2,const int,incX
+30,cblas_cdotc_sub,void,cdotc,3,const void*,Y
+31,cblas_cdotc_sub,void,cdotc,4,const int,incY
+32,cblas_cdotc_sub,void,cdotc,5,void*,dotc
+33,cblas_zdotu_sub,void,zdotu,0,const int,N
+34,cblas_zdotu_sub,void,zdotu,1,const void*,X
+35,cblas_zdotu_sub,void,zdotu,2,const int,incX
+36,cblas_zdotu_sub,void,zdotu,3,const void*,Y
+37,cblas_zdotu_sub,void,zdotu,4,const int,incY
+38,cblas_zdotu_sub,void,zdotu,5,void*,dotu
+39,cblas_zdotc_sub,void,zdotc,0,const int,N
+40,cblas_zdotc_sub,void,zdotc,1,const void*,X
+41,cblas_zdotc_sub,void,zdotc,2,const int,incX
+42,cblas_zdotc_sub,void,zdotc,3,const void*,Y
+43,cblas_zdotc_sub,void,zdotc,4,const int,incY
+44,cblas_zdotc_sub,void,zdotc,5,void*,dotc
+45,cblas_snrm2,float,snrm2,0,const int,N
+46,cblas_snrm2,float,snrm2,1,const float*,X
+47,cblas_snrm2,float,snrm2,2,const int,incX
+48,cblas_sasum,float,sasum,0,const int,N
+49,cblas_sasum,float,sasum,1,const float*,X
+50,cblas_sasum,float,sasum,2,const int,incX
+51,cblas_dnrm2,double,dnrm2,0,const int,N
+52,cblas_dnrm2,double,dnrm2,1,const double*,X
+53,cblas_dnrm2,double,dnrm2,2,const int,incX
+54,cblas_dasum,double,dasum,0,const int,N
+55,cblas_dasum,double,dasum,1,const double*,X
+56,cblas_dasum,double,dasum,2,const int,incX
+57,cblas_scnrm2,float,scnrm2,0,const int,N
+58,cblas_scnrm2,float,scnrm2,1,const void*,X
+59,cblas_scnrm2,float,scnrm2,2,const int,incX
+60,cblas_scasum,float,scasum,0,const int,N
+61,cblas_scasum,float,scasum,1,const void*,X
+62,cblas_scasum,float,scasum,2,const int,incX
+63,cblas_dznrm2,double,dznrm2,0,const int,N
+64,cblas_dznrm2,double,dznrm2,1,const void*,X
+65,cblas_dznrm2,double,dznrm2,2,const int,incX
+66,cblas_dzasum,double,dzasum,0,const int,N
+67,cblas_dzasum,double,dzasum,1,const void*,X
+68,cblas_dzasum,double,dzasum,2,const int,incX
+69,cblas_isamax,CBLAS_INDEX,isamax,0,const int,N
+70,cblas_isamax,CBLAS_INDEX,isamax,1,const float*,X
+71,cblas_isamax,CBLAS_INDEX,isamax,2,const int,incX
+72,cblas_idamax,CBLAS_INDEX,idamax,0,const int,N
+73,cblas_idamax,CBLAS_INDEX,idamax,1,const double*,X
+74,cblas_idamax,CBLAS_INDEX,idamax,2,const int,incX
+75,cblas_icamax,CBLAS_INDEX,icamax,0,const int,N
+76,cblas_icamax,CBLAS_INDEX,icamax,1,const void*,X
+77,cblas_icamax,CBLAS_INDEX,icamax,2,const int,incX
+78,cblas_izamax,CBLAS_INDEX,izamax,0,const int,N
+79,cblas_izamax,CBLAS_INDEX,izamax,1,const void*,X
+80,cblas_izamax,CBLAS_INDEX,izamax,2,const int,incX
+81,cblas_sswap,void,sswap,0,const int,N
+82,cblas_sswap,void,sswap,1,float*,X
+83,cblas_sswap,void,sswap,2,const int,incX
+84,cblas_sswap,void,sswap,3,float*,Y
+85,cblas_sswap,void,sswap,4,const int,incY
+86,cblas_scopy,void,scopy,0,const int,N
+87,cblas_scopy,void,scopy,1,const float*,X
+88,cblas_scopy,void,scopy,2,const int,incX
+89,cblas_scopy,void,scopy,3,float*,Y
+90,cblas_scopy,void,scopy,4,const int,incY
+91,cblas_saxpy,void,saxpy,0,const int,N
+92,cblas_saxpy,void,saxpy,1,const float,alpha
+93,cblas_saxpy,void,saxpy,2,const float*,X
+94,cblas_saxpy,void,saxpy,3,const int,incX
+95,cblas_saxpy,void,saxpy,4,float*,Y
+96,cblas_saxpy,void,saxpy,5,const int,incY
+97,cblas_dswap,void,dswap,0,const int,N
+98,cblas_dswap,void,dswap,1,double*,X
+99,cblas_dswap,void,dswap,2,const int,incX
+100,cblas_dswap,void,dswap,3,double*,Y
+101,cblas_dswap,void,dswap,4,const int,incY
+102,cblas_dcopy,void,dcopy,0,const int,N
+103,cblas_dcopy,void,dcopy,1,const double*,X
+104,cblas_dcopy,void,dcopy,2,const int,incX
+105,cblas_dcopy,void,dcopy,3,double*,Y
+106,cblas_dcopy,void,dcopy,4,const int,incY
+107,cblas_daxpy,void,daxpy,0,const int,N
+108,cblas_daxpy,void,daxpy,1,const double,alpha
+109,cblas_daxpy,void,daxpy,2,const double*,X
+110,cblas_daxpy,void,daxpy,3,const int,incX
+111,cblas_daxpy,void,daxpy,4,double*,Y
+112,cblas_daxpy,void,daxpy,5,const int,incY
+113,cblas_cswap,void,cswap,0,const int,N
+114,cblas_cswap,void,cswap,1,void*,X
+115,cblas_cswap,void,cswap,2,const int,incX
+116,cblas_cswap,void,cswap,3,void*,Y
+117,cblas_cswap,void,cswap,4,const int,incY
+118,cblas_ccopy,void,ccopy,0,const int,N
+119,cblas_ccopy,void,ccopy,1,const void*,X
+120,cblas_ccopy,void,ccopy,2,const int,incX
+121,cblas_ccopy,void,ccopy,3,void*,Y
+122,cblas_ccopy,void,ccopy,4,const int,incY
+123,cblas_caxpy,void,caxpy,0,const int,N
+124,cblas_caxpy,void,caxpy,1,const void*,alpha
+125,cblas_caxpy,void,caxpy,2,const void*,X
+126,cblas_caxpy,void,caxpy,3,const int,incX
+127,cblas_caxpy,void,caxpy,4,void*,Y
+128,cblas_caxpy,void,caxpy,5,const int,incY
+129,cblas_zswap,void,zswap,0,const int,N
+130,cblas_zswap,void,zswap,1,void*,X
+131,cblas_zswap,void,zswap,2,const int,incX
+132,cblas_zswap,void,zswap,3,void*,Y
+133,cblas_zswap,void,zswap,4,const int,incY
+134,cblas_zcopy,void,zcopy,0,const int,N
+135,cblas_zcopy,void,zcopy,1,const void*,X
+136,cblas_zcopy,void,zcopy,2,const int,incX
+137,cblas_zcopy,void,zcopy,3,void*,Y
+138,cblas_zcopy,void,zcopy,4,const int,incY
+139,cblas_zaxpy,void,zaxpy,0,const int,N
+140,cblas_zaxpy,void,zaxpy,1,const void*,alpha
+141,cblas_zaxpy,void,zaxpy,2,const void*,X
+142,cblas_zaxpy,void,zaxpy,3,const int,incX
+143,cblas_zaxpy,void,zaxpy,4,void*,Y
+144,cblas_zaxpy,void,zaxpy,5,const int,incY
+145,cblas_srotg,void,srotg,0,float*,a
+146,cblas_srotg,void,srotg,1,float*,b
+147,cblas_srotg,void,srotg,2,float*,c
+148,cblas_srotg,void,srotg,3,float*,s
+149,cblas_srotmg,void,srotmg,0,float*,d1
+150,cblas_srotmg,void,srotmg,1,float*,d2
+151,cblas_srotmg,void,srotmg,2,float*,b1
+152,cblas_srotmg,void,srotmg,3,const float,b2
+153,cblas_srotmg,void,srotmg,4,float*,P
+154,cblas_srot,void,srot,0,const int,N
+155,cblas_srot,void,srot,1,float*,X
+156,cblas_srot,void,srot,2,const int,incX
+157,cblas_srot,void,srot,3,float*,Y
+158,cblas_srot,void,srot,4,const int,incY
+159,cblas_srot,void,srot,5,const float,c
+160,cblas_srot,void,srot,6,const float,s
+161,cblas_srotm,void,srotm,0,const int,N
+162,cblas_srotm,void,srotm,1,float*,X
+163,cblas_srotm,void,srotm,2,const int,incX
+164,cblas_srotm,void,srotm,3,float*,Y
+165,cblas_srotm,void,srotm,4,const int,incY
+166,cblas_srotm,void,srotm,5,const float*,P
+167,cblas_drotg,void,drotg,0,double*,a
+168,cblas_drotg,void,drotg,1,double*,b
+169,cblas_drotg,void,drotg,2,double*,c
+170,cblas_drotg,void,drotg,3,double*,s
+171,cblas_drotmg,void,drotmg,0,double*,d1
+172,cblas_drotmg,void,drotmg,1,double*,d2
+173,cblas_drotmg,void,drotmg,2,double*,b1
+174,cblas_drotmg,void,drotmg,3,const double,b2
+175,cblas_drotmg,void,drotmg,4,double*,P
+176,cblas_drot,void,drot,0,const int,N
+177,cblas_drot,void,drot,1,double*,X
+178,cblas_drot,void,drot,2,const int,incX
+179,cblas_drot,void,drot,3,double*,Y
+180,cblas_drot,void,drot,4,const int,incY
+181,cblas_drot,void,drot,5,const double,c
+182,cblas_drot,void,drot,6,const double,s
+183,cblas_drotm,void,drotm,0,const int,N
+184,cblas_drotm,void,drotm,1,double*,X
+185,cblas_drotm,void,drotm,2,const int,incX
+186,cblas_drotm,void,drotm,3,double*,Y
+187,cblas_drotm,void,drotm,4,const int,incY
+188,cblas_drotm,void,drotm,5,const double*,P
+189,cblas_sscal,void,sscal,0,const int,N
+190,cblas_sscal,void,sscal,1,const float,alpha
+191,cblas_sscal,void,sscal,2,float*,X
+192,cblas_sscal,void,sscal,3,const int,incX
+193,cblas_dscal,void,dscal,0,const int,N
+194,cblas_dscal,void,dscal,1,const double,alpha
+195,cblas_dscal,void,dscal,2,double*,X
+196,cblas_dscal,void,dscal,3,const int,incX
+197,cblas_cscal,void,cscal,0,const int,N
+198,cblas_cscal,void,cscal,1,const void*,alpha
+199,cblas_cscal,void,cscal,2,void*,X
+200,cblas_cscal,void,cscal,3,const int,incX
+201,cblas_zscal,void,zscal,0,const int,N
+202,cblas_zscal,void,zscal,1,const void*,alpha
+203,cblas_zscal,void,zscal,2,void*,X
+204,cblas_zscal,void,zscal,3,const int,incX
+205,cblas_csscal,void,csscal,0,const int,N
+206,cblas_csscal,void,csscal,1,const float,alpha
+207,cblas_csscal,void,csscal,2,void*,X
+208,cblas_csscal,void,csscal,3,const int,incX
+209,cblas_zdscal,void,zdscal,0,const int,N
+210,cblas_zdscal,void,zdscal,1,const double,alpha
+211,cblas_zdscal,void,zdscal,2,void*,X
+212,cblas_zdscal,void,zdscal,3,const int,incX
+213,cblas_sgemv,void,sgemv,0,const enum CBLAS_ORDER,order
+214,cblas_sgemv,void,sgemv,1,const enum CBLAS_TRANSPOSE,TransA
+215,cblas_sgemv,void,sgemv,2,const int,M
+216,cblas_sgemv,void,sgemv,3,const int,N
+217,cblas_sgemv,void,sgemv,4,const float,alpha
+218,cblas_sgemv,void,sgemv,5,const float*,A
+219,cblas_sgemv,void,sgemv,6,const int,lda
+220,cblas_sgemv,void,sgemv,7,const float*,X
+221,cblas_sgemv,void,sgemv,8,const int,incX
+222,cblas_sgemv,void,sgemv,9,const float,beta
+223,cblas_sgemv,void,sgemv,10,float*,Y
+224,cblas_sgemv,void,sgemv,11,const int,incY
+225,cblas_sgbmv,void,sgbmv,0,const enum CBLAS_ORDER,order
+226,cblas_sgbmv,void,sgbmv,1,const enum CBLAS_TRANSPOSE,TransA
+227,cblas_sgbmv,void,sgbmv,2,const int,M
+228,cblas_sgbmv,void,sgbmv,3,const int,N
+229,cblas_sgbmv,void,sgbmv,4,const int,KL
+230,cblas_sgbmv,void,sgbmv,5,const int,KU
+231,cblas_sgbmv,void,sgbmv,6,const float,alpha
+232,cblas_sgbmv,void,sgbmv,7,const float*,A
+233,cblas_sgbmv,void,sgbmv,8,const int,lda
+234,cblas_sgbmv,void,sgbmv,9,const float*,X
+235,cblas_sgbmv,void,sgbmv,10,const int,incX
+236,cblas_sgbmv,void,sgbmv,11,const float,beta
+237,cblas_sgbmv,void,sgbmv,12,float*,Y
+238,cblas_sgbmv,void,sgbmv,13,const int,incY
+239,cblas_strmv,void,strmv,0,const enum CBLAS_ORDER,order
+240,cblas_strmv,void,strmv,1,const enum CBLAS_UPLO,Uplo
+241,cblas_strmv,void,strmv,2,const enum CBLAS_TRANSPOSE,TransA
+242,cblas_strmv,void,strmv,3,const enum CBLAS_DIAG,Diag
+243,cblas_strmv,void,strmv,4,const int,N
+244,cblas_strmv,void,strmv,5,const float*,A
+245,cblas_strmv,void,strmv,6,const int,lda
+246,cblas_strmv,void,strmv,7,float*,X
+247,cblas_strmv,void,strmv,8,const int,incX
+248,cblas_stbmv,void,stbmv,0,const enum CBLAS_ORDER,order
+249,cblas_stbmv,void,stbmv,1,const enum CBLAS_UPLO,Uplo
+250,cblas_stbmv,void,stbmv,2,const enum CBLAS_TRANSPOSE,TransA
+251,cblas_stbmv,void,stbmv,3,const enum CBLAS_DIAG,Diag
+252,cblas_stbmv,void,stbmv,4,const int,N
+253,cblas_stbmv,void,stbmv,5,const int,K
+254,cblas_stbmv,void,stbmv,6,const float*,A
+255,cblas_stbmv,void,stbmv,7,const int,lda
+256,cblas_stbmv,void,stbmv,8,float*,X
+257,cblas_stbmv,void,stbmv,9,const int,incX
+258,cblas_stpmv,void,stpmv,0,const enum CBLAS_ORDER,order
+259,cblas_stpmv,void,stpmv,1,const enum CBLAS_UPLO,Uplo
+260,cblas_stpmv,void,stpmv,2,const enum CBLAS_TRANSPOSE,TransA
+261,cblas_stpmv,void,stpmv,3,const enum CBLAS_DIAG,Diag
+262,cblas_stpmv,void,stpmv,4,const int,N
+263,cblas_stpmv,void,stpmv,5,const float*,Ap
+264,cblas_stpmv,void,stpmv,6,float*,X
+265,cblas_stpmv,void,stpmv,7,const int,incX
+266,cblas_strsv,void,strsv,0,const enum CBLAS_ORDER,order
+267,cblas_strsv,void,strsv,1,const enum CBLAS_UPLO,Uplo
+268,cblas_strsv,void,strsv,2,const enum CBLAS_TRANSPOSE,TransA
+269,cblas_strsv,void,strsv,3,const enum CBLAS_DIAG,Diag
+270,cblas_strsv,void,strsv,4,const int,N
+271,cblas_strsv,void,strsv,5,const float*,A
+272,cblas_strsv,void,strsv,6,const int,lda
+273,cblas_strsv,void,strsv,7,float*,X
+274,cblas_strsv,void,strsv,8,const int,incX
+275,cblas_stbsv,void,stbsv,0,const enum CBLAS_ORDER,order
+276,cblas_stbsv,void,stbsv,1,const enum CBLAS_UPLO,Uplo
+277,cblas_stbsv,void,stbsv,2,const enum CBLAS_TRANSPOSE,TransA
+278,cblas_stbsv,void,stbsv,3,const enum CBLAS_DIAG,Diag
+279,cblas_stbsv,void,stbsv,4,const int,N
+280,cblas_stbsv,void,stbsv,5,const int,K
+281,cblas_stbsv,void,stbsv,6,const float*,A
+282,cblas_stbsv,void,stbsv,7,const int,lda
+283,cblas_stbsv,void,stbsv,8,float*,X
+284,cblas_stbsv,void,stbsv,9,const int,incX
+285,cblas_stpsv,void,stpsv,0,const enum CBLAS_ORDER,order
+286,cblas_stpsv,void,stpsv,1,const enum CBLAS_UPLO,Uplo
+287,cblas_stpsv,void,stpsv,2,const enum CBLAS_TRANSPOSE,TransA
+288,cblas_stpsv,void,stpsv,3,const enum CBLAS_DIAG,Diag
+289,cblas_stpsv,void,stpsv,4,const int,N
+290,cblas_stpsv,void,stpsv,5,const float*,Ap
+291,cblas_stpsv,void,stpsv,6,float*,X
+292,cblas_stpsv,void,stpsv,7,const int,incX
+293,cblas_dgemv,void,dgemv,0,const enum CBLAS_ORDER,order
+294,cblas_dgemv,void,dgemv,1,const enum CBLAS_TRANSPOSE,TransA
+295,cblas_dgemv,void,dgemv,2,const int,M
+296,cblas_dgemv,void,dgemv,3,const int,N
+297,cblas_dgemv,void,dgemv,4,const double,alpha
+298,cblas_dgemv,void,dgemv,5,const double*,A
+299,cblas_dgemv,void,dgemv,6,const int,lda
+300,cblas_dgemv,void,dgemv,7,const double*,X
+301,cblas_dgemv,void,dgemv,8,const int,incX
+302,cblas_dgemv,void,dgemv,9,const double,beta
+303,cblas_dgemv,void,dgemv,10,double*,Y
+304,cblas_dgemv,void,dgemv,11,const int,incY
+305,cblas_dgbmv,void,dgbmv,0,const enum CBLAS_ORDER,order
+306,cblas_dgbmv,void,dgbmv,1,const enum CBLAS_TRANSPOSE,TransA
+307,cblas_dgbmv,void,dgbmv,2,const int,M
+308,cblas_dgbmv,void,dgbmv,3,const int,N
+309,cblas_dgbmv,void,dgbmv,4,const int,KL
+310,cblas_dgbmv,void,dgbmv,5,const int,KU
+311,cblas_dgbmv,void,dgbmv,6,const double,alpha
+312,cblas_dgbmv,void,dgbmv,7,const double*,A
+313,cblas_dgbmv,void,dgbmv,8,const int,lda
+314,cblas_dgbmv,void,dgbmv,9,const double*,X
+315,cblas_dgbmv,void,dgbmv,10,const int,incX
+316,cblas_dgbmv,void,dgbmv,11,const double,beta
+317,cblas_dgbmv,void,dgbmv,12,double*,Y
+318,cblas_dgbmv,void,dgbmv,13,const int,incY
+319,cblas_dtrmv,void,dtrmv,0,const enum CBLAS_ORDER,order
+320,cblas_dtrmv,void,dtrmv,1,const enum CBLAS_UPLO,Uplo
+321,cblas_dtrmv,void,dtrmv,2,const enum CBLAS_TRANSPOSE,TransA
+322,cblas_dtrmv,void,dtrmv,3,const enum CBLAS_DIAG,Diag
+323,cblas_dtrmv,void,dtrmv,4,const int,N
+324,cblas_dtrmv,void,dtrmv,5,const double*,A
+325,cblas_dtrmv,void,dtrmv,6,const int,lda
+326,cblas_dtrmv,void,dtrmv,7,double*,X
+327,cblas_dtrmv,void,dtrmv,8,const int,incX
+328,cblas_dtbmv,void,dtbmv,0,const enum CBLAS_ORDER,order
+329,cblas_dtbmv,void,dtbmv,1,const enum CBLAS_UPLO,Uplo
+330,cblas_dtbmv,void,dtbmv,2,const enum CBLAS_TRANSPOSE,TransA
+331,cblas_dtbmv,void,dtbmv,3,const enum CBLAS_DIAG,Diag
+332,cblas_dtbmv,void,dtbmv,4,const int,N
+333,cblas_dtbmv,void,dtbmv,5,const int,K
+334,cblas_dtbmv,void,dtbmv,6,const double*,A
+335,cblas_dtbmv,void,dtbmv,7,const int,lda
+336,cblas_dtbmv,void,dtbmv,8,double*,X
+337,cblas_dtbmv,void,dtbmv,9,const int,incX
+338,cblas_dtpmv,void,dtpmv,0,const enum CBLAS_ORDER,order
+339,cblas_dtpmv,void,dtpmv,1,const enum CBLAS_UPLO,Uplo
+340,cblas_dtpmv,void,dtpmv,2,const enum CBLAS_TRANSPOSE,TransA
+341,cblas_dtpmv,void,dtpmv,3,const enum CBLAS_DIAG,Diag
+342,cblas_dtpmv,void,dtpmv,4,const int,N
+343,cblas_dtpmv,void,dtpmv,5,const double*,Ap
+344,cblas_dtpmv,void,dtpmv,6,double*,X
+345,cblas_dtpmv,void,dtpmv,7,const int,incX
+346,cblas_dtrsv,void,dtrsv,0,const enum CBLAS_ORDER,order
+347,cblas_dtrsv,void,dtrsv,1,const enum CBLAS_UPLO,Uplo
+348,cblas_dtrsv,void,dtrsv,2,const enum CBLAS_TRANSPOSE,TransA
+349,cblas_dtrsv,void,dtrsv,3,const enum CBLAS_DIAG,Diag
+350,cblas_dtrsv,void,dtrsv,4,const int,N
+351,cblas_dtrsv,void,dtrsv,5,const double*,A
+352,cblas_dtrsv,void,dtrsv,6,const int,lda
+353,cblas_dtrsv,void,dtrsv,7,double*,X
+354,cblas_dtrsv,void,dtrsv,8,const int,incX
+355,cblas_dtbsv,void,dtbsv,0,const enum CBLAS_ORDER,order
+356,cblas_dtbsv,void,dtbsv,1,const enum CBLAS_UPLO,Uplo
+357,cblas_dtbsv,void,dtbsv,2,const enum CBLAS_TRANSPOSE,TransA
+358,cblas_dtbsv,void,dtbsv,3,const enum CBLAS_DIAG,Diag
+359,cblas_dtbsv,void,dtbsv,4,const int,N
+360,cblas_dtbsv,void,dtbsv,5,const int,K
+361,cblas_dtbsv,void,dtbsv,6,const double*,A
+362,cblas_dtbsv,void,dtbsv,7,const int,lda
+363,cblas_dtbsv,void,dtbsv,8,double*,X
+364,cblas_dtbsv,void,dtbsv,9,const int,incX
+365,cblas_dtpsv,void,dtpsv,0,const enum CBLAS_ORDER,order
+366,cblas_dtpsv,void,dtpsv,1,const enum CBLAS_UPLO,Uplo
+367,cblas_dtpsv,void,dtpsv,2,const enum CBLAS_TRANSPOSE,TransA
+368,cblas_dtpsv,void,dtpsv,3,const enum CBLAS_DIAG,Diag
+369,cblas_dtpsv,void,dtpsv,4,const int,N
+370,cblas_dtpsv,void,dtpsv,5,const double*,Ap
+371,cblas_dtpsv,void,dtpsv,6,double*,X
+372,cblas_dtpsv,void,dtpsv,7,const int,incX
+373,cblas_cgemv,void,cgemv,0,const enum CBLAS_ORDER,order
+374,cblas_cgemv,void,cgemv,1,const enum CBLAS_TRANSPOSE,TransA
+375,cblas_cgemv,void,cgemv,2,const int,M
+376,cblas_cgemv,void,cgemv,3,const int,N
+377,cblas_cgemv,void,cgemv,4,const void*,alpha
+378,cblas_cgemv,void,cgemv,5,const void*,A
+379,cblas_cgemv,void,cgemv,6,const int,lda
+380,cblas_cgemv,void,cgemv,7,const void*,X
+381,cblas_cgemv,void,cgemv,8,const int,incX
+382,cblas_cgemv,void,cgemv,9,const void*,beta
+383,cblas_cgemv,void,cgemv,10,void*,Y
+384,cblas_cgemv,void,cgemv,11,const int,incY
+385,cblas_cgbmv,void,cgbmv,0,const enum CBLAS_ORDER,order
+386,cblas_cgbmv,void,cgbmv,1,const enum CBLAS_TRANSPOSE,TransA
+387,cblas_cgbmv,void,cgbmv,2,const int,M
+388,cblas_cgbmv,void,cgbmv,3,const int,N
+389,cblas_cgbmv,void,cgbmv,4,const int,KL
+390,cblas_cgbmv,void,cgbmv,5,const int,KU
+391,cblas_cgbmv,void,cgbmv,6,const void*,alpha
+392,cblas_cgbmv,void,cgbmv,7,const void*,A
+393,cblas_cgbmv,void,cgbmv,8,const int,lda
+394,cblas_cgbmv,void,cgbmv,9,const void*,X
+395,cblas_cgbmv,void,cgbmv,10,const int,incX
+396,cblas_cgbmv,void,cgbmv,11,const void*,beta
+397,cblas_cgbmv,void,cgbmv,12,void*,Y
+398,cblas_cgbmv,void,cgbmv,13,const int,incY
+399,cblas_ctrmv,void,ctrmv,0,const enum CBLAS_ORDER,order
+400,cblas_ctrmv,void,ctrmv,1,const enum CBLAS_UPLO,Uplo
+401,cblas_ctrmv,void,ctrmv,2,const enum CBLAS_TRANSPOSE,TransA
+402,cblas_ctrmv,void,ctrmv,3,const enum CBLAS_DIAG,Diag
+403,cblas_ctrmv,void,ctrmv,4,const int,N
+404,cblas_ctrmv,void,ctrmv,5,const void*,A
+405,cblas_ctrmv,void,ctrmv,6,const int,lda
+406,cblas_ctrmv,void,ctrmv,7,void*,X
+407,cblas_ctrmv,void,ctrmv,8,const int,incX
+408,cblas_ctbmv,void,ctbmv,0,const enum CBLAS_ORDER,order
+409,cblas_ctbmv,void,ctbmv,1,const enum CBLAS_UPLO,Uplo
+410,cblas_ctbmv,void,ctbmv,2,const enum CBLAS_TRANSPOSE,TransA
+411,cblas_ctbmv,void,ctbmv,3,const enum CBLAS_DIAG,Diag
+412,cblas_ctbmv,void,ctbmv,4,const int,N
+413,cblas_ctbmv,void,ctbmv,5,const int,K
+414,cblas_ctbmv,void,ctbmv,6,const void*,A
+415,cblas_ctbmv,void,ctbmv,7,const int,lda
+416,cblas_ctbmv,void,ctbmv,8,void*,X
+417,cblas_ctbmv,void,ctbmv,9,const int,incX
+418,cblas_ctpmv,void,ctpmv,0,const enum CBLAS_ORDER,order
+419,cblas_ctpmv,void,ctpmv,1,const enum CBLAS_UPLO,Uplo
+420,cblas_ctpmv,void,ctpmv,2,const enum CBLAS_TRANSPOSE,TransA
+421,cblas_ctpmv,void,ctpmv,3,const enum CBLAS_DIAG,Diag
+422,cblas_ctpmv,void,ctpmv,4,const int,N
+423,cblas_ctpmv,void,ctpmv,5,const void*,Ap
+424,cblas_ctpmv,void,ctpmv,6,void*,X
+425,cblas_ctpmv,void,ctpmv,7,const int,incX
+426,cblas_ctrsv,void,ctrsv,0,const enum CBLAS_ORDER,order
+427,cblas_ctrsv,void,ctrsv,1,const enum CBLAS_UPLO,Uplo
+428,cblas_ctrsv,void,ctrsv,2,const enum CBLAS_TRANSPOSE,TransA
+429,cblas_ctrsv,void,ctrsv,3,const enum CBLAS_DIAG,Diag
+430,cblas_ctrsv,void,ctrsv,4,const int,N
+431,cblas_ctrsv,void,ctrsv,5,const void*,A
+432,cblas_ctrsv,void,ctrsv,6,const int,lda
+433,cblas_ctrsv,void,ctrsv,7,void*,X
+434,cblas_ctrsv,void,ctrsv,8,const int,incX
+435,cblas_ctbsv,void,ctbsv,0,const enum CBLAS_ORDER,order
+436,cblas_ctbsv,void,ctbsv,1,const enum CBLAS_UPLO,Uplo
+437,cblas_ctbsv,void,ctbsv,2,const enum CBLAS_TRANSPOSE,TransA
+438,cblas_ctbsv,void,ctbsv,3,const enum CBLAS_DIAG,Diag
+439,cblas_ctbsv,void,ctbsv,4,const int,N
+440,cblas_ctbsv,void,ctbsv,5,const int,K
+441,cblas_ctbsv,void,ctbsv,6,const void*,A
+442,cblas_ctbsv,void,ctbsv,7,const int,lda
+443,cblas_ctbsv,void,ctbsv,8,void*,X
+444,cblas_ctbsv,void,ctbsv,9,const int,incX
+445,cblas_ctpsv,void,ctpsv,0,const enum CBLAS_ORDER,order
+446,cblas_ctpsv,void,ctpsv,1,const enum CBLAS_UPLO,Uplo
+447,cblas_ctpsv,void,ctpsv,2,const enum CBLAS_TRANSPOSE,TransA
+448,cblas_ctpsv,void,ctpsv,3,const enum CBLAS_DIAG,Diag
+449,cblas_ctpsv,void,ctpsv,4,const int,N
+450,cblas_ctpsv,void,ctpsv,5,const void*,Ap
+451,cblas_ctpsv,void,ctpsv,6,void*,X
+452,cblas_ctpsv,void,ctpsv,7,const int,incX
+453,cblas_zgemv,void,zgemv,0,const enum CBLAS_ORDER,order
+454,cblas_zgemv,void,zgemv,1,const enum CBLAS_TRANSPOSE,TransA
+455,cblas_zgemv,void,zgemv,2,const int,M
+456,cblas_zgemv,void,zgemv,3,const int,N
+457,cblas_zgemv,void,zgemv,4,const void*,alpha
+458,cblas_zgemv,void,zgemv,5,const void*,A
+459,cblas_zgemv,void,zgemv,6,const int,lda
+460,cblas_zgemv,void,zgemv,7,const void*,X
+461,cblas_zgemv,void,zgemv,8,const int,incX
+462,cblas_zgemv,void,zgemv,9,const void*,beta
+463,cblas_zgemv,void,zgemv,10,void*,Y
+464,cblas_zgemv,void,zgemv,11,const int,incY
+465,cblas_zgbmv,void,zgbmv,0,const enum CBLAS_ORDER,order
+466,cblas_zgbmv,void,zgbmv,1,const enum CBLAS_TRANSPOSE,TransA
+467,cblas_zgbmv,void,zgbmv,2,const int,M
+468,cblas_zgbmv,void,zgbmv,3,const int,N
+469,cblas_zgbmv,void,zgbmv,4,const int,KL
+470,cblas_zgbmv,void,zgbmv,5,const int,KU
+471,cblas_zgbmv,void,zgbmv,6,const void*,alpha
+472,cblas_zgbmv,void,zgbmv,7,const void*,A
+473,cblas_zgbmv,void,zgbmv,8,const int,lda
+474,cblas_zgbmv,void,zgbmv,9,const void*,X
+475,cblas_zgbmv,void,zgbmv,10,const int,incX
+476,cblas_zgbmv,void,zgbmv,11,const void*,beta
+477,cblas_zgbmv,void,zgbmv,12,void*,Y
+478,cblas_zgbmv,void,zgbmv,13,const int,incY
+479,cblas_ztrmv,void,ztrmv,0,const enum CBLAS_ORDER,order
+480,cblas_ztrmv,void,ztrmv,1,const enum CBLAS_UPLO,Uplo
+481,cblas_ztrmv,void,ztrmv,2,const enum CBLAS_TRANSPOSE,TransA
+482,cblas_ztrmv,void,ztrmv,3,const enum CBLAS_DIAG,Diag
+483,cblas_ztrmv,void,ztrmv,4,const int,N
+484,cblas_ztrmv,void,ztrmv,5,const void*,A
+485,cblas_ztrmv,void,ztrmv,6,const int,lda
+486,cblas_ztrmv,void,ztrmv,7,void*,X
+487,cblas_ztrmv,void,ztrmv,8,const int,incX
+488,cblas_ztbmv,void,ztbmv,0,const enum CBLAS_ORDER,order
+489,cblas_ztbmv,void,ztbmv,1,const enum CBLAS_UPLO,Uplo
+490,cblas_ztbmv,void,ztbmv,2,const enum CBLAS_TRANSPOSE,TransA
+491,cblas_ztbmv,void,ztbmv,3,const enum CBLAS_DIAG,Diag
+492,cblas_ztbmv,void,ztbmv,4,const int,N
+493,cblas_ztbmv,void,ztbmv,5,const int,K
+494,cblas_ztbmv,void,ztbmv,6,const void*,A
+495,cblas_ztbmv,void,ztbmv,7,const int,lda
+496,cblas_ztbmv,void,ztbmv,8,void*,X
+497,cblas_ztbmv,void,ztbmv,9,const int,incX
+498,cblas_ztpmv,void,ztpmv,0,const enum CBLAS_ORDER,order
+499,cblas_ztpmv,void,ztpmv,1,const enum CBLAS_UPLO,Uplo
+500,cblas_ztpmv,void,ztpmv,2,const enum CBLAS_TRANSPOSE,TransA
+501,cblas_ztpmv,void,ztpmv,3,const enum CBLAS_DIAG,Diag
+502,cblas_ztpmv,void,ztpmv,4,const int,N
+503,cblas_ztpmv,void,ztpmv,5,const void*,Ap
+504,cblas_ztpmv,void,ztpmv,6,void*,X
+505,cblas_ztpmv,void,ztpmv,7,const int,incX
+506,cblas_ztrsv,void,ztrsv,0,const enum CBLAS_ORDER,order
+507,cblas_ztrsv,void,ztrsv,1,const enum CBLAS_UPLO,Uplo
+508,cblas_ztrsv,void,ztrsv,2,const enum CBLAS_TRANSPOSE,TransA
+509,cblas_ztrsv,void,ztrsv,3,const enum CBLAS_DIAG,Diag
+510,cblas_ztrsv,void,ztrsv,4,const int,N
+511,cblas_ztrsv,void,ztrsv,5,const void*,A
+512,cblas_ztrsv,void,ztrsv,6,const int,lda
+513,cblas_ztrsv,void,ztrsv,7,void*,X
+514,cblas_ztrsv,void,ztrsv,8,const int,incX
+515,cblas_ztbsv,void,ztbsv,0,const enum CBLAS_ORDER,order
+516,cblas_ztbsv,void,ztbsv,1,const enum CBLAS_UPLO,Uplo
+517,cblas_ztbsv,void,ztbsv,2,const enum CBLAS_TRANSPOSE,TransA
+518,cblas_ztbsv,void,ztbsv,3,const enum CBLAS_DIAG,Diag
+519,cblas_ztbsv,void,ztbsv,4,const int,N
+520,cblas_ztbsv,void,ztbsv,5,const int,K
+521,cblas_ztbsv,void,ztbsv,6,const void*,A
+522,cblas_ztbsv,void,ztbsv,7,const int,lda
+523,cblas_ztbsv,void,ztbsv,8,void*,X
+524,cblas_ztbsv,void,ztbsv,9,const int,incX
+525,cblas_ztpsv,void,ztpsv,0,const enum CBLAS_ORDER,order
+526,cblas_ztpsv,void,ztpsv,1,const enum CBLAS_UPLO,Uplo
+527,cblas_ztpsv,void,ztpsv,2,const enum CBLAS_TRANSPOSE,TransA
+528,cblas_ztpsv,void,ztpsv,3,const enum CBLAS_DIAG,Diag
+529,cblas_ztpsv,void,ztpsv,4,const int,N
+530,cblas_ztpsv,void,ztpsv,5,const void*,Ap
+531,cblas_ztpsv,void,ztpsv,6,void*,X
+532,cblas_ztpsv,void,ztpsv,7,const int,incX
+533,cblas_ssymv,void,ssymv,0,const enum CBLAS_ORDER,order
+534,cblas_ssymv,void,ssymv,1,const enum CBLAS_UPLO,Uplo
+535,cblas_ssymv,void,ssymv,2,const int,N
+536,cblas_ssymv,void,ssymv,3,const float,alpha
+537,cblas_ssymv,void,ssymv,4,const float*,A
+538,cblas_ssymv,void,ssymv,5,const int,lda
+539,cblas_ssymv,void,ssymv,6,const float*,X
+540,cblas_ssymv,void,ssymv,7,const int,incX
+541,cblas_ssymv,void,ssymv,8,const float,beta
+542,cblas_ssymv,void,ssymv,9,float*,Y
+543,cblas_ssymv,void,ssymv,10,const int,incY
+544,cblas_ssbmv,void,ssbmv,0,const enum CBLAS_ORDER,order
+545,cblas_ssbmv,void,ssbmv,1,const enum CBLAS_UPLO,Uplo
+546,cblas_ssbmv,void,ssbmv,2,const int,N
+547,cblas_ssbmv,void,ssbmv,3,const int,K
+548,cblas_ssbmv,void,ssbmv,4,const float,alpha
+549,cblas_ssbmv,void,ssbmv,5,const float*,A
+550,cblas_ssbmv,void,ssbmv,6,const int,lda
+551,cblas_ssbmv,void,ssbmv,7,const float*,X
+552,cblas_ssbmv,void,ssbmv,8,const int,incX
+553,cblas_ssbmv,void,ssbmv,9,const float,beta
+554,cblas_ssbmv,void,ssbmv,10,float*,Y
+555,cblas_ssbmv,void,ssbmv,11,const int,incY
+556,cblas_sspmv,void,sspmv,0,const enum CBLAS_ORDER,order
+557,cblas_sspmv,void,sspmv,1,const enum CBLAS_UPLO,Uplo
+558,cblas_sspmv,void,sspmv,2,const int,N
+559,cblas_sspmv,void,sspmv,3,const float,alpha
+560,cblas_sspmv,void,sspmv,4,const float*,Ap
+561,cblas_sspmv,void,sspmv,5,const float*,X
+562,cblas_sspmv,void,sspmv,6,const int,incX
+563,cblas_sspmv,void,sspmv,7,const float,beta
+564,cblas_sspmv,void,sspmv,8,float*,Y
+565,cblas_sspmv,void,sspmv,9,const int,incY
+566,cblas_sger,void,sger,0,const enum CBLAS_ORDER,order
+567,cblas_sger,void,sger,1,const int,M
+568,cblas_sger,void,sger,2,const int,N
+569,cblas_sger,void,sger,3,const float,alpha
+570,cblas_sger,void,sger,4,const float*,X
+571,cblas_sger,void,sger,5,const int,incX
+572,cblas_sger,void,sger,6,const float*,Y
+573,cblas_sger,void,sger,7,const int,incY
+574,cblas_sger,void,sger,8,float*,A
+575,cblas_sger,void,sger,9,const int,lda
+576,cblas_ssyr,void,ssyr,0,const enum CBLAS_ORDER,order
+577,cblas_ssyr,void,ssyr,1,const enum CBLAS_UPLO,Uplo
+578,cblas_ssyr,void,ssyr,2,const int,N
+579,cblas_ssyr,void,ssyr,3,const float,alpha
+580,cblas_ssyr,void,ssyr,4,const float*,X
+581,cblas_ssyr,void,ssyr,5,const int,incX
+582,cblas_ssyr,void,ssyr,6,float*,A
+583,cblas_ssyr,void,ssyr,7,const int,lda
+584,cblas_sspr,void,sspr,0,const enum CBLAS_ORDER,order
+585,cblas_sspr,void,sspr,1,const enum CBLAS_UPLO,Uplo
+586,cblas_sspr,void,sspr,2,const int,N
+587,cblas_sspr,void,sspr,3,const float,alpha
+588,cblas_sspr,void,sspr,4,const float*,X
+589,cblas_sspr,void,sspr,5,const int,incX
+590,cblas_sspr,void,sspr,6,float*,Ap
+591,cblas_ssyr2,void,ssyr2,0,const enum CBLAS_ORDER,order
+592,cblas_ssyr2,void,ssyr2,1,const enum CBLAS_UPLO,Uplo
+593,cblas_ssyr2,void,ssyr2,2,const int,N
+594,cblas_ssyr2,void,ssyr2,3,const float,alpha
+595,cblas_ssyr2,void,ssyr2,4,const float*,X
+596,cblas_ssyr2,void,ssyr2,5,const int,incX
+597,cblas_ssyr2,void,ssyr2,6,const float*,Y
+598,cblas_ssyr2,void,ssyr2,7,const int,incY
+599,cblas_ssyr2,void,ssyr2,8,float*,A
+600,cblas_ssyr2,void,ssyr2,9,const int,lda
+601,cblas_sspr2,void,sspr2,0,const enum CBLAS_ORDER,order
+602,cblas_sspr2,void,sspr2,1,const enum CBLAS_UPLO,Uplo
+603,cblas_sspr2,void,sspr2,2,const int,N
+604,cblas_sspr2,void,sspr2,3,const float,alpha
+605,cblas_sspr2,void,sspr2,4,const float*,X
+606,cblas_sspr2,void,sspr2,5,const int,incX
+607,cblas_sspr2,void,sspr2,6,const float*,Y
+608,cblas_sspr2,void,sspr2,7,const int,incY
+609,cblas_sspr2,void,sspr2,8,float*,A
+610,cblas_dsymv,void,dsymv,0,const enum CBLAS_ORDER,order
+611,cblas_dsymv,void,dsymv,1,const enum CBLAS_UPLO,Uplo
+612,cblas_dsymv,void,dsymv,2,const int,N
+613,cblas_dsymv,void,dsymv,3,const double,alpha
+614,cblas_dsymv,void,dsymv,4,const double*,A
+615,cblas_dsymv,void,dsymv,5,const int,lda
+616,cblas_dsymv,void,dsymv,6,const double*,X
+617,cblas_dsymv,void,dsymv,7,const int,incX
+618,cblas_dsymv,void,dsymv,8,const double,beta
+619,cblas_dsymv,void,dsymv,9,double*,Y
+620,cblas_dsymv,void,dsymv,10,const int,incY
+621,cblas_dsbmv,void,dsbmv,0,const enum CBLAS_ORDER,order
+622,cblas_dsbmv,void,dsbmv,1,const enum CBLAS_UPLO,Uplo
+623,cblas_dsbmv,void,dsbmv,2,const int,N
+624,cblas_dsbmv,void,dsbmv,3,const int,K
+625,cblas_dsbmv,void,dsbmv,4,const double,alpha
+626,cblas_dsbmv,void,dsbmv,5,const double*,A
+627,cblas_dsbmv,void,dsbmv,6,const int,lda
+628,cblas_dsbmv,void,dsbmv,7,const double*,X
+629,cblas_dsbmv,void,dsbmv,8,const int,incX
+630,cblas_dsbmv,void,dsbmv,9,const double,beta
+631,cblas_dsbmv,void,dsbmv,10,double*,Y
+632,cblas_dsbmv,void,dsbmv,11,const int,incY
+633,cblas_dspmv,void,dspmv,0,const enum CBLAS_ORDER,order
+634,cblas_dspmv,void,dspmv,1,const enum CBLAS_UPLO,Uplo
+635,cblas_dspmv,void,dspmv,2,const int,N
+636,cblas_dspmv,void,dspmv,3,const double,alpha
+637,cblas_dspmv,void,dspmv,4,const double*,Ap
+638,cblas_dspmv,void,dspmv,5,const double*,X
+639,cblas_dspmv,void,dspmv,6,const int,incX
+640,cblas_dspmv,void,dspmv,7,const double,beta
+641,cblas_dspmv,void,dspmv,8,double*,Y
+642,cblas_dspmv,void,dspmv,9,const int,incY
+643,cblas_dger,void,dger,0,const enum CBLAS_ORDER,order
+644,cblas_dger,void,dger,1,const int,M
+645,cblas_dger,void,dger,2,const int,N
+646,cblas_dger,void,dger,3,const double,alpha
+647,cblas_dger,void,dger,4,const double*,X
+648,cblas_dger,void,dger,5,const int,incX
+649,cblas_dger,void,dger,6,const double*,Y
+650,cblas_dger,void,dger,7,const int,incY
+651,cblas_dger,void,dger,8,double*,A
+652,cblas_dger,void,dger,9,const int,lda
+653,cblas_dsyr,void,dsyr,0,const enum CBLAS_ORDER,order
+654,cblas_dsyr,void,dsyr,1,const enum CBLAS_UPLO,Uplo
+655,cblas_dsyr,void,dsyr,2,const int,N
+656,cblas_dsyr,void,dsyr,3,const double,alpha
+657,cblas_dsyr,void,dsyr,4,const double*,X
+658,cblas_dsyr,void,dsyr,5,const int,incX
+659,cblas_dsyr,void,dsyr,6,double*,A
+660,cblas_dsyr,void,dsyr,7,const int,lda
+661,cblas_dspr,void,dspr,0,const enum CBLAS_ORDER,order
+662,cblas_dspr,void,dspr,1,const enum CBLAS_UPLO,Uplo
+663,cblas_dspr,void,dspr,2,const int,N
+664,cblas_dspr,void,dspr,3,const double,alpha
+665,cblas_dspr,void,dspr,4,const double*,X
+666,cblas_dspr,void,dspr,5,const int,incX
+667,cblas_dspr,void,dspr,6,double*,Ap
+668,cblas_dsyr2,void,dsyr2,0,const enum CBLAS_ORDER,order
+669,cblas_dsyr2,void,dsyr2,1,const enum CBLAS_UPLO,Uplo
+670,cblas_dsyr2,void,dsyr2,2,const int,N
+671,cblas_dsyr2,void,dsyr2,3,const double,alpha
+672,cblas_dsyr2,void,dsyr2,4,const double*,X
+673,cblas_dsyr2,void,dsyr2,5,const int,incX
+674,cblas_dsyr2,void,dsyr2,6,const double*,Y
+675,cblas_dsyr2,void,dsyr2,7,const int,incY
+676,cblas_dsyr2,void,dsyr2,8,double*,A
+677,cblas_dsyr2,void,dsyr2,9,const int,lda
+678,cblas_dspr2,void,dspr2,0,const enum CBLAS_ORDER,order
+679,cblas_dspr2,void,dspr2,1,const enum CBLAS_UPLO,Uplo
+680,cblas_dspr2,void,dspr2,2,const int,N
+681,cblas_dspr2,void,dspr2,3,const double,alpha
+682,cblas_dspr2,void,dspr2,4,const double*,X
+683,cblas_dspr2,void,dspr2,5,const int,incX
+684,cblas_dspr2,void,dspr2,6,const double*,Y
+685,cblas_dspr2,void,dspr2,7,const int,incY
+686,cblas_dspr2,void,dspr2,8,double*,A
+687,cblas_chemv,void,chemv,0,const enum CBLAS_ORDER,order
+688,cblas_chemv,void,chemv,1,const enum CBLAS_UPLO,Uplo
+689,cblas_chemv,void,chemv,2,const int,N
+690,cblas_chemv,void,chemv,3,const void*,alpha
+691,cblas_chemv,void,chemv,4,const void*,A
+692,cblas_chemv,void,chemv,5,const int,lda
+693,cblas_chemv,void,chemv,6,const void*,X
+694,cblas_chemv,void,chemv,7,const int,incX
+695,cblas_chemv,void,chemv,8,const void*,beta
+696,cblas_chemv,void,chemv,9,void*,Y
+697,cblas_chemv,void,chemv,10,const int,incY
+698,cblas_chbmv,void,chbmv,0,const enum CBLAS_ORDER,order
+699,cblas_chbmv,void,chbmv,1,const enum CBLAS_UPLO,Uplo
+700,cblas_chbmv,void,chbmv,2,const int,N
+701,cblas_chbmv,void,chbmv,3,const int,K
+702,cblas_chbmv,void,chbmv,4,const void*,alpha
+703,cblas_chbmv,void,chbmv,5,const void*,A
+704,cblas_chbmv,void,chbmv,6,const int,lda
+705,cblas_chbmv,void,chbmv,7,const void*,X
+706,cblas_chbmv,void,chbmv,8,const int,incX
+707,cblas_chbmv,void,chbmv,9,const void*,beta
+708,cblas_chbmv,void,chbmv,10,void*,Y
+709,cblas_chbmv,void,chbmv,11,const int,incY
+710,cblas_chpmv,void,chpmv,0,const enum CBLAS_ORDER,order
+711,cblas_chpmv,void,chpmv,1,const enum CBLAS_UPLO,Uplo
+712,cblas_chpmv,void,chpmv,2,const int,N
+713,cblas_chpmv,void,chpmv,3,const void*,alpha
+714,cblas_chpmv,void,chpmv,4,const void*,Ap
+715,cblas_chpmv,void,chpmv,5,const void*,X
+716,cblas_chpmv,void,chpmv,6,const int,incX
+717,cblas_chpmv,void,chpmv,7,const void*,beta
+718,cblas_chpmv,void,chpmv,8,void*,Y
+719,cblas_chpmv,void,chpmv,9,const int,incY
+720,cblas_cgeru,void,cgeru,0,const enum CBLAS_ORDER,order
+721,cblas_cgeru,void,cgeru,1,const int,M
+722,cblas_cgeru,void,cgeru,2,const int,N
+723,cblas_cgeru,void,cgeru,3,const void*,alpha
+724,cblas_cgeru,void,cgeru,4,const void*,X
+725,cblas_cgeru,void,cgeru,5,const int,incX
+726,cblas_cgeru,void,cgeru,6,const void*,Y
+727,cblas_cgeru,void,cgeru,7,const int,incY
+728,cblas_cgeru,void,cgeru,8,void*,A
+729,cblas_cgeru,void,cgeru,9,const int,lda
+730,cblas_cgerc,void,cgerc,0,const enum CBLAS_ORDER,order
+731,cblas_cgerc,void,cgerc,1,const int,M
+732,cblas_cgerc,void,cgerc,2,const int,N
+733,cblas_cgerc,void,cgerc,3,const void*,alpha
+734,cblas_cgerc,void,cgerc,4,const void*,X
+735,cblas_cgerc,void,cgerc,5,const int,incX
+736,cblas_cgerc,void,cgerc,6,const void*,Y
+737,cblas_cgerc,void,cgerc,7,const int,incY
+738,cblas_cgerc,void,cgerc,8,void*,A
+739,cblas_cgerc,void,cgerc,9,const int,lda
+740,cblas_cher,void,cher,0,const enum CBLAS_ORDER,order
+741,cblas_cher,void,cher,1,const enum CBLAS_UPLO,Uplo
+742,cblas_cher,void,cher,2,const int,N
+743,cblas_cher,void,cher,3,const float,alpha
+744,cblas_cher,void,cher,4,const void*,X
+745,cblas_cher,void,cher,5,const int,incX
+746,cblas_cher,void,cher,6,void*,A
+747,cblas_cher,void,cher,7,const int,lda
+748,cblas_chpr,void,chpr,0,const enum CBLAS_ORDER,order
+749,cblas_chpr,void,chpr,1,const enum CBLAS_UPLO,Uplo
+750,cblas_chpr,void,chpr,2,const int,N
+751,cblas_chpr,void,chpr,3,const float,alpha
+752,cblas_chpr,void,chpr,4,const void*,X
+753,cblas_chpr,void,chpr,5,const int,incX
+754,cblas_chpr,void,chpr,6,void*,A
+755,cblas_cher2,void,cher2,0,const enum CBLAS_ORDER,order
+756,cblas_cher2,void,cher2,1,const enum CBLAS_UPLO,Uplo
+757,cblas_cher2,void,cher2,2,const int,N
+758,cblas_cher2,void,cher2,3,const void*,alpha
+759,cblas_cher2,void,cher2,4,const void*,X
+760,cblas_cher2,void,cher2,5,const int,incX
+761,cblas_cher2,void,cher2,6,const void*,Y
+762,cblas_cher2,void,cher2,7,const int,incY
+763,cblas_cher2,void,cher2,8,void*,A
+764,cblas_cher2,void,cher2,9,const int,lda
+765,cblas_chpr2,void,chpr2,0,const enum CBLAS_ORDER,order
+766,cblas_chpr2,void,chpr2,1,const enum CBLAS_UPLO,Uplo
+767,cblas_chpr2,void,chpr2,2,const int,N
+768,cblas_chpr2,void,chpr2,3,const void*,alpha
+769,cblas_chpr2,void,chpr2,4,const void*,X
+770,cblas_chpr2,void,chpr2,5,const int,incX
+771,cblas_chpr2,void,chpr2,6,const void*,Y
+772,cblas_chpr2,void,chpr2,7,const int,incY
+773,cblas_chpr2,void,chpr2,8,void*,Ap
+774,cblas_zhemv,void,zhemv,0,const enum CBLAS_ORDER,order
+775,cblas_zhemv,void,zhemv,1,const enum CBLAS_UPLO,Uplo
+776,cblas_zhemv,void,zhemv,2,const int,N
+777,cblas_zhemv,void,zhemv,3,const void*,alpha
+778,cblas_zhemv,void,zhemv,4,const void*,A
+779,cblas_zhemv,void,zhemv,5,const int,lda
+780,cblas_zhemv,void,zhemv,6,const void*,X
+781,cblas_zhemv,void,zhemv,7,const int,incX
+782,cblas_zhemv,void,zhemv,8,const void*,beta
+783,cblas_zhemv,void,zhemv,9,void*,Y
+784,cblas_zhemv,void,zhemv,10,const int,incY
+785,cblas_zhbmv,void,zhbmv,0,const enum CBLAS_ORDER,order
+786,cblas_zhbmv,void,zhbmv,1,const enum CBLAS_UPLO,Uplo
+787,cblas_zhbmv,void,zhbmv,2,const int,N
+788,cblas_zhbmv,void,zhbmv,3,const int,K
+789,cblas_zhbmv,void,zhbmv,4,const void*,alpha
+790,cblas_zhbmv,void,zhbmv,5,const void*,A
+791,cblas_zhbmv,void,zhbmv,6,const int,lda
+792,cblas_zhbmv,void,zhbmv,7,const void*,X
+793,cblas_zhbmv,void,zhbmv,8,const int,incX
+794,cblas_zhbmv,void,zhbmv,9,const void*,beta
+795,cblas_zhbmv,void,zhbmv,10,void*,Y
+796,cblas_zhbmv,void,zhbmv,11,const int,incY
+797,cblas_zhpmv,void,zhpmv,0,const enum CBLAS_ORDER,order
+798,cblas_zhpmv,void,zhpmv,1,const enum CBLAS_UPLO,Uplo
+799,cblas_zhpmv,void,zhpmv,2,const int,N
+800,cblas_zhpmv,void,zhpmv,3,const void*,alpha
+801,cblas_zhpmv,void,zhpmv,4,const void*,Ap
+802,cblas_zhpmv,void,zhpmv,5,const void*,X
+803,cblas_zhpmv,void,zhpmv,6,const int,incX
+804,cblas_zhpmv,void,zhpmv,7,const void*,beta
+805,cblas_zhpmv,void,zhpmv,8,void*,Y
+806,cblas_zhpmv,void,zhpmv,9,const int,incY
+807,cblas_zgeru,void,zgeru,0,const enum CBLAS_ORDER,order
+808,cblas_zgeru,void,zgeru,1,const int,M
+809,cblas_zgeru,void,zgeru,2,const int,N
+810,cblas_zgeru,void,zgeru,3,const void*,alpha
+811,cblas_zgeru,void,zgeru,4,const void*,X
+812,cblas_zgeru,void,zgeru,5,const int,incX
+813,cblas_zgeru,void,zgeru,6,const void*,Y
+814,cblas_zgeru,void,zgeru,7,const int,incY
+815,cblas_zgeru,void,zgeru,8,void*,A
+816,cblas_zgeru,void,zgeru,9,const int,lda
+817,cblas_zgerc,void,zgerc,0,const enum CBLAS_ORDER,order
+818,cblas_zgerc,void,zgerc,1,const int,M
+819,cblas_zgerc,void,zgerc,2,const int,N
+820,cblas_zgerc,void,zgerc,3,const void*,alpha
+821,cblas_zgerc,void,zgerc,4,const void*,X
+822,cblas_zgerc,void,zgerc,5,const int,incX
+823,cblas_zgerc,void,zgerc,6,const void*,Y
+824,cblas_zgerc,void,zgerc,7,const int,incY
+825,cblas_zgerc,void,zgerc,8,void*,A
+826,cblas_zgerc,void,zgerc,9,const int,lda
+827,cblas_zher,void,zher,0,const enum CBLAS_ORDER,order
+828,cblas_zher,void,zher,1,const enum CBLAS_UPLO,Uplo
+829,cblas_zher,void,zher,2,const int,N
+830,cblas_zher,void,zher,3,const double,alpha
+831,cblas_zher,void,zher,4,const void*,X
+832,cblas_zher,void,zher,5,const int,incX
+833,cblas_zher,void,zher,6,void*,A
+834,cblas_zher,void,zher,7,const int,lda
+835,cblas_zhpr,void,zhpr,0,const enum CBLAS_ORDER,order
+836,cblas_zhpr,void,zhpr,1,const enum CBLAS_UPLO,Uplo
+837,cblas_zhpr,void,zhpr,2,const int,N
+838,cblas_zhpr,void,zhpr,3,const double,alpha
+839,cblas_zhpr,void,zhpr,4,const void*,X
+840,cblas_zhpr,void,zhpr,5,const int,incX
+841,cblas_zhpr,void,zhpr,6,void*,A
+842,cblas_zher2,void,zher2,0,const enum CBLAS_ORDER,order
+843,cblas_zher2,void,zher2,1,const enum CBLAS_UPLO,Uplo
+844,cblas_zher2,void,zher2,2,const int,N
+845,cblas_zher2,void,zher2,3,const void*,alpha
+846,cblas_zher2,void,zher2,4,const void*,X
+847,cblas_zher2,void,zher2,5,const int,incX
+848,cblas_zher2,void,zher2,6,const void*,Y
+849,cblas_zher2,void,zher2,7,const int,incY
+850,cblas_zher2,void,zher2,8,void*,A
+851,cblas_zher2,void,zher2,9,const int,lda
+852,cblas_zhpr2,void,zhpr2,0,const enum CBLAS_ORDER,order
+853,cblas_zhpr2,void,zhpr2,1,const enum CBLAS_UPLO,Uplo
+854,cblas_zhpr2,void,zhpr2,2,const int,N
+855,cblas_zhpr2,void,zhpr2,3,const void*,alpha
+856,cblas_zhpr2,void,zhpr2,4,const void*,X
+857,cblas_zhpr2,void,zhpr2,5,const int,incX
+858,cblas_zhpr2,void,zhpr2,6,const void*,Y
+859,cblas_zhpr2,void,zhpr2,7,const int,incY
+860,cblas_zhpr2,void,zhpr2,8,void*,Ap
+861,cblas_sgemm,void,sgemm,0,const enum CBLAS_ORDER,Order
+862,cblas_sgemm,void,sgemm,1,const enum CBLAS_TRANSPOSE,TransA
+863,cblas_sgemm,void,sgemm,2,const enum CBLAS_TRANSPOSE,TransB
+864,cblas_sgemm,void,sgemm,3,const int,M
+865,cblas_sgemm,void,sgemm,4,const int,N
+866,cblas_sgemm,void,sgemm,5,const int,K
+867,cblas_sgemm,void,sgemm,6,const float,alpha
+868,cblas_sgemm,void,sgemm,7,const float*,A
+869,cblas_sgemm,void,sgemm,8,const int,lda
+870,cblas_sgemm,void,sgemm,9,const float*,B
+871,cblas_sgemm,void,sgemm,10,const int,ldb
+872,cblas_sgemm,void,sgemm,11,const float,beta
+873,cblas_sgemm,void,sgemm,12,float*,C
+874,cblas_sgemm,void,sgemm,13,const int,ldc
+875,cblas_ssymm,void,ssymm,0,const enum CBLAS_ORDER,Order
+876,cblas_ssymm,void,ssymm,1,const enum CBLAS_SIDE,Side
+877,cblas_ssymm,void,ssymm,2,const enum CBLAS_UPLO,Uplo
+878,cblas_ssymm,void,ssymm,3,const int,M
+879,cblas_ssymm,void,ssymm,4,const int,N
+880,cblas_ssymm,void,ssymm,5,const float,alpha
+881,cblas_ssymm,void,ssymm,6,const float*,A
+882,cblas_ssymm,void,ssymm,7,const int,lda
+883,cblas_ssymm,void,ssymm,8,const float*,B
+884,cblas_ssymm,void,ssymm,9,const int,ldb
+885,cblas_ssymm,void,ssymm,10,const float,beta
+886,cblas_ssymm,void,ssymm,11,float*,C
+887,cblas_ssymm,void,ssymm,12,const int,ldc
+888,cblas_ssyrk,void,ssyrk,0,const enum CBLAS_ORDER,Order
+889,cblas_ssyrk,void,ssyrk,1,const enum CBLAS_UPLO,Uplo
+890,cblas_ssyrk,void,ssyrk,2,const enum CBLAS_TRANSPOSE,Trans
+891,cblas_ssyrk,void,ssyrk,3,const int,N
+892,cblas_ssyrk,void,ssyrk,4,const int,K
+893,cblas_ssyrk,void,ssyrk,5,const float,alpha
+894,cblas_ssyrk,void,ssyrk,6,const float*,A
+895,cblas_ssyrk,void,ssyrk,7,const int,lda
+896,cblas_ssyrk,void,ssyrk,8,const float,beta
+897,cblas_ssyrk,void,ssyrk,9,float*,C
+898,cblas_ssyrk,void,ssyrk,10,const int,ldc
+899,cblas_ssyr2k,void,ssyr2k,0,const enum CBLAS_ORDER,Order
+900,cblas_ssyr2k,void,ssyr2k,1,const enum CBLAS_UPLO,Uplo
+901,cblas_ssyr2k,void,ssyr2k,2,const enum CBLAS_TRANSPOSE,Trans
+902,cblas_ssyr2k,void,ssyr2k,3,const int,N
+903,cblas_ssyr2k,void,ssyr2k,4,const int,K
+904,cblas_ssyr2k,void,ssyr2k,5,const float,alpha
+905,cblas_ssyr2k,void,ssyr2k,6,const float*,A
+906,cblas_ssyr2k,void,ssyr2k,7,const int,lda
+907,cblas_ssyr2k,void,ssyr2k,8,const float*,B
+908,cblas_ssyr2k,void,ssyr2k,9,const int,ldb
+909,cblas_ssyr2k,void,ssyr2k,10,const float,beta
+910,cblas_ssyr2k,void,ssyr2k,11,float*,C
+911,cblas_ssyr2k,void,ssyr2k,12,const int,ldc
+912,cblas_strmm,void,strmm,0,const enum CBLAS_ORDER,Order
+913,cblas_strmm,void,strmm,1,const enum CBLAS_SIDE,Side
+914,cblas_strmm,void,strmm,2,const enum CBLAS_UPLO,Uplo
+915,cblas_strmm,void,strmm,3,const enum CBLAS_TRANSPOSE,TransA
+916,cblas_strmm,void,strmm,4,const enum CBLAS_DIAG,Diag
+917,cblas_strmm,void,strmm,5,const int,M
+918,cblas_strmm,void,strmm,6,const int,N
+919,cblas_strmm,void,strmm,7,const float,alpha
+920,cblas_strmm,void,strmm,8,const float*,A
+921,cblas_strmm,void,strmm,9,const int,lda
+922,cblas_strmm,void,strmm,10,float*,B
+923,cblas_strmm,void,strmm,11,const int,ldb
+924,cblas_strsm,void,strsm,0,const enum CBLAS_ORDER,Order
+925,cblas_strsm,void,strsm,1,const enum CBLAS_SIDE,Side
+926,cblas_strsm,void,strsm,2,const enum CBLAS_UPLO,Uplo
+927,cblas_strsm,void,strsm,3,const enum CBLAS_TRANSPOSE,TransA
+928,cblas_strsm,void,strsm,4,const enum CBLAS_DIAG,Diag
+929,cblas_strsm,void,strsm,5,const int,M
+930,cblas_strsm,void,strsm,6,const int,N
+931,cblas_strsm,void,strsm,7,const float,alpha
+932,cblas_strsm,void,strsm,8,const float*,A
+933,cblas_strsm,void,strsm,9,const int,lda
+934,cblas_strsm,void,strsm,10,float*,B
+935,cblas_strsm,void,strsm,11,const int,ldb
+936,cblas_dgemm,void,dgemm,0,const enum CBLAS_ORDER,Order
+937,cblas_dgemm,void,dgemm,1,const enum CBLAS_TRANSPOSE,TransA
+938,cblas_dgemm,void,dgemm,2,const enum CBLAS_TRANSPOSE,TransB
+939,cblas_dgemm,void,dgemm,3,const int,M
+940,cblas_dgemm,void,dgemm,4,const int,N
+941,cblas_dgemm,void,dgemm,5,const int,K
+942,cblas_dgemm,void,dgemm,6,const double,alpha
+943,cblas_dgemm,void,dgemm,7,const double*,A
+944,cblas_dgemm,void,dgemm,8,const int,lda
+945,cblas_dgemm,void,dgemm,9,const double*,B
+946,cblas_dgemm,void,dgemm,10,const int,ldb
+947,cblas_dgemm,void,dgemm,11,const double,beta
+948,cblas_dgemm,void,dgemm,12,double*,C
+949,cblas_dgemm,void,dgemm,13,const int,ldc
+950,cblas_dsymm,void,dsymm,0,const enum CBLAS_ORDER,Order
+951,cblas_dsymm,void,dsymm,1,const enum CBLAS_SIDE,Side
+952,cblas_dsymm,void,dsymm,2,const enum CBLAS_UPLO,Uplo
+953,cblas_dsymm,void,dsymm,3,const int,M
+954,cblas_dsymm,void,dsymm,4,const int,N
+955,cblas_dsymm,void,dsymm,5,const double,alpha
+956,cblas_dsymm,void,dsymm,6,const double*,A
+957,cblas_dsymm,void,dsymm,7,const int,lda
+958,cblas_dsymm,void,dsymm,8,const double*,B
+959,cblas_dsymm,void,dsymm,9,const int,ldb
+960,cblas_dsymm,void,dsymm,10,const double,beta
+961,cblas_dsymm,void,dsymm,11,double*,C
+962,cblas_dsymm,void,dsymm,12,const int,ldc
+963,cblas_dsyrk,void,dsyrk,0,const enum CBLAS_ORDER,Order
+964,cblas_dsyrk,void,dsyrk,1,const enum CBLAS_UPLO,Uplo
+965,cblas_dsyrk,void,dsyrk,2,const enum CBLAS_TRANSPOSE,Trans
+966,cblas_dsyrk,void,dsyrk,3,const int,N
+967,cblas_dsyrk,void,dsyrk,4,const int,K
+968,cblas_dsyrk,void,dsyrk,5,const double,alpha
+969,cblas_dsyrk,void,dsyrk,6,const double*,A
+970,cblas_dsyrk,void,dsyrk,7,const int,lda
+971,cblas_dsyrk,void,dsyrk,8,const double,beta
+972,cblas_dsyrk,void,dsyrk,9,double*,C
+973,cblas_dsyrk,void,dsyrk,10,const int,ldc
+974,cblas_dsyr2k,void,dsyr2k,0,const enum CBLAS_ORDER,Order
+975,cblas_dsyr2k,void,dsyr2k,1,const enum CBLAS_UPLO,Uplo
+976,cblas_dsyr2k,void,dsyr2k,2,const enum CBLAS_TRANSPOSE,Trans
+977,cblas_dsyr2k,void,dsyr2k,3,const int,N
+978,cblas_dsyr2k,void,dsyr2k,4,const int,K
+979,cblas_dsyr2k,void,dsyr2k,5,const double,alpha
+980,cblas_dsyr2k,void,dsyr2k,6,const double*,A
+981,cblas_dsyr2k,void,dsyr2k,7,const int,lda
+982,cblas_dsyr2k,void,dsyr2k,8,const double*,B
+983,cblas_dsyr2k,void,dsyr2k,9,const int,ldb
+984,cblas_dsyr2k,void,dsyr2k,10,const double,beta
+985,cblas_dsyr2k,void,dsyr2k,11,double*,C
+986,cblas_dsyr2k,void,dsyr2k,12,const int,ldc
+987,cblas_dtrmm,void,dtrmm,0,const enum CBLAS_ORDER,Order
+988,cblas_dtrmm,void,dtrmm,1,const enum CBLAS_SIDE,Side
+989,cblas_dtrmm,void,dtrmm,2,const enum CBLAS_UPLO,Uplo
+990,cblas_dtrmm,void,dtrmm,3,const enum CBLAS_TRANSPOSE,TransA
+991,cblas_dtrmm,void,dtrmm,4,const enum CBLAS_DIAG,Diag
+992,cblas_dtrmm,void,dtrmm,5,const int,M
+993,cblas_dtrmm,void,dtrmm,6,const int,N
+994,cblas_dtrmm,void,dtrmm,7,const double,alpha
+995,cblas_dtrmm,void,dtrmm,8,const double*,A
+996,cblas_dtrmm,void,dtrmm,9,const int,lda
+997,cblas_dtrmm,void,dtrmm,10,double*,B
+998,cblas_dtrmm,void,dtrmm,11,const int,ldb
+999,cblas_dtrsm,void,dtrsm,0,const enum CBLAS_ORDER,Order
+1000,cblas_dtrsm,void,dtrsm,1,const enum CBLAS_SIDE,Side
+1001,cblas_dtrsm,void,dtrsm,2,const enum CBLAS_UPLO,Uplo
+1002,cblas_dtrsm,void,dtrsm,3,const enum CBLAS_TRANSPOSE,TransA
+1003,cblas_dtrsm,void,dtrsm,4,const enum CBLAS_DIAG,Diag
+1004,cblas_dtrsm,void,dtrsm,5,const int,M
+1005,cblas_dtrsm,void,dtrsm,6,const int,N
+1006,cblas_dtrsm,void,dtrsm,7,const double,alpha
+1007,cblas_dtrsm,void,dtrsm,8,const double*,A
+1008,cblas_dtrsm,void,dtrsm,9,const int,lda
+1009,cblas_dtrsm,void,dtrsm,10,double*,B
+1010,cblas_dtrsm,void,dtrsm,11,const int,ldb
+1011,cblas_cgemm,void,cgemm,0,const enum CBLAS_ORDER,Order
+1012,cblas_cgemm,void,cgemm,1,const enum CBLAS_TRANSPOSE,TransA
+1013,cblas_cgemm,void,cgemm,2,const enum CBLAS_TRANSPOSE,TransB
+1014,cblas_cgemm,void,cgemm,3,const int,M
+1015,cblas_cgemm,void,cgemm,4,const int,N
+1016,cblas_cgemm,void,cgemm,5,const int,K
+1017,cblas_cgemm,void,cgemm,6,const void*,alpha
+1018,cblas_cgemm,void,cgemm,7,const void*,A
+1019,cblas_cgemm,void,cgemm,8,const int,lda
+1020,cblas_cgemm,void,cgemm,9,const void*,B
+1021,cblas_cgemm,void,cgemm,10,const int,ldb
+1022,cblas_cgemm,void,cgemm,11,const void*,beta
+1023,cblas_cgemm,void,cgemm,12,void*,C
+1024,cblas_cgemm,void,cgemm,13,const int,ldc
+1025,cblas_csymm,void,csymm,0,const enum CBLAS_ORDER,Order
+1026,cblas_csymm,void,csymm,1,const enum CBLAS_SIDE,Side
+1027,cblas_csymm,void,csymm,2,const enum CBLAS_UPLO,Uplo
+1028,cblas_csymm,void,csymm,3,const int,M
+1029,cblas_csymm,void,csymm,4,const int,N
+1030,cblas_csymm,void,csymm,5,const void*,alpha
+1031,cblas_csymm,void,csymm,6,const void*,A
+1032,cblas_csymm,void,csymm,7,const int,lda
+1033,cblas_csymm,void,csymm,8,const void*,B
+1034,cblas_csymm,void,csymm,9,const int,ldb
+1035,cblas_csymm,void,csymm,10,const void*,beta
+1036,cblas_csymm,void,csymm,11,void*,C
+1037,cblas_csymm,void,csymm,12,const int,ldc
+1038,cblas_csyrk,void,csyrk,0,const enum CBLAS_ORDER,Order
+1039,cblas_csyrk,void,csyrk,1,const enum CBLAS_UPLO,Uplo
+1040,cblas_csyrk,void,csyrk,2,const enum CBLAS_TRANSPOSE,Trans
+1041,cblas_csyrk,void,csyrk,3,const int,N
+1042,cblas_csyrk,void,csyrk,4,const int,K
+1043,cblas_csyrk,void,csyrk,5,const void*,alpha
+1044,cblas_csyrk,void,csyrk,6,const void*,A
+1045,cblas_csyrk,void,csyrk,7,const int,lda
+1046,cblas_csyrk,void,csyrk,8,const void*,beta
+1047,cblas_csyrk,void,csyrk,9,void*,C
+1048,cblas_csyrk,void,csyrk,10,const int,ldc
+1049,cblas_csyr2k,void,csyr2k,0,const enum CBLAS_ORDER,Order
+1050,cblas_csyr2k,void,csyr2k,1,const enum CBLAS_UPLO,Uplo
+1051,cblas_csyr2k,void,csyr2k,2,const enum CBLAS_TRANSPOSE,Trans
+1052,cblas_csyr2k,void,csyr2k,3,const int,N
+1053,cblas_csyr2k,void,csyr2k,4,const int,K
+1054,cblas_csyr2k,void,csyr2k,5,const void*,alpha
+1055,cblas_csyr2k,void,csyr2k,6,const void*,A
+1056,cblas_csyr2k,void,csyr2k,7,const int,lda
+1057,cblas_csyr2k,void,csyr2k,8,const void*,B
+1058,cblas_csyr2k,void,csyr2k,9,const int,ldb
+1059,cblas_csyr2k,void,csyr2k,10,const void*,beta
+1060,cblas_csyr2k,void,csyr2k,11,void*,C
+1061,cblas_csyr2k,void,csyr2k,12,const int,ldc
+1062,cblas_ctrmm,void,ctrmm,0,const enum CBLAS_ORDER,Order
+1063,cblas_ctrmm,void,ctrmm,1,const enum CBLAS_SIDE,Side
+1064,cblas_ctrmm,void,ctrmm,2,const enum CBLAS_UPLO,Uplo
+1065,cblas_ctrmm,void,ctrmm,3,const enum CBLAS_TRANSPOSE,TransA
+1066,cblas_ctrmm,void,ctrmm,4,const enum CBLAS_DIAG,Diag
+1067,cblas_ctrmm,void,ctrmm,5,const int,M
+1068,cblas_ctrmm,void,ctrmm,6,const int,N
+1069,cblas_ctrmm,void,ctrmm,7,const void*,alpha
+1070,cblas_ctrmm,void,ctrmm,8,const void*,A
+1071,cblas_ctrmm,void,ctrmm,9,const int,lda
+1072,cblas_ctrmm,void,ctrmm,10,void*,B
+1073,cblas_ctrmm,void,ctrmm,11,const int,ldb
+1074,cblas_ctrsm,void,ctrsm,0,const enum CBLAS_ORDER,Order
+1075,cblas_ctrsm,void,ctrsm,1,const enum CBLAS_SIDE,Side
+1076,cblas_ctrsm,void,ctrsm,2,const enum CBLAS_UPLO,Uplo
+1077,cblas_ctrsm,void,ctrsm,3,const enum CBLAS_TRANSPOSE,TransA
+1078,cblas_ctrsm,void,ctrsm,4,const enum CBLAS_DIAG,Diag
+1079,cblas_ctrsm,void,ctrsm,5,const int,M
+1080,cblas_ctrsm,void,ctrsm,6,const int,N
+1081,cblas_ctrsm,void,ctrsm,7,const void*,alpha
+1082,cblas_ctrsm,void,ctrsm,8,const void*,A
+1083,cblas_ctrsm,void,ctrsm,9,const int,lda
+1084,cblas_ctrsm,void,ctrsm,10,void*,B
+1085,cblas_ctrsm,void,ctrsm,11,const int,ldb
+1086,cblas_zgemm,void,zgemm,0,const enum CBLAS_ORDER,Order
+1087,cblas_zgemm,void,zgemm,1,const enum CBLAS_TRANSPOSE,TransA
+1088,cblas_zgemm,void,zgemm,2,const enum CBLAS_TRANSPOSE,TransB
+1089,cblas_zgemm,void,zgemm,3,const int,M
+1090,cblas_zgemm,void,zgemm,4,const int,N
+1091,cblas_zgemm,void,zgemm,5,const int,K
+1092,cblas_zgemm,void,zgemm,6,const void*,alpha
+1093,cblas_zgemm,void,zgemm,7,const void*,A
+1094,cblas_zgemm,void,zgemm,8,const int,lda
+1095,cblas_zgemm,void,zgemm,9,const void*,B
+1096,cblas_zgemm,void,zgemm,10,const int,ldb
+1097,cblas_zgemm,void,zgemm,11,const void*,beta
+1098,cblas_zgemm,void,zgemm,12,void*,C
+1099,cblas_zgemm,void,zgemm,13,const int,ldc
+1100,cblas_zsymm,void,zsymm,0,const enum CBLAS_ORDER,Order
+1101,cblas_zsymm,void,zsymm,1,const enum CBLAS_SIDE,Side
+1102,cblas_zsymm,void,zsymm,2,const enum CBLAS_UPLO,Uplo
+1103,cblas_zsymm,void,zsymm,3,const int,M
+1104,cblas_zsymm,void,zsymm,4,const int,N
+1105,cblas_zsymm,void,zsymm,5,const void*,alpha
+1106,cblas_zsymm,void,zsymm,6,const void*,A
+1107,cblas_zsymm,void,zsymm,7,const int,lda
+1108,cblas_zsymm,void,zsymm,8,const void*,B
+1109,cblas_zsymm,void,zsymm,9,const int,ldb
+1110,cblas_zsymm,void,zsymm,10,const void*,beta
+1111,cblas_zsymm,void,zsymm,11,void*,C
+1112,cblas_zsymm,void,zsymm,12,const int,ldc
+1113,cblas_zsyrk,void,zsyrk,0,const enum CBLAS_ORDER,Order
+1114,cblas_zsyrk,void,zsyrk,1,const enum CBLAS_UPLO,Uplo
+1115,cblas_zsyrk,void,zsyrk,2,const enum CBLAS_TRANSPOSE,Trans
+1116,cblas_zsyrk,void,zsyrk,3,const int,N
+1117,cblas_zsyrk,void,zsyrk,4,const int,K
+1118,cblas_zsyrk,void,zsyrk,5,const void*,alpha
+1119,cblas_zsyrk,void,zsyrk,6,const void*,A
+1120,cblas_zsyrk,void,zsyrk,7,const int,lda
+1121,cblas_zsyrk,void,zsyrk,8,const void*,beta
+1122,cblas_zsyrk,void,zsyrk,9,void*,C
+1123,cblas_zsyrk,void,zsyrk,10,const int,ldc
+1124,cblas_zsyr2k,void,zsyr2k,0,const enum CBLAS_ORDER,Order
+1125,cblas_zsyr2k,void,zsyr2k,1,const enum CBLAS_UPLO,Uplo
+1126,cblas_zsyr2k,void,zsyr2k,2,const enum CBLAS_TRANSPOSE,Trans
+1127,cblas_zsyr2k,void,zsyr2k,3,const int,N
+1128,cblas_zsyr2k,void,zsyr2k,4,const int,K
+1129,cblas_zsyr2k,void,zsyr2k,5,const void*,alpha
+1130,cblas_zsyr2k,void,zsyr2k,6,const void*,A
+1131,cblas_zsyr2k,void,zsyr2k,7,const int,lda
+1132,cblas_zsyr2k,void,zsyr2k,8,const void*,B
+1133,cblas_zsyr2k,void,zsyr2k,9,const int,ldb
+1134,cblas_zsyr2k,void,zsyr2k,10,const void*,beta
+1135,cblas_zsyr2k,void,zsyr2k,11,void*,C
+1136,cblas_zsyr2k,void,zsyr2k,12,const int,ldc
+1137,cblas_ztrmm,void,ztrmm,0,const enum CBLAS_ORDER,Order
+1138,cblas_ztrmm,void,ztrmm,1,const enum CBLAS_SIDE,Side
+1139,cblas_ztrmm,void,ztrmm,2,const enum CBLAS_UPLO,Uplo
+1140,cblas_ztrmm,void,ztrmm,3,const enum CBLAS_TRANSPOSE,TransA
+1141,cblas_ztrmm,void,ztrmm,4,const enum CBLAS_DIAG,Diag
+1142,cblas_ztrmm,void,ztrmm,5,const int,M
+1143,cblas_ztrmm,void,ztrmm,6,const int,N
+1144,cblas_ztrmm,void,ztrmm,7,const void*,alpha
+1145,cblas_ztrmm,void,ztrmm,8,const void*,A
+1146,cblas_ztrmm,void,ztrmm,9,const int,lda
+1147,cblas_ztrmm,void,ztrmm,10,void*,B
+1148,cblas_ztrmm,void,ztrmm,11,const int,ldb
+1149,cblas_ztrsm,void,ztrsm,0,const enum CBLAS_ORDER,Order
+1150,cblas_ztrsm,void,ztrsm,1,const enum CBLAS_SIDE,Side
+1151,cblas_ztrsm,void,ztrsm,2,const enum CBLAS_UPLO,Uplo
+1152,cblas_ztrsm,void,ztrsm,3,const enum CBLAS_TRANSPOSE,TransA
+1153,cblas_ztrsm,void,ztrsm,4,const enum CBLAS_DIAG,Diag
+1154,cblas_ztrsm,void,ztrsm,5,const int,M
+1155,cblas_ztrsm,void,ztrsm,6,const int,N
+1156,cblas_ztrsm,void,ztrsm,7,const void*,alpha
+1157,cblas_ztrsm,void,ztrsm,8,const void*,A
+1158,cblas_ztrsm,void,ztrsm,9,const int,lda
+1159,cblas_ztrsm,void,ztrsm,10,void*,B
+1160,cblas_ztrsm,void,ztrsm,11,const int,ldb
+1161,cblas_chemm,void,chemm,0,const enum CBLAS_ORDER,Order
+1162,cblas_chemm,void,chemm,1,const enum CBLAS_SIDE,Side
+1163,cblas_chemm,void,chemm,2,const enum CBLAS_UPLO,Uplo
+1164,cblas_chemm,void,chemm,3,const int,M
+1165,cblas_chemm,void,chemm,4,const int,N
+1166,cblas_chemm,void,chemm,5,const void*,alpha
+1167,cblas_chemm,void,chemm,6,const void*,A
+1168,cblas_chemm,void,chemm,7,const int,lda
+1169,cblas_chemm,void,chemm,8,const void*,B
+1170,cblas_chemm,void,chemm,9,const int,ldb
+1171,cblas_chemm,void,chemm,10,const void*,beta
+1172,cblas_chemm,void,chemm,11,void*,C
+1173,cblas_chemm,void,chemm,12,const int,ldc
+1174,cblas_cherk,void,cherk,0,const enum CBLAS_ORDER,Order
+1175,cblas_cherk,void,cherk,1,const enum CBLAS_UPLO,Uplo
+1176,cblas_cherk,void,cherk,2,const enum CBLAS_TRANSPOSE,Trans
+1177,cblas_cherk,void,cherk,3,const int,N
+1178,cblas_cherk,void,cherk,4,const int,K
+1179,cblas_cherk,void,cherk,5,const float,alpha
+1180,cblas_cherk,void,cherk,6,const void*,A
+1181,cblas_cherk,void,cherk,7,const int,lda
+1182,cblas_cherk,void,cherk,8,const float,beta
+1183,cblas_cherk,void,cherk,9,void*,C
+1184,cblas_cherk,void,cherk,10,const int,ldc
+1185,cblas_cher2k,void,cher2k,0,const enum CBLAS_ORDER,Order
+1186,cblas_cher2k,void,cher2k,1,const enum CBLAS_UPLO,Uplo
+1187,cblas_cher2k,void,cher2k,2,const enum CBLAS_TRANSPOSE,Trans
+1188,cblas_cher2k,void,cher2k,3,const int,N
+1189,cblas_cher2k,void,cher2k,4,const int,K
+1190,cblas_cher2k,void,cher2k,5,const void*,alpha
+1191,cblas_cher2k,void,cher2k,6,const void*,A
+1192,cblas_cher2k,void,cher2k,7,const int,lda
+1193,cblas_cher2k,void,cher2k,8,const void*,B
+1194,cblas_cher2k,void,cher2k,9,const int,ldb
+1195,cblas_cher2k,void,cher2k,10,const float,beta
+1196,cblas_cher2k,void,cher2k,11,void*,C
+1197,cblas_cher2k,void,cher2k,12,const int,ldc
+1198,cblas_zhemm,void,zhemm,0,const enum CBLAS_ORDER,Order
+1199,cblas_zhemm,void,zhemm,1,const enum CBLAS_SIDE,Side
+1200,cblas_zhemm,void,zhemm,2,const enum CBLAS_UPLO,Uplo
+1201,cblas_zhemm,void,zhemm,3,const int,M
+1202,cblas_zhemm,void,zhemm,4,const int,N
+1203,cblas_zhemm,void,zhemm,5,const void*,alpha
+1204,cblas_zhemm,void,zhemm,6,const void*,A
+1205,cblas_zhemm,void,zhemm,7,const int,lda
+1206,cblas_zhemm,void,zhemm,8,const void*,B
+1207,cblas_zhemm,void,zhemm,9,const int,ldb
+1208,cblas_zhemm,void,zhemm,10,const void*,beta
+1209,cblas_zhemm,void,zhemm,11,void*,C
+1210,cblas_zhemm,void,zhemm,12,const int,ldc
+1211,cblas_zherk,void,zherk,0,const enum CBLAS_ORDER,Order
+1212,cblas_zherk,void,zherk,1,const enum CBLAS_UPLO,Uplo
+1213,cblas_zherk,void,zherk,2,const enum CBLAS_TRANSPOSE,Trans
+1214,cblas_zherk,void,zherk,3,const int,N
+1215,cblas_zherk,void,zherk,4,const int,K
+1216,cblas_zherk,void,zherk,5,const double,alpha
+1217,cblas_zherk,void,zherk,6,const void*,A
+1218,cblas_zherk,void,zherk,7,const int,lda
+1219,cblas_zherk,void,zherk,8,const double,beta
+1220,cblas_zherk,void,zherk,9,void*,C
+1221,cblas_zherk,void,zherk,10,const int,ldc
+1222,cblas_zher2k,void,zher2k,0,const enum CBLAS_ORDER,Order
+1223,cblas_zher2k,void,zher2k,1,const enum CBLAS_UPLO,Uplo
+1224,cblas_zher2k,void,zher2k,2,const enum CBLAS_TRANSPOSE,Trans
+1225,cblas_zher2k,void,zher2k,3,const int,N
+1226,cblas_zher2k,void,zher2k,4,const int,K
+1227,cblas_zher2k,void,zher2k,5,const void*,alpha
+1228,cblas_zher2k,void,zher2k,6,const void*,A
+1229,cblas_zher2k,void,zher2k,7,const int,lda
+1230,cblas_zher2k,void,zher2k,8,const void*,B
+1231,cblas_zher2k,void,zher2k,9,const int,ldb
+1232,cblas_zher2k,void,zher2k,10,const double,beta
+1233,cblas_zher2k,void,zher2k,11,void*,C
+1234,cblas_zher2k,void,zher2k,12,const int,ldc
