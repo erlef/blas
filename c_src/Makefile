@@ -1,6 +1,6 @@
 # Source: https://github.com/dgud/blas/blob/master/c_src/Makefile
 
-C_SRC_OUTPUT = ../priv/eblas.so
+C_SRC_OUTPUT = ../priv/eblas_nif.so
 
 ERL_INCLUDE_DIR = $(ERLANG_ROOT_DIR)/usr/include
 
@@ -18,7 +18,7 @@ endif
 
 $(C_SRC_OUTPUT): *.c
 	$(CC) $(CFLAGS) *.c -g -fPIC -shared -o $(C_SRC_OUTPUT) -I $(ERL_INCLUDE_DIR) \
-		$(C_SRC_OPTS) -L/usr/lib -lopenblas
+		$(C_SRC_OPTS) -L/usr/lib -lopenblas -llapacke
 
 clean:
 	rm -f $(C_SRC_OUTPUT)
