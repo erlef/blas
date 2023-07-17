@@ -1835,42 +1835,6 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
                 LAPACKE_zgbrfs(matrix_layout, trans, n, kl, ku, nrhs, get_cste_ptr(ab), ldab, get_cste_ptr(afb), ldafb, get_cste_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
         } break;
-        case sgbrfsx: {
-            int matrix_layout; char trans; char equed; int n; int kl; int ku; int nrhs; cste_c_binary ab; int ldab; cste_c_binary afb; int ldafb; cste_c_binary ipiv; cste_c_binary r; cste_c_binary c; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary berr; int n_err_bnds; c_binary err_bnds_norm; c_binary err_bnds_comp; int nparams; c_binary params;
-            
-            if( !(error = narg == 25? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_char, e_char, e_int, e_int, e_int, e_int, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_cste_ptr, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_ptr, e_ptr, e_int, e_ptr, e_ptr, e_int, e_ptr, e_end}, &matrix_layout, &trans, &equed, &n, &kl, &ku, &nrhs, &ab, &ldab, &afb, &ldafb, &ipiv, &r, &c, &b, &ldb, &x, &ldx, &rcond, &berr, &n_err_bnds, &err_bnds_norm, &err_bnds_comp, &nparams, &params))
-            ){
-                LAPACKE_sgbrfsx(matrix_layout, trans, equed, n, kl, ku, nrhs, get_cste_ptr(ab), ldab, get_cste_ptr(afb), ldafb, get_cste_ptr(ipiv), get_cste_ptr(r), get_cste_ptr(c), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(berr), n_err_bnds, get_ptr(err_bnds_norm), get_ptr(err_bnds_comp), nparams, get_ptr(params));
-            }
-        } break;
-        case dgbrfsx: {
-            int matrix_layout; char trans; char equed; int n; int kl; int ku; int nrhs; cste_c_binary ab; int ldab; cste_c_binary afb; int ldafb; cste_c_binary ipiv; cste_c_binary r; cste_c_binary c; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary berr; int n_err_bnds; c_binary err_bnds_norm; c_binary err_bnds_comp; int nparams; c_binary params;
-            
-            if( !(error = narg == 25? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_char, e_char, e_int, e_int, e_int, e_int, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_cste_ptr, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_ptr, e_ptr, e_int, e_ptr, e_ptr, e_int, e_ptr, e_end}, &matrix_layout, &trans, &equed, &n, &kl, &ku, &nrhs, &ab, &ldab, &afb, &ldafb, &ipiv, &r, &c, &b, &ldb, &x, &ldx, &rcond, &berr, &n_err_bnds, &err_bnds_norm, &err_bnds_comp, &nparams, &params))
-            ){
-                LAPACKE_dgbrfsx(matrix_layout, trans, equed, n, kl, ku, nrhs, get_cste_ptr(ab), ldab, get_cste_ptr(afb), ldafb, get_cste_ptr(ipiv), get_cste_ptr(r), get_cste_ptr(c), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(berr), n_err_bnds, get_ptr(err_bnds_norm), get_ptr(err_bnds_comp), nparams, get_ptr(params));
-            }
-        } break;
-        case cgbrfsx: {
-            int matrix_layout; char trans; char equed; int n; int kl; int ku; int nrhs; cste_c_binary ab; int ldab; cste_c_binary afb; int ldafb; cste_c_binary ipiv; cste_c_binary r; cste_c_binary c; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary berr; int n_err_bnds; c_binary err_bnds_norm; c_binary err_bnds_comp; int nparams; c_binary params;
-            
-            if( !(error = narg == 25? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_char, e_char, e_int, e_int, e_int, e_int, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_cste_ptr, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_ptr, e_ptr, e_int, e_ptr, e_ptr, e_int, e_ptr, e_end}, &matrix_layout, &trans, &equed, &n, &kl, &ku, &nrhs, &ab, &ldab, &afb, &ldafb, &ipiv, &r, &c, &b, &ldb, &x, &ldx, &rcond, &berr, &n_err_bnds, &err_bnds_norm, &err_bnds_comp, &nparams, &params))
-            ){
-                LAPACKE_cgbrfsx(matrix_layout, trans, equed, n, kl, ku, nrhs, get_cste_ptr(ab), ldab, get_cste_ptr(afb), ldafb, get_cste_ptr(ipiv), get_cste_ptr(r), get_cste_ptr(c), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(berr), n_err_bnds, get_ptr(err_bnds_norm), get_ptr(err_bnds_comp), nparams, get_ptr(params));
-            }
-        } break;
-        case zgbrfsx: {
-            int matrix_layout; char trans; char equed; int n; int kl; int ku; int nrhs; cste_c_binary ab; int ldab; cste_c_binary afb; int ldafb; cste_c_binary ipiv; cste_c_binary r; cste_c_binary c; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary berr; int n_err_bnds; c_binary err_bnds_norm; c_binary err_bnds_comp; int nparams; c_binary params;
-            
-            if( !(error = narg == 25? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_char, e_char, e_int, e_int, e_int, e_int, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_cste_ptr, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_ptr, e_ptr, e_int, e_ptr, e_ptr, e_int, e_ptr, e_end}, &matrix_layout, &trans, &equed, &n, &kl, &ku, &nrhs, &ab, &ldab, &afb, &ldafb, &ipiv, &r, &c, &b, &ldb, &x, &ldx, &rcond, &berr, &n_err_bnds, &err_bnds_norm, &err_bnds_comp, &nparams, &params))
-            ){
-                LAPACKE_zgbrfsx(matrix_layout, trans, equed, n, kl, ku, nrhs, get_cste_ptr(ab), ldab, get_cste_ptr(afb), ldafb, get_cste_ptr(ipiv), get_cste_ptr(r), get_cste_ptr(c), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(berr), n_err_bnds, get_ptr(err_bnds_norm), get_ptr(err_bnds_comp), nparams, get_ptr(params));
-            }
-        } break;
         case sgbsv: {
             int matrix_layout; int n; int kl; int ku; int nrhs; c_binary ab; int ldab; c_binary ipiv; c_binary b; int ldb;
             
@@ -2715,42 +2679,6 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
                 && !(error = translate(env, elements, (etypes[]) {e_layout, e_char, e_int, e_int, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_ptr, e_ptr, e_end}, &matrix_layout, &trans, &n, &nrhs, &a, &lda, &af, &ldaf, &ipiv, &b, &ldb, &x, &ldx, &ferr, &berr))
             ){
                 LAPACKE_zgerfs(matrix_layout, trans, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(af), ldaf, get_cste_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
-            }
-        } break;
-        case sgerfsx: {
-            int matrix_layout; char trans; char equed; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary af; int ldaf; cste_c_binary ipiv; cste_c_binary r; cste_c_binary c; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary berr; int n_err_bnds; c_binary err_bnds_norm; c_binary err_bnds_comp; int nparams; c_binary params;
-            
-            if( !(error = narg == 23? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_char, e_char, e_int, e_int, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_cste_ptr, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_ptr, e_ptr, e_int, e_ptr, e_ptr, e_int, e_ptr, e_end}, &matrix_layout, &trans, &equed, &n, &nrhs, &a, &lda, &af, &ldaf, &ipiv, &r, &c, &b, &ldb, &x, &ldx, &rcond, &berr, &n_err_bnds, &err_bnds_norm, &err_bnds_comp, &nparams, &params))
-            ){
-                LAPACKE_sgerfsx(matrix_layout, trans, equed, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(af), ldaf, get_cste_ptr(ipiv), get_cste_ptr(r), get_cste_ptr(c), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(berr), n_err_bnds, get_ptr(err_bnds_norm), get_ptr(err_bnds_comp), nparams, get_ptr(params));
-            }
-        } break;
-        case dgerfsx: {
-            int matrix_layout; char trans; char equed; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary af; int ldaf; cste_c_binary ipiv; cste_c_binary r; cste_c_binary c; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary berr; int n_err_bnds; c_binary err_bnds_norm; c_binary err_bnds_comp; int nparams; c_binary params;
-            
-            if( !(error = narg == 23? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_char, e_char, e_int, e_int, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_cste_ptr, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_ptr, e_ptr, e_int, e_ptr, e_ptr, e_int, e_ptr, e_end}, &matrix_layout, &trans, &equed, &n, &nrhs, &a, &lda, &af, &ldaf, &ipiv, &r, &c, &b, &ldb, &x, &ldx, &rcond, &berr, &n_err_bnds, &err_bnds_norm, &err_bnds_comp, &nparams, &params))
-            ){
-                LAPACKE_dgerfsx(matrix_layout, trans, equed, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(af), ldaf, get_cste_ptr(ipiv), get_cste_ptr(r), get_cste_ptr(c), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(berr), n_err_bnds, get_ptr(err_bnds_norm), get_ptr(err_bnds_comp), nparams, get_ptr(params));
-            }
-        } break;
-        case cgerfsx: {
-            int matrix_layout; char trans; char equed; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary af; int ldaf; cste_c_binary ipiv; cste_c_binary r; cste_c_binary c; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary berr; int n_err_bnds; c_binary err_bnds_norm; c_binary err_bnds_comp; int nparams; c_binary params;
-            
-            if( !(error = narg == 23? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_char, e_char, e_int, e_int, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_cste_ptr, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_ptr, e_ptr, e_int, e_ptr, e_ptr, e_int, e_ptr, e_end}, &matrix_layout, &trans, &equed, &n, &nrhs, &a, &lda, &af, &ldaf, &ipiv, &r, &c, &b, &ldb, &x, &ldx, &rcond, &berr, &n_err_bnds, &err_bnds_norm, &err_bnds_comp, &nparams, &params))
-            ){
-                LAPACKE_cgerfsx(matrix_layout, trans, equed, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(af), ldaf, get_cste_ptr(ipiv), get_cste_ptr(r), get_cste_ptr(c), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(berr), n_err_bnds, get_ptr(err_bnds_norm), get_ptr(err_bnds_comp), nparams, get_ptr(params));
-            }
-        } break;
-        case zgerfsx: {
-            int matrix_layout; char trans; char equed; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary af; int ldaf; cste_c_binary ipiv; cste_c_binary r; cste_c_binary c; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary berr; int n_err_bnds; c_binary err_bnds_norm; c_binary err_bnds_comp; int nparams; c_binary params;
-            
-            if( !(error = narg == 23? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_char, e_char, e_int, e_int, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_cste_ptr, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_ptr, e_ptr, e_int, e_ptr, e_ptr, e_int, e_ptr, e_end}, &matrix_layout, &trans, &equed, &n, &nrhs, &a, &lda, &af, &ldaf, &ipiv, &r, &c, &b, &ldb, &x, &ldx, &rcond, &berr, &n_err_bnds, &err_bnds_norm, &err_bnds_comp, &nparams, &params))
-            ){
-                LAPACKE_zgerfsx(matrix_layout, trans, equed, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(af), ldaf, get_cste_ptr(ipiv), get_cste_ptr(r), get_cste_ptr(c), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(berr), n_err_bnds, get_ptr(err_bnds_norm), get_ptr(err_bnds_comp), nparams, get_ptr(params));
             }
         } break;
         case sgerqf: {
@@ -3975,24 +3903,6 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
                 && !(error = translate(env, elements, (etypes[]) {e_layout, e_char, e_int, e_int, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_ptr, e_ptr, e_end}, &matrix_layout, &uplo, &n, &nrhs, &a, &lda, &af, &ldaf, &ipiv, &b, &ldb, &x, &ldx, &ferr, &berr))
             ){
                 LAPACKE_zherfs(matrix_layout, uplo, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(af), ldaf, get_cste_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
-            }
-        } break;
-        case cherfsx: {
-            int matrix_layout; char uplo; char equed; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary af; int ldaf; cste_c_binary ipiv; cste_c_binary s; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary berr; int n_err_bnds; c_binary err_bnds_norm; c_binary err_bnds_comp; int nparams; c_binary params;
-            
-            if( !(error = narg == 22? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_char, e_char, e_int, e_int, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_ptr, e_ptr, e_int, e_ptr, e_ptr, e_int, e_ptr, e_end}, &matrix_layout, &uplo, &equed, &n, &nrhs, &a, &lda, &af, &ldaf, &ipiv, &s, &b, &ldb, &x, &ldx, &rcond, &berr, &n_err_bnds, &err_bnds_norm, &err_bnds_comp, &nparams, &params))
-            ){
-                LAPACKE_cherfsx(matrix_layout, uplo, equed, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(af), ldaf, get_cste_ptr(ipiv), get_cste_ptr(s), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(berr), n_err_bnds, get_ptr(err_bnds_norm), get_ptr(err_bnds_comp), nparams, get_ptr(params));
-            }
-        } break;
-        case zherfsx: {
-            int matrix_layout; char uplo; char equed; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary af; int ldaf; cste_c_binary ipiv; cste_c_binary s; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary berr; int n_err_bnds; c_binary err_bnds_norm; c_binary err_bnds_comp; int nparams; c_binary params;
-            
-            if( !(error = narg == 22? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_char, e_char, e_int, e_int, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_ptr, e_ptr, e_int, e_ptr, e_ptr, e_int, e_ptr, e_end}, &matrix_layout, &uplo, &equed, &n, &nrhs, &a, &lda, &af, &ldaf, &ipiv, &s, &b, &ldb, &x, &ldx, &rcond, &berr, &n_err_bnds, &err_bnds_norm, &err_bnds_comp, &nparams, &params))
-            ){
-                LAPACKE_zherfsx(matrix_layout, uplo, equed, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(af), ldaf, get_cste_ptr(ipiv), get_cste_ptr(s), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(berr), n_err_bnds, get_ptr(err_bnds_norm), get_ptr(err_bnds_comp), nparams, get_ptr(params));
             }
         } break;
         case chesv: {
@@ -5307,42 +5217,6 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
                 && !(error = translate(env, elements, (etypes[]) {e_layout, e_char, e_int, e_int, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_int, e_ptr, e_int, e_ptr, e_ptr, e_end}, &matrix_layout, &uplo, &n, &nrhs, &a, &lda, &af, &ldaf, &b, &ldb, &x, &ldx, &ferr, &berr))
             ){
                 LAPACKE_zporfs(matrix_layout, uplo, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(af), ldaf, get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
-            }
-        } break;
-        case sporfsx: {
-            int matrix_layout; char uplo; char equed; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary af; int ldaf; cste_c_binary s; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary berr; int n_err_bnds; c_binary err_bnds_norm; c_binary err_bnds_comp; int nparams; c_binary params;
-            
-            if( !(error = narg == 21? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_char, e_char, e_int, e_int, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_ptr, e_ptr, e_int, e_ptr, e_ptr, e_int, e_ptr, e_end}, &matrix_layout, &uplo, &equed, &n, &nrhs, &a, &lda, &af, &ldaf, &s, &b, &ldb, &x, &ldx, &rcond, &berr, &n_err_bnds, &err_bnds_norm, &err_bnds_comp, &nparams, &params))
-            ){
-                LAPACKE_sporfsx(matrix_layout, uplo, equed, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(af), ldaf, get_cste_ptr(s), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(berr), n_err_bnds, get_ptr(err_bnds_norm), get_ptr(err_bnds_comp), nparams, get_ptr(params));
-            }
-        } break;
-        case dporfsx: {
-            int matrix_layout; char uplo; char equed; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary af; int ldaf; cste_c_binary s; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary berr; int n_err_bnds; c_binary err_bnds_norm; c_binary err_bnds_comp; int nparams; c_binary params;
-            
-            if( !(error = narg == 21? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_char, e_char, e_int, e_int, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_ptr, e_ptr, e_int, e_ptr, e_ptr, e_int, e_ptr, e_end}, &matrix_layout, &uplo, &equed, &n, &nrhs, &a, &lda, &af, &ldaf, &s, &b, &ldb, &x, &ldx, &rcond, &berr, &n_err_bnds, &err_bnds_norm, &err_bnds_comp, &nparams, &params))
-            ){
-                LAPACKE_dporfsx(matrix_layout, uplo, equed, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(af), ldaf, get_cste_ptr(s), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(berr), n_err_bnds, get_ptr(err_bnds_norm), get_ptr(err_bnds_comp), nparams, get_ptr(params));
-            }
-        } break;
-        case cporfsx: {
-            int matrix_layout; char uplo; char equed; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary af; int ldaf; cste_c_binary s; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary berr; int n_err_bnds; c_binary err_bnds_norm; c_binary err_bnds_comp; int nparams; c_binary params;
-            
-            if( !(error = narg == 21? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_char, e_char, e_int, e_int, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_ptr, e_ptr, e_int, e_ptr, e_ptr, e_int, e_ptr, e_end}, &matrix_layout, &uplo, &equed, &n, &nrhs, &a, &lda, &af, &ldaf, &s, &b, &ldb, &x, &ldx, &rcond, &berr, &n_err_bnds, &err_bnds_norm, &err_bnds_comp, &nparams, &params))
-            ){
-                LAPACKE_cporfsx(matrix_layout, uplo, equed, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(af), ldaf, get_cste_ptr(s), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(berr), n_err_bnds, get_ptr(err_bnds_norm), get_ptr(err_bnds_comp), nparams, get_ptr(params));
-            }
-        } break;
-        case zporfsx: {
-            int matrix_layout; char uplo; char equed; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary af; int ldaf; cste_c_binary s; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary berr; int n_err_bnds; c_binary err_bnds_norm; c_binary err_bnds_comp; int nparams; c_binary params;
-            
-            if( !(error = narg == 21? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_char, e_char, e_int, e_int, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_ptr, e_ptr, e_int, e_ptr, e_ptr, e_int, e_ptr, e_end}, &matrix_layout, &uplo, &equed, &n, &nrhs, &a, &lda, &af, &ldaf, &s, &b, &ldb, &x, &ldx, &rcond, &berr, &n_err_bnds, &err_bnds_norm, &err_bnds_comp, &nparams, &params))
-            ){
-                LAPACKE_zporfsx(matrix_layout, uplo, equed, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(af), ldaf, get_cste_ptr(s), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(berr), n_err_bnds, get_ptr(err_bnds_norm), get_ptr(err_bnds_comp), nparams, get_ptr(params));
             }
         } break;
         case sposv: {
@@ -7125,42 +6999,6 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
                 && !(error = translate(env, elements, (etypes[]) {e_layout, e_char, e_int, e_int, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_ptr, e_ptr, e_end}, &matrix_layout, &uplo, &n, &nrhs, &a, &lda, &af, &ldaf, &ipiv, &b, &ldb, &x, &ldx, &ferr, &berr))
             ){
                 LAPACKE_zsyrfs(matrix_layout, uplo, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(af), ldaf, get_cste_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
-            }
-        } break;
-        case ssyrfsx: {
-            int matrix_layout; char uplo; char equed; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary af; int ldaf; cste_c_binary ipiv; cste_c_binary s; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary berr; int n_err_bnds; c_binary err_bnds_norm; c_binary err_bnds_comp; int nparams; c_binary params;
-            
-            if( !(error = narg == 22? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_char, e_char, e_int, e_int, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_ptr, e_ptr, e_int, e_ptr, e_ptr, e_int, e_ptr, e_end}, &matrix_layout, &uplo, &equed, &n, &nrhs, &a, &lda, &af, &ldaf, &ipiv, &s, &b, &ldb, &x, &ldx, &rcond, &berr, &n_err_bnds, &err_bnds_norm, &err_bnds_comp, &nparams, &params))
-            ){
-                LAPACKE_ssyrfsx(matrix_layout, uplo, equed, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(af), ldaf, get_cste_ptr(ipiv), get_cste_ptr(s), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(berr), n_err_bnds, get_ptr(err_bnds_norm), get_ptr(err_bnds_comp), nparams, get_ptr(params));
-            }
-        } break;
-        case dsyrfsx: {
-            int matrix_layout; char uplo; char equed; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary af; int ldaf; cste_c_binary ipiv; cste_c_binary s; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary berr; int n_err_bnds; c_binary err_bnds_norm; c_binary err_bnds_comp; int nparams; c_binary params;
-            
-            if( !(error = narg == 22? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_char, e_char, e_int, e_int, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_ptr, e_ptr, e_int, e_ptr, e_ptr, e_int, e_ptr, e_end}, &matrix_layout, &uplo, &equed, &n, &nrhs, &a, &lda, &af, &ldaf, &ipiv, &s, &b, &ldb, &x, &ldx, &rcond, &berr, &n_err_bnds, &err_bnds_norm, &err_bnds_comp, &nparams, &params))
-            ){
-                LAPACKE_dsyrfsx(matrix_layout, uplo, equed, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(af), ldaf, get_cste_ptr(ipiv), get_cste_ptr(s), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(berr), n_err_bnds, get_ptr(err_bnds_norm), get_ptr(err_bnds_comp), nparams, get_ptr(params));
-            }
-        } break;
-        case csyrfsx: {
-            int matrix_layout; char uplo; char equed; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary af; int ldaf; cste_c_binary ipiv; cste_c_binary s; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary berr; int n_err_bnds; c_binary err_bnds_norm; c_binary err_bnds_comp; int nparams; c_binary params;
-            
-            if( !(error = narg == 22? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_char, e_char, e_int, e_int, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_ptr, e_ptr, e_int, e_ptr, e_ptr, e_int, e_ptr, e_end}, &matrix_layout, &uplo, &equed, &n, &nrhs, &a, &lda, &af, &ldaf, &ipiv, &s, &b, &ldb, &x, &ldx, &rcond, &berr, &n_err_bnds, &err_bnds_norm, &err_bnds_comp, &nparams, &params))
-            ){
-                LAPACKE_csyrfsx(matrix_layout, uplo, equed, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(af), ldaf, get_cste_ptr(ipiv), get_cste_ptr(s), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(berr), n_err_bnds, get_ptr(err_bnds_norm), get_ptr(err_bnds_comp), nparams, get_ptr(params));
-            }
-        } break;
-        case zsyrfsx: {
-            int matrix_layout; char uplo; char equed; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary af; int ldaf; cste_c_binary ipiv; cste_c_binary s; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary berr; int n_err_bnds; c_binary err_bnds_norm; c_binary err_bnds_comp; int nparams; c_binary params;
-            
-            if( !(error = narg == 22? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_char, e_char, e_int, e_int, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_ptr, e_ptr, e_int, e_ptr, e_ptr, e_int, e_ptr, e_end}, &matrix_layout, &uplo, &equed, &n, &nrhs, &a, &lda, &af, &ldaf, &ipiv, &s, &b, &ldb, &x, &ldx, &rcond, &berr, &n_err_bnds, &err_bnds_norm, &err_bnds_comp, &nparams, &params))
-            ){
-                LAPACKE_zsyrfsx(matrix_layout, uplo, equed, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(af), ldaf, get_cste_ptr(ipiv), get_cste_ptr(s), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(berr), n_err_bnds, get_ptr(err_bnds_norm), get_ptr(err_bnds_comp), nparams, get_ptr(params));
             }
         } break;
         case ssysv: {

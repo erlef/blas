@@ -305,6 +305,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
     switch(hash_name){
 
 //INSERT_HERE
+
         default:
             error = ERROR_NO_BLAS;
             debug_write("Error: blas %s of hash %u does not exist.\n", name, hash(name));
