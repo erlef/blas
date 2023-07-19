@@ -4,7 +4,7 @@
 #include <cblas.h>
 
 // Types translator
-ERL_NIF_TERM atomRowMajor, atomColMajor, atomNoTrans, atomTrans, atomConjTrans, atomUpper,atomLower, atomNonUnit, atomUnit, atomLeft, atomRight;
+ERL_NIF_TERM atomRowMajor, atomColMajor, atomNoTrans, atomTrans, atomConjTrans, atomUpper,atomLower, atomNonUnit, atomUnit, atomLeft, atomRight, atomN, atomT, atomC, atomU, atomL, atomR;
 
 typedef enum types {e_int, e_char, e_float, e_double, e_ptr, e_cste_ptr, e_float_complex, e_double_complex, e_layout, e_transpose, e_uplo, e_diag, e_side, e_end} etypes;
 int translate(ErlNifEnv* env, const ERL_NIF_TERM* terms, const etypes* format, ...);

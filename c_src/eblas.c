@@ -52,6 +52,9 @@ int translate(ErlNifEnv* env, const ERL_NIF_TERM* terms, const etypes* format, .
                 if      (enif_is_identical(terms[curr], atomNoTrans))  *i_dest = CblasNoTrans;
                 else if (enif_is_identical(terms[curr], atomTrans))    *i_dest = CblasTrans;
                 else if (enif_is_identical(terms[curr], atomConjTrans))*i_dest = CblasConjTrans;
+                else if (enif_is_identical(terms[curr], atomN))        *i_dest = CblasNoTrans;
+                else if (enif_is_identical(terms[curr], atomT))        *i_dest = CblasTrans;
+                else if (enif_is_identical(terms[curr], atomC))        *i_dest = CblasConjTrans;
                 else valid = 0;
             break;
 
@@ -59,6 +62,8 @@ int translate(ErlNifEnv* env, const ERL_NIF_TERM* terms, const etypes* format, .
                 i_dest = va_arg(valist, int*);
                 if      (enif_is_identical(terms[curr], atomUpper)) *i_dest = CblasUpper;
                 else if (enif_is_identical(terms[curr], atomLower)) *i_dest = CblasLower;
+                else if (enif_is_identical(terms[curr], atomU    )) *i_dest = CblasUpper;
+                else if (enif_is_identical(terms[curr], atomL    )) *i_dest = CblasLower;
                 else valid = 0;
             break;
 
@@ -66,6 +71,8 @@ int translate(ErlNifEnv* env, const ERL_NIF_TERM* terms, const etypes* format, .
                 i_dest = va_arg(valist, int*);
                 if      (enif_is_identical(terms[curr], atomNonUnit)) *i_dest = CblasNonUnit;
                 else if (enif_is_identical(terms[curr], atomUnit))    *i_dest = CblasUnit;
+                else if (enif_is_identical(terms[curr], atomN))       *i_dest = CblasNonUnit;
+                else if (enif_is_identical(terms[curr], atomU))       *i_dest = CblasUnit;
                 else valid = 0;
                 break;
 
@@ -73,6 +80,8 @@ int translate(ErlNifEnv* env, const ERL_NIF_TERM* terms, const etypes* format, .
                 i_dest = va_arg(valist, int*);
                 if      (enif_is_identical(terms[curr], atomLeft))  *i_dest = CblasLeft;
                 else if (enif_is_identical(terms[curr], atomRight)) *i_dest = CblasRight;
+                else if (enif_is_identical(terms[curr], atomL))     *i_dest = CblasLeft;
+                else if (enif_is_identical(terms[curr], atomR))     *i_dest = CblasRight;
                 else valid = 0;
                 break;
 
@@ -8603,6 +8612,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
                 LAPACKE_zupmtr(matrix_layout, side, uplo, trans, m, n, get_cste_ptr(ap), get_cste_ptr(tau), get_ptr(c), ldc);
             }
         } break;
+
         default:
             error = ERROR_NO_BLAS;
             debug_write("Error: blas %s of hash %u does not exist.\n", name, hash(name));
@@ -8655,12 +8665,18 @@ int load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info){
     atomNoTrans     = enif_make_atom(env, "blasNoTrans");
     atomTrans       = enif_make_atom(env, "blasTrans");
     atomConjTrans   = enif_make_atom(env, "blasConjTrans");
+    atomN           = enif_make_atom(env, "n");
+    atomT           = enif_make_atom(env, "t");
+    atomC           = enif_make_atom(env, "c");
     atomUpper       = enif_make_atom(env, "blasUpper");
+    atomU           = enif_make_atom(env, "u");
     atomLower       = enif_make_atom(env, "blasLower");
+    atomL           = enif_make_atom(env, "l");
     atomNonUnit     = enif_make_atom(env, "blasNonUnit");
     atomUnit        = enif_make_atom(env, "blasUnit");
     atomLeft        = enif_make_atom(env, "blasLeft");
     atomRight       = enif_make_atom(env, "blasRight");
+    atomR           = enif_make_atom(env, "r");
 
     return 0;
 }
