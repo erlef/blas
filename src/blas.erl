@@ -94,12 +94,14 @@ normsum(L)->
             Weigths = [I/N_elems || I <- lists:seq(N_elems, 1, -1)],
             Sum     = lists:foldl(
                 fun({E,W}, S) ->
-                    S + E/W 
+                    S + E*W 
                 end,
                 0,
                 lists:zip(L, Weigths)
             ),
-            round(Sum / lists:foldl(fun(V,A)-> V+A end, 0, Weigths))
+            Result = round(Sum / lists:foldl(fun(V,A)-> V+A end, 0, Weigths)),
+            %io:format("Prediction: ~w ~n\n", [Result]),
+            Result
     end.
 
 benchmark()->
@@ -110,4 +112,4 @@ benchmark()->
         round(max(min(10, 1000.0/T), 0.1) * N)
     end,
 
-    lists:foldl(fun (_, L) -> [Iterate(normsum(L))|L] end, [Iterate(20)], lists:seq(1, 20)).
+    lists:foldl(fun (_, L) -> [Iterate(normsum(L))|L] end, [Iterate(20)], lists:seq(1, 9)).
