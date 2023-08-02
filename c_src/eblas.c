@@ -7334,6 +7334,24 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
                 LAPACKE_dtfsm(matrix_layout, transr, side, uplo, trans, diag, m, n, get_cste_double(alpha), get_cste_ptr(a), get_ptr(b), ldb);
             }
         } break;
+        case ctfsm: {
+            int matrix_layout; char transr; char side; char uplo; char trans; char diag; int m; int n; c_binary alpha; cste_c_binary a; c_binary b; int ldb;
+            
+            if( !(error = narg == 12? 0:ERROR_N_ARG)
+                && !(error = translate(env, elements, (etypes[]) {e_layout, e_char, e_char, e_char, e_char, e_char, e_int, e_int, e_ptr, e_cste_ptr, e_ptr, e_int, e_end}, &matrix_layout, &transr, &side, &uplo, &trans, &diag, &m, &n, &alpha, &a, &b, &ldb))
+            ){
+                LAPACKE_ctfsm(matrix_layout, transr, side, uplo, trans, diag, m, n, lapack_make_complex_float(*(float*)get_ptr(alpha), *(((float*)get_ptr(alpha))+1)), get_cste_ptr(a), get_ptr(b), ldb);
+            }
+        } break;
+        case ztfsm: {
+            int matrix_layout; char transr; char side; char uplo; char trans; char diag; int m; int n; c_binary alpha; cste_c_binary a; c_binary b; int ldb;
+            
+            if( !(error = narg == 12? 0:ERROR_N_ARG)
+                && !(error = translate(env, elements, (etypes[]) {e_layout, e_char, e_char, e_char, e_char, e_char, e_int, e_int, e_ptr, e_cste_ptr, e_ptr, e_int, e_end}, &matrix_layout, &transr, &side, &uplo, &trans, &diag, &m, &n, &alpha, &a, &b, &ldb))
+            ){
+                LAPACKE_ztfsm(matrix_layout, transr, side, uplo, trans, diag, m, n, lapack_make_complex_double(*(double*)get_ptr(alpha), *(((double*)get_ptr(alpha))+1)), get_cste_ptr(a), get_ptr(b), ldb);
+            }
+        } break;
         case stftri: {
             int matrix_layout; char transr; char uplo; char diag; int n; c_binary a;
             
