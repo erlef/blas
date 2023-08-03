@@ -310,6 +310,14 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
     unsigned long hash_name = hash(name);
 
     ERL_NIF_TERM result = 0;
+    int timeslice;
+    if(!enif_get_int(env, argv[1], &timeslice))
+        return enif_make_badarg(env);
+
+    if (timeslice < 0){
+        timeslice = 100;
+    }
+    enif_consume_timeslice(env, timeslice);
 
     switch(hash_name){
 
@@ -8705,8 +8713,8 @@ ErlNifFunc nif_funcs[] = {
     {"bin_nif", 2, to_binary},
     {"hash", 1, hash_nif},
 
-    {"dirty_unwrapper", 1, unwrapper, ERL_NIF_DIRTY_JOB_CPU_BOUND},
-    {"clean_unwrapper", 1, unwrapper, 0}
+    {"dirty_unwrapper", 2, unwrapper, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"clean_unwrapper", 2, unwrapper, 0}
 };
 
 
