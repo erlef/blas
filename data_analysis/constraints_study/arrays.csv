@@ -1,0 +1,389 @@
+	fct_name	return_type	e_name	arg_pos	arg_type	arg_name
+2	cblas_sdsdot	float	sdsdot	2	const float*	X
+4	cblas_sdsdot	float	sdsdot	4	const float*	Y
+7	cblas_dsdot	double	dsdot	1	const float*	X
+9	cblas_dsdot	double	dsdot	3	const float*	Y
+12	cblas_sdot	float	sdot	1	const float*	X
+14	cblas_sdot	float	sdot	3	const float*	Y
+17	cblas_ddot	double	ddot	1	const double*	X
+19	cblas_ddot	double	ddot	3	const double*	Y
+22	cblas_cdotu_sub	void	cdotu	1	const void*	X
+24	cblas_cdotu_sub	void	cdotu	3	const void*	Y
+26	cblas_cdotu_sub	void	cdotu	5	void*	dotu
+28	cblas_cdotc_sub	void	cdotc	1	const void*	X
+30	cblas_cdotc_sub	void	cdotc	3	const void*	Y
+32	cblas_cdotc_sub	void	cdotc	5	void*	dotc
+34	cblas_zdotu_sub	void	zdotu	1	const void*	X
+36	cblas_zdotu_sub	void	zdotu	3	const void*	Y
+38	cblas_zdotu_sub	void	zdotu	5	void*	dotu
+40	cblas_zdotc_sub	void	zdotc	1	const void*	X
+42	cblas_zdotc_sub	void	zdotc	3	const void*	Y
+44	cblas_zdotc_sub	void	zdotc	5	void*	dotc
+46	cblas_snrm2	float	snrm2	1	const float*	X
+49	cblas_sasum	float	sasum	1	const float*	X
+52	cblas_dnrm2	double	dnrm2	1	const double*	X
+55	cblas_dasum	double	dasum	1	const double*	X
+58	cblas_scnrm2	float	scnrm2	1	const void*	X
+61	cblas_scasum	float	scasum	1	const void*	X
+64	cblas_dznrm2	double	dznrm2	1	const void*	X
+67	cblas_dzasum	double	dzasum	1	const void*	X
+70	cblas_isamax	CBLAS_INDEX	isamax	1	const float*	X
+73	cblas_idamax	CBLAS_INDEX	idamax	1	const double*	X
+76	cblas_icamax	CBLAS_INDEX	icamax	1	const void*	X
+79	cblas_izamax	CBLAS_INDEX	izamax	1	const void*	X
+82	cblas_sswap	void	sswap	1	float*	X
+84	cblas_sswap	void	sswap	3	float*	Y
+87	cblas_scopy	void	scopy	1	const float*	X
+89	cblas_scopy	void	scopy	3	float*	Y
+93	cblas_saxpy	void	saxpy	2	const float*	X
+95	cblas_saxpy	void	saxpy	4	float*	Y
+98	cblas_dswap	void	dswap	1	double*	X
+100	cblas_dswap	void	dswap	3	double*	Y
+103	cblas_dcopy	void	dcopy	1	const double*	X
+105	cblas_dcopy	void	dcopy	3	double*	Y
+109	cblas_daxpy	void	daxpy	2	const double*	X
+111	cblas_daxpy	void	daxpy	4	double*	Y
+114	cblas_cswap	void	cswap	1	void*	X
+116	cblas_cswap	void	cswap	3	void*	Y
+119	cblas_ccopy	void	ccopy	1	const void*	X
+121	cblas_ccopy	void	ccopy	3	void*	Y
+124	cblas_caxpy	void	caxpy	1	const void*	alpha
+125	cblas_caxpy	void	caxpy	2	const void*	X
+127	cblas_caxpy	void	caxpy	4	void*	Y
+130	cblas_zswap	void	zswap	1	void*	X
+132	cblas_zswap	void	zswap	3	void*	Y
+135	cblas_zcopy	void	zcopy	1	const void*	X
+137	cblas_zcopy	void	zcopy	3	void*	Y
+140	cblas_zaxpy	void	zaxpy	1	const void*	alpha
+141	cblas_zaxpy	void	zaxpy	2	const void*	X
+143	cblas_zaxpy	void	zaxpy	4	void*	Y
+145	cblas_srotg	void	srotg	0	float*	a
+146	cblas_srotg	void	srotg	1	float*	b
+147	cblas_srotg	void	srotg	2	float*	c
+148	cblas_srotg	void	srotg	3	float*	s
+149	cblas_srotmg	void	srotmg	0	float*	d1
+150	cblas_srotmg	void	srotmg	1	float*	d2
+151	cblas_srotmg	void	srotmg	2	float*	b1
+153	cblas_srotmg	void	srotmg	4	float*	P
+155	cblas_srot	void	srot	1	float*	X
+157	cblas_srot	void	srot	3	float*	Y
+162	cblas_srotm	void	srotm	1	float*	X
+164	cblas_srotm	void	srotm	3	float*	Y
+166	cblas_srotm	void	srotm	5	const float*	P
+167	cblas_drotg	void	drotg	0	double*	a
+168	cblas_drotg	void	drotg	1	double*	b
+169	cblas_drotg	void	drotg	2	double*	c
+170	cblas_drotg	void	drotg	3	double*	s
+171	cblas_drotmg	void	drotmg	0	double*	d1
+172	cblas_drotmg	void	drotmg	1	double*	d2
+173	cblas_drotmg	void	drotmg	2	double*	b1
+175	cblas_drotmg	void	drotmg	4	double*	P
+177	cblas_drot	void	drot	1	double*	X
+179	cblas_drot	void	drot	3	double*	Y
+184	cblas_drotm	void	drotm	1	double*	X
+186	cblas_drotm	void	drotm	3	double*	Y
+188	cblas_drotm	void	drotm	5	const double*	P
+191	cblas_sscal	void	sscal	2	float*	X
+195	cblas_dscal	void	dscal	2	double*	X
+198	cblas_cscal	void	cscal	1	const void*	alpha
+199	cblas_cscal	void	cscal	2	void*	X
+202	cblas_zscal	void	zscal	1	const void*	alpha
+203	cblas_zscal	void	zscal	2	void*	X
+207	cblas_csscal	void	csscal	2	void*	X
+211	cblas_zdscal	void	zdscal	2	void*	X
+218	cblas_sgemv	void	sgemv	5	const float*	A
+220	cblas_sgemv	void	sgemv	7	const float*	X
+223	cblas_sgemv	void	sgemv	10	float*	Y
+232	cblas_sgbmv	void	sgbmv	7	const float*	A
+234	cblas_sgbmv	void	sgbmv	9	const float*	X
+237	cblas_sgbmv	void	sgbmv	12	float*	Y
+244	cblas_strmv	void	strmv	5	const float*	A
+246	cblas_strmv	void	strmv	7	float*	X
+254	cblas_stbmv	void	stbmv	6	const float*	A
+256	cblas_stbmv	void	stbmv	8	float*	X
+263	cblas_stpmv	void	stpmv	5	const float*	Ap
+264	cblas_stpmv	void	stpmv	6	float*	X
+271	cblas_strsv	void	strsv	5	const float*	A
+273	cblas_strsv	void	strsv	7	float*	X
+281	cblas_stbsv	void	stbsv	6	const float*	A
+283	cblas_stbsv	void	stbsv	8	float*	X
+290	cblas_stpsv	void	stpsv	5	const float*	Ap
+291	cblas_stpsv	void	stpsv	6	float*	X
+298	cblas_dgemv	void	dgemv	5	const double*	A
+300	cblas_dgemv	void	dgemv	7	const double*	X
+303	cblas_dgemv	void	dgemv	10	double*	Y
+312	cblas_dgbmv	void	dgbmv	7	const double*	A
+314	cblas_dgbmv	void	dgbmv	9	const double*	X
+317	cblas_dgbmv	void	dgbmv	12	double*	Y
+324	cblas_dtrmv	void	dtrmv	5	const double*	A
+326	cblas_dtrmv	void	dtrmv	7	double*	X
+334	cblas_dtbmv	void	dtbmv	6	const double*	A
+336	cblas_dtbmv	void	dtbmv	8	double*	X
+343	cblas_dtpmv	void	dtpmv	5	const double*	Ap
+344	cblas_dtpmv	void	dtpmv	6	double*	X
+351	cblas_dtrsv	void	dtrsv	5	const double*	A
+353	cblas_dtrsv	void	dtrsv	7	double*	X
+361	cblas_dtbsv	void	dtbsv	6	const double*	A
+363	cblas_dtbsv	void	dtbsv	8	double*	X
+370	cblas_dtpsv	void	dtpsv	5	const double*	Ap
+371	cblas_dtpsv	void	dtpsv	6	double*	X
+377	cblas_cgemv	void	cgemv	4	const void*	alpha
+378	cblas_cgemv	void	cgemv	5	const void*	A
+380	cblas_cgemv	void	cgemv	7	const void*	X
+382	cblas_cgemv	void	cgemv	9	const void*	beta
+383	cblas_cgemv	void	cgemv	10	void*	Y
+391	cblas_cgbmv	void	cgbmv	6	const void*	alpha
+392	cblas_cgbmv	void	cgbmv	7	const void*	A
+394	cblas_cgbmv	void	cgbmv	9	const void*	X
+396	cblas_cgbmv	void	cgbmv	11	const void*	beta
+397	cblas_cgbmv	void	cgbmv	12	void*	Y
+404	cblas_ctrmv	void	ctrmv	5	const void*	A
+406	cblas_ctrmv	void	ctrmv	7	void*	X
+414	cblas_ctbmv	void	ctbmv	6	const void*	A
+416	cblas_ctbmv	void	ctbmv	8	void*	X
+423	cblas_ctpmv	void	ctpmv	5	const void*	Ap
+424	cblas_ctpmv	void	ctpmv	6	void*	X
+431	cblas_ctrsv	void	ctrsv	5	const void*	A
+433	cblas_ctrsv	void	ctrsv	7	void*	X
+441	cblas_ctbsv	void	ctbsv	6	const void*	A
+443	cblas_ctbsv	void	ctbsv	8	void*	X
+450	cblas_ctpsv	void	ctpsv	5	const void*	Ap
+451	cblas_ctpsv	void	ctpsv	6	void*	X
+457	cblas_zgemv	void	zgemv	4	const void*	alpha
+458	cblas_zgemv	void	zgemv	5	const void*	A
+460	cblas_zgemv	void	zgemv	7	const void*	X
+462	cblas_zgemv	void	zgemv	9	const void*	beta
+463	cblas_zgemv	void	zgemv	10	void*	Y
+471	cblas_zgbmv	void	zgbmv	6	const void*	alpha
+472	cblas_zgbmv	void	zgbmv	7	const void*	A
+474	cblas_zgbmv	void	zgbmv	9	const void*	X
+476	cblas_zgbmv	void	zgbmv	11	const void*	beta
+477	cblas_zgbmv	void	zgbmv	12	void*	Y
+484	cblas_ztrmv	void	ztrmv	5	const void*	A
+486	cblas_ztrmv	void	ztrmv	7	void*	X
+494	cblas_ztbmv	void	ztbmv	6	const void*	A
+496	cblas_ztbmv	void	ztbmv	8	void*	X
+503	cblas_ztpmv	void	ztpmv	5	const void*	Ap
+504	cblas_ztpmv	void	ztpmv	6	void*	X
+511	cblas_ztrsv	void	ztrsv	5	const void*	A
+513	cblas_ztrsv	void	ztrsv	7	void*	X
+521	cblas_ztbsv	void	ztbsv	6	const void*	A
+523	cblas_ztbsv	void	ztbsv	8	void*	X
+530	cblas_ztpsv	void	ztpsv	5	const void*	Ap
+531	cblas_ztpsv	void	ztpsv	6	void*	X
+537	cblas_ssymv	void	ssymv	4	const float*	A
+539	cblas_ssymv	void	ssymv	6	const float*	X
+542	cblas_ssymv	void	ssymv	9	float*	Y
+549	cblas_ssbmv	void	ssbmv	5	const float*	A
+551	cblas_ssbmv	void	ssbmv	7	const float*	X
+554	cblas_ssbmv	void	ssbmv	10	float*	Y
+560	cblas_sspmv	void	sspmv	4	const float*	Ap
+561	cblas_sspmv	void	sspmv	5	const float*	X
+564	cblas_sspmv	void	sspmv	8	float*	Y
+570	cblas_sger	void	sger	4	const float*	X
+572	cblas_sger	void	sger	6	const float*	Y
+574	cblas_sger	void	sger	8	float*	A
+580	cblas_ssyr	void	ssyr	4	const float*	X
+582	cblas_ssyr	void	ssyr	6	float*	A
+588	cblas_sspr	void	sspr	4	const float*	X
+590	cblas_sspr	void	sspr	6	float*	Ap
+595	cblas_ssyr2	void	ssyr2	4	const float*	X
+597	cblas_ssyr2	void	ssyr2	6	const float*	Y
+599	cblas_ssyr2	void	ssyr2	8	float*	A
+605	cblas_sspr2	void	sspr2	4	const float*	X
+607	cblas_sspr2	void	sspr2	6	const float*	Y
+609	cblas_sspr2	void	sspr2	8	float*	A
+614	cblas_dsymv	void	dsymv	4	const double*	A
+616	cblas_dsymv	void	dsymv	6	const double*	X
+619	cblas_dsymv	void	dsymv	9	double*	Y
+626	cblas_dsbmv	void	dsbmv	5	const double*	A
+628	cblas_dsbmv	void	dsbmv	7	const double*	X
+631	cblas_dsbmv	void	dsbmv	10	double*	Y
+637	cblas_dspmv	void	dspmv	4	const double*	Ap
+638	cblas_dspmv	void	dspmv	5	const double*	X
+641	cblas_dspmv	void	dspmv	8	double*	Y
+647	cblas_dger	void	dger	4	const double*	X
+649	cblas_dger	void	dger	6	const double*	Y
+651	cblas_dger	void	dger	8	double*	A
+657	cblas_dsyr	void	dsyr	4	const double*	X
+659	cblas_dsyr	void	dsyr	6	double*	A
+665	cblas_dspr	void	dspr	4	const double*	X
+667	cblas_dspr	void	dspr	6	double*	Ap
+672	cblas_dsyr2	void	dsyr2	4	const double*	X
+674	cblas_dsyr2	void	dsyr2	6	const double*	Y
+676	cblas_dsyr2	void	dsyr2	8	double*	A
+682	cblas_dspr2	void	dspr2	4	const double*	X
+684	cblas_dspr2	void	dspr2	6	const double*	Y
+686	cblas_dspr2	void	dspr2	8	double*	A
+690	cblas_chemv	void	chemv	3	const void*	alpha
+691	cblas_chemv	void	chemv	4	const void*	A
+693	cblas_chemv	void	chemv	6	const void*	X
+695	cblas_chemv	void	chemv	8	const void*	beta
+696	cblas_chemv	void	chemv	9	void*	Y
+702	cblas_chbmv	void	chbmv	4	const void*	alpha
+703	cblas_chbmv	void	chbmv	5	const void*	A
+705	cblas_chbmv	void	chbmv	7	const void*	X
+707	cblas_chbmv	void	chbmv	9	const void*	beta
+708	cblas_chbmv	void	chbmv	10	void*	Y
+713	cblas_chpmv	void	chpmv	3	const void*	alpha
+714	cblas_chpmv	void	chpmv	4	const void*	Ap
+715	cblas_chpmv	void	chpmv	5	const void*	X
+717	cblas_chpmv	void	chpmv	7	const void*	beta
+718	cblas_chpmv	void	chpmv	8	void*	Y
+723	cblas_cgeru	void	cgeru	3	const void*	alpha
+724	cblas_cgeru	void	cgeru	4	const void*	X
+726	cblas_cgeru	void	cgeru	6	const void*	Y
+728	cblas_cgeru	void	cgeru	8	void*	A
+733	cblas_cgerc	void	cgerc	3	const void*	alpha
+734	cblas_cgerc	void	cgerc	4	const void*	X
+736	cblas_cgerc	void	cgerc	6	const void*	Y
+738	cblas_cgerc	void	cgerc	8	void*	A
+744	cblas_cher	void	cher	4	const void*	X
+746	cblas_cher	void	cher	6	void*	A
+752	cblas_chpr	void	chpr	4	const void*	X
+754	cblas_chpr	void	chpr	6	void*	A
+758	cblas_cher2	void	cher2	3	const void*	alpha
+759	cblas_cher2	void	cher2	4	const void*	X
+761	cblas_cher2	void	cher2	6	const void*	Y
+763	cblas_cher2	void	cher2	8	void*	A
+768	cblas_chpr2	void	chpr2	3	const void*	alpha
+769	cblas_chpr2	void	chpr2	4	const void*	X
+771	cblas_chpr2	void	chpr2	6	const void*	Y
+773	cblas_chpr2	void	chpr2	8	void*	Ap
+777	cblas_zhemv	void	zhemv	3	const void*	alpha
+778	cblas_zhemv	void	zhemv	4	const void*	A
+780	cblas_zhemv	void	zhemv	6	const void*	X
+782	cblas_zhemv	void	zhemv	8	const void*	beta
+783	cblas_zhemv	void	zhemv	9	void*	Y
+789	cblas_zhbmv	void	zhbmv	4	const void*	alpha
+790	cblas_zhbmv	void	zhbmv	5	const void*	A
+792	cblas_zhbmv	void	zhbmv	7	const void*	X
+794	cblas_zhbmv	void	zhbmv	9	const void*	beta
+795	cblas_zhbmv	void	zhbmv	10	void*	Y
+800	cblas_zhpmv	void	zhpmv	3	const void*	alpha
+801	cblas_zhpmv	void	zhpmv	4	const void*	Ap
+802	cblas_zhpmv	void	zhpmv	5	const void*	X
+804	cblas_zhpmv	void	zhpmv	7	const void*	beta
+805	cblas_zhpmv	void	zhpmv	8	void*	Y
+810	cblas_zgeru	void	zgeru	3	const void*	alpha
+811	cblas_zgeru	void	zgeru	4	const void*	X
+813	cblas_zgeru	void	zgeru	6	const void*	Y
+815	cblas_zgeru	void	zgeru	8	void*	A
+820	cblas_zgerc	void	zgerc	3	const void*	alpha
+821	cblas_zgerc	void	zgerc	4	const void*	X
+823	cblas_zgerc	void	zgerc	6	const void*	Y
+825	cblas_zgerc	void	zgerc	8	void*	A
+831	cblas_zher	void	zher	4	const void*	X
+833	cblas_zher	void	zher	6	void*	A
+839	cblas_zhpr	void	zhpr	4	const void*	X
+841	cblas_zhpr	void	zhpr	6	void*	A
+845	cblas_zher2	void	zher2	3	const void*	alpha
+846	cblas_zher2	void	zher2	4	const void*	X
+848	cblas_zher2	void	zher2	6	const void*	Y
+850	cblas_zher2	void	zher2	8	void*	A
+855	cblas_zhpr2	void	zhpr2	3	const void*	alpha
+856	cblas_zhpr2	void	zhpr2	4	const void*	X
+858	cblas_zhpr2	void	zhpr2	6	const void*	Y
+860	cblas_zhpr2	void	zhpr2	8	void*	Ap
+868	cblas_sgemm	void	sgemm	7	const float*	A
+870	cblas_sgemm	void	sgemm	9	const float*	B
+873	cblas_sgemm	void	sgemm	12	float*	C
+881	cblas_ssymm	void	ssymm	6	const float*	A
+883	cblas_ssymm	void	ssymm	8	const float*	B
+886	cblas_ssymm	void	ssymm	11	float*	C
+894	cblas_ssyrk	void	ssyrk	6	const float*	A
+897	cblas_ssyrk	void	ssyrk	9	float*	C
+905	cblas_ssyr2k	void	ssyr2k	6	const float*	A
+907	cblas_ssyr2k	void	ssyr2k	8	const float*	B
+910	cblas_ssyr2k	void	ssyr2k	11	float*	C
+920	cblas_strmm	void	strmm	8	const float*	A
+922	cblas_strmm	void	strmm	10	float*	B
+932	cblas_strsm	void	strsm	8	const float*	A
+934	cblas_strsm	void	strsm	10	float*	B
+943	cblas_dgemm	void	dgemm	7	const double*	A
+945	cblas_dgemm	void	dgemm	9	const double*	B
+948	cblas_dgemm	void	dgemm	12	double*	C
+956	cblas_dsymm	void	dsymm	6	const double*	A
+958	cblas_dsymm	void	dsymm	8	const double*	B
+961	cblas_dsymm	void	dsymm	11	double*	C
+969	cblas_dsyrk	void	dsyrk	6	const double*	A
+972	cblas_dsyrk	void	dsyrk	9	double*	C
+980	cblas_dsyr2k	void	dsyr2k	6	const double*	A
+982	cblas_dsyr2k	void	dsyr2k	8	const double*	B
+985	cblas_dsyr2k	void	dsyr2k	11	double*	C
+995	cblas_dtrmm	void	dtrmm	8	const double*	A
+997	cblas_dtrmm	void	dtrmm	10	double*	B
+1007	cblas_dtrsm	void	dtrsm	8	const double*	A
+1009	cblas_dtrsm	void	dtrsm	10	double*	B
+1017	cblas_cgemm	void	cgemm	6	const void*	alpha
+1018	cblas_cgemm	void	cgemm	7	const void*	A
+1020	cblas_cgemm	void	cgemm	9	const void*	B
+1022	cblas_cgemm	void	cgemm	11	const void*	beta
+1023	cblas_cgemm	void	cgemm	12	void*	C
+1030	cblas_csymm	void	csymm	5	const void*	alpha
+1031	cblas_csymm	void	csymm	6	const void*	A
+1033	cblas_csymm	void	csymm	8	const void*	B
+1035	cblas_csymm	void	csymm	10	const void*	beta
+1036	cblas_csymm	void	csymm	11	void*	C
+1043	cblas_csyrk	void	csyrk	5	const void*	alpha
+1044	cblas_csyrk	void	csyrk	6	const void*	A
+1046	cblas_csyrk	void	csyrk	8	const void*	beta
+1047	cblas_csyrk	void	csyrk	9	void*	C
+1054	cblas_csyr2k	void	csyr2k	5	const void*	alpha
+1055	cblas_csyr2k	void	csyr2k	6	const void*	A
+1057	cblas_csyr2k	void	csyr2k	8	const void*	B
+1059	cblas_csyr2k	void	csyr2k	10	const void*	beta
+1060	cblas_csyr2k	void	csyr2k	11	void*	C
+1069	cblas_ctrmm	void	ctrmm	7	const void*	alpha
+1070	cblas_ctrmm	void	ctrmm	8	const void*	A
+1072	cblas_ctrmm	void	ctrmm	10	void*	B
+1081	cblas_ctrsm	void	ctrsm	7	const void*	alpha
+1082	cblas_ctrsm	void	ctrsm	8	const void*	A
+1084	cblas_ctrsm	void	ctrsm	10	void*	B
+1092	cblas_zgemm	void	zgemm	6	const void*	alpha
+1093	cblas_zgemm	void	zgemm	7	const void*	A
+1095	cblas_zgemm	void	zgemm	9	const void*	B
+1097	cblas_zgemm	void	zgemm	11	const void*	beta
+1098	cblas_zgemm	void	zgemm	12	void*	C
+1105	cblas_zsymm	void	zsymm	5	const void*	alpha
+1106	cblas_zsymm	void	zsymm	6	const void*	A
+1108	cblas_zsymm	void	zsymm	8	const void*	B
+1110	cblas_zsymm	void	zsymm	10	const void*	beta
+1111	cblas_zsymm	void	zsymm	11	void*	C
+1118	cblas_zsyrk	void	zsyrk	5	const void*	alpha
+1119	cblas_zsyrk	void	zsyrk	6	const void*	A
+1121	cblas_zsyrk	void	zsyrk	8	const void*	beta
+1122	cblas_zsyrk	void	zsyrk	9	void*	C
+1129	cblas_zsyr2k	void	zsyr2k	5	const void*	alpha
+1130	cblas_zsyr2k	void	zsyr2k	6	const void*	A
+1132	cblas_zsyr2k	void	zsyr2k	8	const void*	B
+1134	cblas_zsyr2k	void	zsyr2k	10	const void*	beta
+1135	cblas_zsyr2k	void	zsyr2k	11	void*	C
+1144	cblas_ztrmm	void	ztrmm	7	const void*	alpha
+1145	cblas_ztrmm	void	ztrmm	8	const void*	A
+1147	cblas_ztrmm	void	ztrmm	10	void*	B
+1156	cblas_ztrsm	void	ztrsm	7	const void*	alpha
+1157	cblas_ztrsm	void	ztrsm	8	const void*	A
+1159	cblas_ztrsm	void	ztrsm	10	void*	B
+1166	cblas_chemm	void	chemm	5	const void*	alpha
+1167	cblas_chemm	void	chemm	6	const void*	A
+1169	cblas_chemm	void	chemm	8	const void*	B
+1171	cblas_chemm	void	chemm	10	const void*	beta
+1172	cblas_chemm	void	chemm	11	void*	C
+1180	cblas_cherk	void	cherk	6	const void*	A
+1183	cblas_cherk	void	cherk	9	void*	C
+1190	cblas_cher2k	void	cher2k	5	const void*	alpha
+1191	cblas_cher2k	void	cher2k	6	const void*	A
+1193	cblas_cher2k	void	cher2k	8	const void*	B
+1196	cblas_cher2k	void	cher2k	11	void*	C
+1203	cblas_zhemm	void	zhemm	5	const void*	alpha
+1204	cblas_zhemm	void	zhemm	6	const void*	A
+1206	cblas_zhemm	void	zhemm	8	const void*	B
+1208	cblas_zhemm	void	zhemm	10	const void*	beta
+1209	cblas_zhemm	void	zhemm	11	void*	C
+1217	cblas_zherk	void	zherk	6	const void*	A
+1220	cblas_zherk	void	zherk	9	void*	C
+1227	cblas_zher2k	void	zher2k	5	const void*	alpha
+1228	cblas_zher2k	void	zher2k	6	const void*	A
+1230	cblas_zher2k	void	zher2k	8	const void*	B
+1233	cblas_zher2k	void	zher2k	11	void*	C
