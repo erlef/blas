@@ -4,7 +4,7 @@
 
 benchmark(Size) ->
     GenMatrix = fun(N) -> 
-        blas:new(float64, [rand:uniform(20) || _ <- lists:seq(1,N*N)])
+        blas:new(float64, lists:seq(1,N*N))
     end,
     GenTuple = fun(N) ->
         {dgemm, blasColMajor, blasNoTrans, blasNoTrans, N,N,N, 1.0, GenMatrix(N), N, GenMatrix(N), N, 1.0, GenMatrix(N), N}
@@ -37,11 +37,12 @@ benchmark()->
     % Reach 1ms.
     Iterate = fun(N)->
         T = benchmark(N),
-        %io:format("Time: ~w ~n", [T]),
+        %io:format("Size ~w, Time ~w ~n", [N, T]),
         round(max(min(10, 1000.0/T), 0.1) * N) % Do not explode/collapse size: limit ratio in range(0.1, 10).
     end,
 
-    R = normsum(lists:foldl(fun (_, L) -> [Iterate(normsum(L))|L] end, [Iterate(20)], lists:seq(1, 9))),
+    R = normsum(lists:foldl(fun (_, L) -> [Iterate(normsum(L))|L] end, [Iterate(20)], lists:seq(1, 20))),
+	%io:format("~w ~n", [R]),
 	math:log(R*R*R).
 
 n_elements(BlasOp)->

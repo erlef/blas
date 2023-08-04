@@ -21,6 +21,10 @@ int translate(ErlNifEnv* env, const ERL_NIF_TERM* terms, const etypes* format, .
             case e_int:
                 valid = enif_get_int(env, terms[curr], va_arg(valist, int*));
             break;
+            case e_uint:
+                i_dest = va_arg(valist, int*);
+                valid = enif_get_int(env, terms[curr], i_dest) && *i_dest >=0;
+            break;
 
             case e_char:
                 char* c_dest = va_arg(valist, char*);
@@ -309,7 +313,10 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
 
     unsigned long hash_name = hash(name);
 
+    size_in_bytes type = pick_size(hash_name);
+
     ERL_NIF_TERM result = 0;
+
     int timeslice;
     if(!enif_get_int(env, argv[1], &timeslice))
         return enif_make_badarg(env);
@@ -320,1286 +327,833 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
     enif_consume_timeslice(env, timeslice);
 
     switch(hash_name){
+         case saxpy: case daxpy: case caxpy: case zaxpy: {
+            int n; cste_c_binary alpha; cste_c_binary x; int incx; c_binary y; int incy;
+            
+            if( !(error = narg == 6? 0:ERROR_N_ARG)
+                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &n, &alpha, &x, &incx, &y, &incy))
+                && !(error = in_cste_bounds(type, 1, 1, alpha)) 
+                && !(error = in_cste_bounds(type, n, incx, x))  &&
+                 !(error = in_bounds(type, n, incy, y))
+            ){
+                switch(hash_name){
+                    case saxpy: cblas_saxpy(n,  get_cste_float(alpha), get_cste_ptr(x), incx, get_ptr(y), incy); break;
+                    case daxpy: cblas_daxpy(n, get_cste_double(alpha), get_cste_ptr(x), incx, get_ptr(y), incy); break;
+                    case caxpy: cblas_caxpy(n,           get_cste_ptr(alpha), get_cste_ptr(x), incx, get_ptr(y), incy); break;
+                    case zaxpy: cblas_zaxpy(n,           get_cste_ptr(alpha), get_cste_ptr(x), incx, get_ptr(y), incy); break;
+                    default: error = ERROR_NOT_FOUND; break;
+                }
+            }
 
+
+        break;}
+
+        case scopy: case dcopy: case ccopy: case zcopy:  {
+            int n;  cste_c_binary x; int incx; c_binary y; int incy;
+            
+            if( !(error = narg == 5? 0:ERROR_N_ARG)
+                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &n, &x, &incx, &y, &incy))
+                && !(error = in_cste_bounds(type, n, incx, x)) && !(error = in_bounds(type, n, incy, y))
+            ){
+                switch(hash_name){
+                    case scopy: cblas_scopy(n, get_cste_ptr(x), incx, get_ptr(y), incy); break;
+                    case dcopy: cblas_dcopy(n, get_cste_ptr(x), incx, get_ptr(y), incy); break;
+                    case ccopy: cblas_ccopy(n, get_cste_ptr(x), incx, get_ptr(y), incy); break;
+                    case zcopy: cblas_zcopy(n, get_cste_ptr(x), incx, get_ptr(y), incy); break;
+                    default: error = ERROR_NOT_FOUND; break;
+                }
+                
+            }
+
+        break;}
+
+        case sswap: case dswap: case cswap: case zswap:  {
+            int n;  c_binary x; int incx; c_binary y; int incy;
+            
+            if( !(error = narg == 5? 0:ERROR_N_ARG)
+                && !(error = translate(env, elements, (etypes[]) {e_int, e_ptr, e_int, e_ptr, e_int, e_end}, &n, &x, &incx, &y, &incy))
+                && !(error = in_bounds(type, n, incx, x)) && !(error = in_bounds(type, n, incy, y))
+            ){
+                switch(hash_name){
+                    case sswap: cblas_sswap(n, get_ptr(x), incx, get_ptr(y), incy); break;
+                    case dswap: cblas_dswap(n, get_ptr(x), incx, get_ptr(y), incy); break;
+                    case cswap: cblas_cswap(n, get_ptr(x), incx, get_ptr(y), incy); break;
+                    case zswap: cblas_zswap(n, get_ptr(x), incx, get_ptr(y), incy); break;
+                    default: error = ERROR_NOT_FOUND; break;
+                }
+                
+            }
+            
+        break;}
+
+        case sscal: case dscal: case cscal: case zscal: case csscal: case zdscal:  {
+            int n;  cste_c_binary alpha; c_binary x; int incx;
+            
+            if( !(error = narg == 4? 0:ERROR_N_ARG)
+                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_ptr, e_int, e_end}, &n, &alpha, &x, &incx))
+                && !(error = in_cste_bounds(type, 1, 1, alpha) ) 
+                && !(error = in_bounds(type, n, incx, x))
+                && !(error = in_cste_bounds(type, 1, 1, alpha))
+            ){
+                switch(hash_name){
+                    case sscal:  cblas_sscal(n,  *(float*) get_cste_ptr(alpha), get_ptr(x), incx); break;
+                    case dscal:  cblas_dscal(n,get_cste_double(alpha), get_ptr(x), incx); break;
+                    case cscal:  cblas_cscal(n,            get_cste_ptr(alpha), get_ptr(x), incx); break;
+                    case zscal:  cblas_zscal(n,            get_cste_ptr(alpha), get_ptr(x), incx); break;
+                    case csscal: cblas_sscal(n,  *(float*) get_cste_ptr(alpha), get_ptr(x), incx); break;
+                    case zdscal: cblas_dscal(n,get_cste_double(alpha), get_ptr(x), incx); break;
+                    default: error = ERROR_NOT_FOUND; break;
+                }
+                
+            }
+            
+        break;}
+
+        case sdot: case ddot: case dsdot: case cdotu: case zdotu: case cdotc: case zdotc: {
+            cste_c_binary dot_result;
+
+            int n;  cste_c_binary x; int incx; cste_c_binary y; int incy;
+            
+            if( !(error = narg == 5? 0:ERROR_N_ARG)
+                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_int, e_cste_ptr, e_int, e_end}, &n, &x, &incx, &y, &incy))
+                && !(error = in_cste_bounds(type, n, incx, x) ) && !(error = in_cste_bounds(type, n, incy, y))
+            ){ 
+                switch(hash_name){
+                    case sdot:                   double f_result  = cblas_sdot (n, get_cste_ptr(x), incx, get_cste_ptr(y), incy); set_cste_c_binary(&dot_result, e_double, (unsigned char*) &f_result);  break;
+                    case ddot:                   double d_result  = cblas_ddot (n, get_cste_ptr(x), incx, get_cste_ptr(y), incy); set_cste_c_binary(&dot_result, e_double, (unsigned char*) &d_result);  break;
+                    case dsdot:                  double ds_result = cblas_dsdot(n, get_cste_ptr(x), incx, get_cste_ptr(y), incy); set_cste_c_binary(&dot_result, e_double, (unsigned char*) &ds_result); break;
+                    case cdotu: openblas_complex_float  c_result  = cblas_cdotu(n, get_cste_ptr(x), incx, get_cste_ptr(y), incy); set_cste_c_binary(&dot_result, e_float_complex,  (unsigned char*) &c_result);  break;
+                    case zdotu: openblas_complex_double z_result  = cblas_zdotu(n, get_cste_ptr(x), incx, get_cste_ptr(y), incy); set_cste_c_binary(&dot_result, e_double_complex, (unsigned char*) &z_result);  break;
+                    case cdotc: openblas_complex_float  cd_result = cblas_cdotc(n, get_cste_ptr(x), incx, get_cste_ptr(y), incy); set_cste_c_binary(&dot_result, e_float_complex,  (unsigned char*) &cd_result); break;
+                    case zdotc: openblas_complex_double zd_result = cblas_zdotc(n, get_cste_ptr(x), incx, get_cste_ptr(y), incy); set_cste_c_binary(&dot_result, e_double_complex, (unsigned char*) &zd_result); break;
+                    default: error = ERROR_NOT_FOUND; break;
+                }
+
+                result = cste_c_binary_to_term(env, dot_result);
+            }
+            
+        break;}
 
         case sdsdot: {
-            int N; cste_c_binary alpha; cste_c_binary X; int incX; cste_c_binary Y; int incY;
+            cste_c_binary dot_result;
+
+            int n;  cste_c_binary b; cste_c_binary x; int incx; cste_c_binary y; int incy;
+            size_in_bytes type = s_bytes;
             
             if( !(error = narg == 6? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_end}, &N, &alpha, &X, &incX, &Y, &incY))
+                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_end}, &n, &b, &x, &incx, &y, &incy))
+                && !(error = in_cste_bounds(type, n, incx, x) ) && !(error = in_cste_bounds(type, n, incy, y))
             ){
-                cblas_sdsdot(N, get_cste_float(alpha), get_cste_ptr(X), incX, get_cste_ptr(Y), incY);
+                double f_result  = cblas_sdsdot (n, *(float*) get_cste_ptr(b), get_cste_ptr(x), incx, get_cste_ptr(y), incy); set_cste_c_binary(&dot_result, e_double, (unsigned char*) &f_result);
+                result = cste_c_binary_to_term(env, dot_result);
+                
             }
-        } break;
-        case dsdot: {
-            int N; cste_c_binary X; int incX; cste_c_binary Y; int incY;
-            
-            if( !(error = narg == 5? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_int, e_cste_ptr, e_int, e_end}, &N, &X, &incX, &Y, &incY))
-            ){
-                cblas_dsdot(N, get_cste_ptr(X), incX, get_cste_ptr(Y), incY);
-            }
-        } break;
-        case sdot: {
-            int N; cste_c_binary X; int incX; cste_c_binary Y; int incY;
-            
-            if( !(error = narg == 5? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_int, e_cste_ptr, e_int, e_end}, &N, &X, &incX, &Y, &incY))
-            ){
-                cblas_sdot(N, get_cste_ptr(X), incX, get_cste_ptr(Y), incY);
-            }
-        } break;
-        case ddot: {
-            int N; cste_c_binary X; int incX; cste_c_binary Y; int incY;
-            
-            if( !(error = narg == 5? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_int, e_cste_ptr, e_int, e_end}, &N, &X, &incX, &Y, &incY))
-            ){
-                cblas_ddot(N, get_cste_ptr(X), incX, get_cste_ptr(Y), incY);
-            }
-        } break;
-        case cdotu: {
-            int N; cste_c_binary X; int incX; cste_c_binary Y; int incY; c_binary dotu;
-            
-            if( !(error = narg == 6? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_int, e_cste_ptr, e_int, e_ptr, e_end}, &N, &X, &incX, &Y, &incY, &dotu))
-            ){
-                cblas_cdotu_sub(N, get_cste_ptr(X), incX, get_cste_ptr(Y), incY, get_ptr(dotu));
-            }
-        } break;
-        case cdotc: {
-            int N; cste_c_binary X; int incX; cste_c_binary Y; int incY; c_binary dotc;
-            
-            if( !(error = narg == 6? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_int, e_cste_ptr, e_int, e_ptr, e_end}, &N, &X, &incX, &Y, &incY, &dotc))
-            ){
-                cblas_cdotc_sub(N, get_cste_ptr(X), incX, get_cste_ptr(Y), incY, get_ptr(dotc));
-            }
-        } break;
-        case zdotu: {
-            int N; cste_c_binary X; int incX; cste_c_binary Y; int incY; c_binary dotu;
-            
-            if( !(error = narg == 6? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_int, e_cste_ptr, e_int, e_ptr, e_end}, &N, &X, &incX, &Y, &incY, &dotu))
-            ){
-                cblas_zdotu_sub(N, get_cste_ptr(X), incX, get_cste_ptr(Y), incY, get_ptr(dotu));
-            }
-        } break;
-        case zdotc: {
-            int N; cste_c_binary X; int incX; cste_c_binary Y; int incY; c_binary dotc;
-            
-            if( !(error = narg == 6? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_int, e_cste_ptr, e_int, e_ptr, e_end}, &N, &X, &incX, &Y, &incY, &dotc))
-            ){
-                cblas_zdotc_sub(N, get_cste_ptr(X), incX, get_cste_ptr(Y), incY, get_ptr(dotc));
-            }
-        } break;
-        case snrm2: {
-            int N; cste_c_binary X; int incX;
-            
+        break;}
+
+        case snrm2: case dnrm2: case scnrm2: case dznrm2:
+        case ssum: case dsum: case scsum: case dzsum: {
+            cste_c_binary u_result;
+            double d_result;
+            int i_result;
+
+            int n;  cste_c_binary x; int incx;
+
             if( !(error = narg == 3? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_int, e_end}, &N, &X, &incX))
+                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_int, e_end}, &n, &x, &incx))
+                && !(error = in_cste_bounds(type, n, incx, x))
             ){
-                cblas_snrm2(N, get_cste_ptr(X), incX);
+                switch(hash_name){
+                    case snrm2:  d_result  = cblas_snrm2 (n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_double, (unsigned char*) &d_result);  break;
+                    case dnrm2:  d_result  = cblas_dnrm2 (n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_double, (unsigned char*) &d_result);  break;
+                    case scnrm2: d_result  = cblas_scnrm2(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_double, (unsigned char*) &d_result);  break;
+                    case dznrm2: d_result  = cblas_dznrm2(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_double, (unsigned char*) &d_result);  break;
+                    
+                    case dsum:  d_result  = cblas_dsum (n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_double, (unsigned char*) &d_result);  break;
+                    case ssum:  d_result  = cblas_ssum (n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_double, (unsigned char*) &d_result);  break;
+                    case scsum: d_result  = cblas_scsum(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_double, (unsigned char*) &d_result);  break;
+                    case dzsum: d_result  = cblas_dzsum(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_double, (unsigned char*) &d_result);  break;
+                    
+                    case dasum:  d_result  = cblas_dasum (n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_double, (unsigned char*) &d_result);  break;
+                    case sasum:  d_result  = cblas_sasum (n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_double, (unsigned char*) &d_result);  break;
+                    case scasum: d_result  = cblas_scasum(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_double, (unsigned char*) &d_result);  break;
+                    case dzasum: d_result  = cblas_dzasum(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_double, (unsigned char*) &d_result);  break;
+                    
+                    case isamax: i_result  = cblas_isamax(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_int, (unsigned char*) &i_result);  break;
+                    case idamax: i_result  = cblas_idamax(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_int, (unsigned char*) &i_result);  break;
+                    case icamax: i_result  = cblas_icamax(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_int, (unsigned char*) &i_result);  break;
+                    case izamax: i_result  = cblas_izamax(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_int, (unsigned char*) &i_result);  break;
+
+                    case isamin: i_result  = cblas_isamin(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_int, (unsigned char*) &i_result);  break;
+                    case idamin: i_result  = cblas_idamin(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_int, (unsigned char*) &i_result);  break;
+                    case icamin: i_result  = cblas_icamin(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_int, (unsigned char*) &i_result);  break;
+                    case izamin: i_result  = cblas_izamin(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_int, (unsigned char*) &i_result);  break;
+
+                    case ismax: i_result  = cblas_ismax(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_int, (unsigned char*) &i_result);  break;
+                    case idmax: i_result  = cblas_idmax(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_int, (unsigned char*) &i_result);  break;
+                    case icmax: i_result  = cblas_icmax(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_int, (unsigned char*) &i_result);  break;
+                    case izmax: i_result  = cblas_izmax(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_int, (unsigned char*) &i_result);  break;
+
+                    case ismin: i_result  = cblas_ismin(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_int, (unsigned char*) &i_result);  break;
+                    case idmin: i_result  = cblas_idmin(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_int, (unsigned char*) &i_result);  break;
+                    case icmin: i_result  = cblas_icmin(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_int, (unsigned char*) &i_result);  break;
+                    case izmin: i_result  = cblas_izmin(n, get_cste_ptr(x), incx); set_cste_c_binary(&u_result, e_int, (unsigned char*) &i_result);  break;
+
+                    default: error = ERROR_NOT_FOUND; break;
+                }
+                result = cste_c_binary_to_term(env, u_result);
             }
-        } break;
-        case sasum: {
-            int N; cste_c_binary X; int incX;
             
-            if( !(error = narg == 3? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_int, e_end}, &N, &X, &incX))
-            ){
-                cblas_sasum(N, get_cste_ptr(X), incX);
-            }
-        } break;
-        case dnrm2: {
-            int N; cste_c_binary X; int incX;
+        break;}
+
+        case srot: case drot: case csrot: case zdrot:  {
+            int n;  c_binary x; int incx; c_binary y; int incy; cste_c_binary c; cste_c_binary s;
             
-            if( !(error = narg == 3? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_int, e_end}, &N, &X, &incX))
+            if( !(error = narg == 7? 0:ERROR_N_ARG)
+                && !(error = translate(env, elements, (etypes[]) {e_int, e_ptr, e_int, e_ptr, e_int, e_cste_ptr, e_cste_ptr, e_end}, &n, &x, &incx, &y, &incy, &c, &s))
+                && !(error = in_bounds(type, n, incx, x)) && !(error = in_bounds(type, n, incy, y))
             ){
-                cblas_dnrm2(N, get_cste_ptr(X), incX);
+                switch(hash_name){
+                    case srot:  cblas_srot(n, get_ptr(x),  incx, get_ptr(y), incy, get_cste_float(c), get_cste_float(s)); break;
+                    case drot:  cblas_drot(n, get_ptr(x),  incx, get_ptr(y), incy, get_cste_double(c), get_cste_double(s)); break;
+                    case csrot: cblas_csrot(n, get_ptr(x), incx, get_ptr(y), incy, get_cste_float(c), get_cste_float(s)); break;
+                    case zdrot: cblas_zdrot(n, get_ptr(x), incx, get_ptr(y), incy, get_cste_double(c), get_cste_double(s)); break;
+                    default: error = ERROR_NOT_FOUND; break;
+                }
+                
             }
-        } break;
-        case dasum: {
-            int N; cste_c_binary X; int incX;
             
-            if( !(error = narg == 3? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_int, e_end}, &N, &X, &incX))
-            ){
-                cblas_dasum(N, get_cste_ptr(X), incX);
-            }
-        } break;
-        case scnrm2: {
-            int N; cste_c_binary X; int incX;
-            
-            if( !(error = narg == 3? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_int, e_end}, &N, &X, &incX))
-            ){
-                cblas_scnrm2(N, get_cste_ptr(X), incX);
-            }
-        } break;
-        case scasum: {
-            int N; cste_c_binary X; int incX;
-            
-            if( !(error = narg == 3? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_int, e_end}, &N, &X, &incX))
-            ){
-                cblas_scasum(N, get_cste_ptr(X), incX);
-            }
-        } break;
-        case dznrm2: {
-            int N; cste_c_binary X; int incX;
-            
-            if( !(error = narg == 3? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_int, e_end}, &N, &X, &incX))
-            ){
-                cblas_dznrm2(N, get_cste_ptr(X), incX);
-            }
-        } break;
-        case dzasum: {
-            int N; cste_c_binary X; int incX;
-            
-            if( !(error = narg == 3? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_int, e_end}, &N, &X, &incX))
-            ){
-                cblas_dzasum(N, get_cste_ptr(X), incX);
-            }
-        } break;
-        case isamax: {
-            int N; cste_c_binary X; int incX;
-            
-            if( !(error = narg == 3? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_int, e_end}, &N, &X, &incX))
-            ){
-                cblas_isamax(N, get_cste_ptr(X), incX);
-            }
-        } break;
-        case idamax: {
-            int N; cste_c_binary X; int incX;
-            
-            if( !(error = narg == 3? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_int, e_end}, &N, &X, &incX))
-            ){
-                cblas_idamax(N, get_cste_ptr(X), incX);
-            }
-        } break;
-        case icamax: {
-            int N; cste_c_binary X; int incX;
-            
-            if( !(error = narg == 3? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_int, e_end}, &N, &X, &incX))
-            ){
-                cblas_icamax(N, get_cste_ptr(X), incX);
-            }
-        } break;
-        case izamax: {
-            int N; cste_c_binary X; int incX;
-            
-            if( !(error = narg == 3? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_int, e_end}, &N, &X, &incX))
-            ){
-                cblas_izamax(N, get_cste_ptr(X), incX);
-            }
-        } break;
-        case sswap: {
-            int N; c_binary X; int incX; c_binary Y; int incY;
-            
-            if( !(error = narg == 5? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_ptr, e_int, e_ptr, e_int, e_end}, &N, &X, &incX, &Y, &incY))
-            ){
-                cblas_sswap(N, get_ptr(X), incX, get_ptr(Y), incY);
-            }
-        } break;
-        case scopy: {
-            int N; cste_c_binary X; int incX; c_binary Y; int incY;
-            
-            if( !(error = narg == 5? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &N, &X, &incX, &Y, &incY))
-            ){
-                cblas_scopy(N, get_cste_ptr(X), incX, get_ptr(Y), incY);
-            }
-        } break;
-        case saxpy: {
-            int N; cste_c_binary alpha; cste_c_binary X; int incX; c_binary Y; int incY;
-            
-            if( !(error = narg == 6? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &N, &alpha, &X, &incX, &Y, &incY))
-            ){
-                cblas_saxpy(N, get_cste_float(alpha), get_cste_ptr(X), incX, get_ptr(Y), incY);
-            }
-        } break;
-        case dswap: {
-            int N; c_binary X; int incX; c_binary Y; int incY;
-            
-            if( !(error = narg == 5? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_ptr, e_int, e_ptr, e_int, e_end}, &N, &X, &incX, &Y, &incY))
-            ){
-                cblas_dswap(N, get_ptr(X), incX, get_ptr(Y), incY);
-            }
-        } break;
-        case dcopy: {
-            int N; cste_c_binary X; int incX; c_binary Y; int incY;
-            
-            if( !(error = narg == 5? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &N, &X, &incX, &Y, &incY))
-            ){
-                cblas_dcopy(N, get_cste_ptr(X), incX, get_ptr(Y), incY);
-            }
-        } break;
-        case daxpy: {
-            int N; cste_c_binary alpha; cste_c_binary X; int incX; c_binary Y; int incY;
-            
-            if( !(error = narg == 6? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &N, &alpha, &X, &incX, &Y, &incY))
-            ){
-                cblas_daxpy(N, get_cste_double(alpha), get_cste_ptr(X), incX, get_ptr(Y), incY);
-            }
-        } break;
-        case cswap: {
-            int N; c_binary X; int incX; c_binary Y; int incY;
-            
-            if( !(error = narg == 5? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_ptr, e_int, e_ptr, e_int, e_end}, &N, &X, &incX, &Y, &incY))
-            ){
-                cblas_cswap(N, get_ptr(X), incX, get_ptr(Y), incY);
-            }
-        } break;
-        case ccopy: {
-            int N; cste_c_binary X; int incX; c_binary Y; int incY;
-            
-            if( !(error = narg == 5? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &N, &X, &incX, &Y, &incY))
-            ){
-                cblas_ccopy(N, get_cste_ptr(X), incX, get_ptr(Y), incY);
-            }
-        } break;
-        case caxpy: {
-            int N; cste_c_binary alpha; cste_c_binary X; int incX; c_binary Y; int incY;
-            
-            if( !(error = narg == 6? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &N, &alpha, &X, &incX, &Y, &incY))
-            ){
-                cblas_caxpy(N, get_cste_ptr(alpha), get_cste_ptr(X), incX, get_ptr(Y), incY);
-            }
-        } break;
-        case zswap: {
-            int N; c_binary X; int incX; c_binary Y; int incY;
-            
-            if( !(error = narg == 5? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_ptr, e_int, e_ptr, e_int, e_end}, &N, &X, &incX, &Y, &incY))
-            ){
-                cblas_zswap(N, get_ptr(X), incX, get_ptr(Y), incY);
-            }
-        } break;
-        case zcopy: {
-            int N; cste_c_binary X; int incX; c_binary Y; int incY;
-            
-            if( !(error = narg == 5? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &N, &X, &incX, &Y, &incY))
-            ){
-                cblas_zcopy(N, get_cste_ptr(X), incX, get_ptr(Y), incY);
-            }
-        } break;
-        case zaxpy: {
-            int N; cste_c_binary alpha; cste_c_binary X; int incX; c_binary Y; int incY;
-            
-            if( !(error = narg == 6? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &N, &alpha, &X, &incX, &Y, &incY))
-            ){
-                cblas_zaxpy(N, get_cste_ptr(alpha), get_cste_ptr(X), incX, get_ptr(Y), incY);
-            }
-        } break;
-        case srotg: {
+        break;}
+
+        case srotg: case drotg: case crotg: case zrotg:  {
             c_binary a; c_binary b; c_binary c; c_binary s;
-            
+
             if( !(error = narg == 4? 0:ERROR_N_ARG)
                 && !(error = translate(env, elements, (etypes[]) {e_ptr, e_ptr, e_ptr, e_ptr, e_end}, &a, &b, &c, &s))
+                && !(error = in_bounds(type, 1, 1, a)) && !(error = in_bounds(type, 1, 1, b)) && !(error = in_bounds(type, 1, 1, c)) && !(error = in_bounds(type, 1, 1, s))
             ){
-                cblas_srotg(get_ptr(a), get_ptr(b), get_ptr(c), get_ptr(s));
+                switch(hash_name){
+                    case srotg: cblas_srotg(get_ptr(a), get_ptr(b), get_ptr(c), get_ptr(s)); break;
+                    case drotg: cblas_drotg(get_ptr(a), get_ptr(b), get_ptr(c), get_ptr(s)); break;
+                    case crotg: cblas_crotg(get_ptr(a), get_ptr(b), get_ptr(c), get_ptr(s)); break;
+                    case zrotg: cblas_zrotg(get_ptr(a), get_ptr(b), get_ptr(c), get_ptr(s)); break;
+                    default: error = ERROR_NOT_FOUND; break;
+                }
+                
             }
-        } break;
-        case srotmg: {
-            c_binary d1; c_binary d2; c_binary b1; cste_c_binary b2; c_binary P;
             
-            if( !(error = narg == 5? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_ptr, e_ptr, e_ptr, e_cste_ptr, e_ptr, e_end}, &d1, &d2, &b1, &b2, &P))
-            ){
-                cblas_srotmg(get_ptr(d1), get_ptr(d2), get_ptr(b1), get_cste_float(b2), get_ptr(P));
-            }
-        } break;
-        case srot: {
-            int N; c_binary X; int incX; c_binary Y; int incY; cste_c_binary c; cste_c_binary s;
-            
-            if( !(error = narg == 7? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_ptr, e_int, e_ptr, e_int, e_cste_ptr, e_cste_ptr, e_end}, &N, &X, &incX, &Y, &incY, &c, &s))
-            ){
-                cblas_srot(N, get_ptr(X), incX, get_ptr(Y), incY, get_cste_float(c), get_cste_float(s));
-            }
-        } break;
-        case srotm: {
-            int N; c_binary X; int incX; c_binary Y; int incY; cste_c_binary P;
-            
+        break;}
+
+        case srotm: case drotm:  {
+            int n; c_binary x; int incx; c_binary y; int incy; cste_c_binary param;
+
             if( !(error = narg == 6? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_ptr, e_int, e_ptr, e_int, e_cste_ptr, e_end}, &N, &X, &incX, &Y, &incY, &P))
+                && !(error = translate(env, elements, (etypes[]) {e_int, e_ptr, e_int, e_ptr, e_int, e_cste_ptr, e_end}, &n, &x, &incx, &y, &incy, &param))
+                && !(error = in_bounds(type, n, incx, x)) && !(error = in_bounds(type, n, incy, y)) && !(error = in_cste_bounds(type, 5, 1, param))
             ){
-                cblas_srotm(N, get_ptr(X), incX, get_ptr(Y), incY, get_cste_ptr(P));
+                switch(hash_name){
+                    case srotm: cblas_srotm(n, get_ptr(x), incx, get_ptr(y), incy, get_cste_ptr(param)); break;
+                    case drotm: cblas_srotm(n, get_ptr(x), incx, get_ptr(y), incy, get_cste_ptr(param)); break;
+                    default: error = ERROR_NOT_FOUND; break;
+                }
             }
-        } break;
-        case drotg: {
-            c_binary a; c_binary b; c_binary c; c_binary s;
             
-            if( !(error = narg == 4? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_ptr, e_ptr, e_ptr, e_ptr, e_end}, &a, &b, &c, &s))
-            ){
-                cblas_drotg(get_ptr(a), get_ptr(b), get_ptr(c), get_ptr(s));
-            }
-        } break;
-        case drotmg: {
-            c_binary d1; c_binary d2; c_binary b1; cste_c_binary b2; c_binary P;
+        break;}
+
+        case srotmg: case drotmg:  {
+            c_binary d1; c_binary d2; c_binary b1; cste_c_binary b2; c_binary param;
             
+
             if( !(error = narg == 5? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_ptr, e_ptr, e_ptr, e_cste_ptr, e_ptr, e_end}, &d1, &d2, &b1, &b2, &P))
-            ){
-                cblas_drotmg(get_ptr(d1), get_ptr(d2), get_ptr(b1), get_cste_double(b2), get_ptr(P));
-            }
-        } break;
-        case drot: {
-            int N; c_binary X; int incX; c_binary Y; int incY; cste_c_binary c; cste_c_binary s;
-            
-            if( !(error = narg == 7? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_ptr, e_int, e_ptr, e_int, e_cste_ptr, e_cste_ptr, e_end}, &N, &X, &incX, &Y, &incY, &c, &s))
-            ){
-                cblas_drot(N, get_ptr(X), incX, get_ptr(Y), incY, get_cste_double(c), get_cste_double(s));
-            }
-        } break;
-        case drotm: {
-            int N; c_binary X; int incX; c_binary Y; int incY; cste_c_binary P;
-            
-            if( !(error = narg == 6? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_ptr, e_int, e_ptr, e_int, e_cste_ptr, e_end}, &N, &X, &incX, &Y, &incY, &P))
-            ){
-                cblas_drotm(N, get_ptr(X), incX, get_ptr(Y), incY, get_cste_ptr(P));
-            }
-        } break;
-        case sscal: {
-            int N; cste_c_binary alpha; c_binary X; int incX;
-            
-            if( !(error = narg == 4? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_ptr, e_int, e_end}, &N, &alpha, &X, &incX))
-            ){
-                cblas_sscal(N, get_cste_float(alpha), get_ptr(X), incX);
-            }
-        } break;
-        case dscal: {
-            int N; cste_c_binary alpha; c_binary X; int incX;
-            
-            if( !(error = narg == 4? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_ptr, e_int, e_end}, &N, &alpha, &X, &incX))
-            ){
-                cblas_dscal(N, get_cste_double(alpha), get_ptr(X), incX);
-            }
-        } break;
-        case cscal: {
-            int N; cste_c_binary alpha; c_binary X; int incX;
-            
-            if( !(error = narg == 4? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_ptr, e_int, e_end}, &N, &alpha, &X, &incX))
-            ){
-                cblas_cscal(N, get_cste_ptr(alpha), get_ptr(X), incX);
-            }
-        } break;
-        case zscal: {
-            int N; cste_c_binary alpha; c_binary X; int incX;
-            
-            if( !(error = narg == 4? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_ptr, e_int, e_end}, &N, &alpha, &X, &incX))
-            ){
-                cblas_zscal(N, get_cste_ptr(alpha), get_ptr(X), incX);
-            }
-        } break;
-        case csscal: {
-            int N; cste_c_binary alpha; c_binary X; int incX;
-            
-            if( !(error = narg == 4? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_ptr, e_int, e_end}, &N, &alpha, &X, &incX))
-            ){
-                cblas_csscal(N, get_cste_float(alpha), get_ptr(X), incX);
-            }
-        } break;
-        case zdscal: {
-            int N; cste_c_binary alpha; c_binary X; int incX;
-            
-            if( !(error = narg == 4? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_int, e_cste_ptr, e_ptr, e_int, e_end}, &N, &alpha, &X, &incX))
-            ){
-                cblas_zdscal(N, get_cste_double(alpha), get_ptr(X), incX);
-            }
-        } break;
-        case sgemv: {
-            int order; int TransA; int M; int N; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary X; int incX; cste_c_binary beta; c_binary Y; int incY;
-            
-            if( !(error = narg == 12? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_transpose, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &order, &TransA, &M, &N, &alpha, &A, &lda, &X, &incX, &beta, &Y, &incY))
-            ){
-                cblas_sgemv(order, TransA, M, N, get_cste_float(alpha), get_cste_ptr(A), lda, get_cste_ptr(X), incX, get_cste_float(beta), get_ptr(Y), incY);
-            }
-        } break;
-        case sgbmv: {
-            int order; int TransA; int M; int N; int KL; int KU; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary X; int incX; cste_c_binary beta; c_binary Y; int incY;
-            
-            if( !(error = narg == 14? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_transpose, e_int, e_int, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &order, &TransA, &M, &N, &KL, &KU, &alpha, &A, &lda, &X, &incX, &beta, &Y, &incY))
-            ){
-                cblas_sgbmv(order, TransA, M, N, KL, KU, get_cste_float(alpha), get_cste_ptr(A), lda, get_cste_ptr(X), incX, get_cste_float(beta), get_ptr(Y), incY);
-            }
-        } break;
-        case strmv: {
-            int order; int Uplo; int TransA; int Diag; int N; cste_c_binary A; int lda; c_binary X; int incX;
-            
-            if( !(error = narg == 9? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_diag, e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &order, &Uplo, &TransA, &Diag, &N, &A, &lda, &X, &incX))
-            ){
-                cblas_strmv(order, Uplo, TransA, Diag, N, get_cste_ptr(A), lda, get_ptr(X), incX);
-            }
-        } break;
-        case stbmv: {
-            int order; int Uplo; int TransA; int Diag; int N; int K; cste_c_binary A; int lda; c_binary X; int incX;
-            
-            if( !(error = narg == 10? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_diag, e_int, e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &order, &Uplo, &TransA, &Diag, &N, &K, &A, &lda, &X, &incX))
-            ){
-                cblas_stbmv(order, Uplo, TransA, Diag, N, K, get_cste_ptr(A), lda, get_ptr(X), incX);
-            }
-        } break;
-        case stpmv: {
-            int order; int Uplo; int TransA; int Diag; int N; cste_c_binary Ap; c_binary X; int incX;
-            
-            if( !(error = narg == 8? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_diag, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &order, &Uplo, &TransA, &Diag, &N, &Ap, &X, &incX))
-            ){
-                cblas_stpmv(order, Uplo, TransA, Diag, N, get_cste_ptr(Ap), get_ptr(X), incX);
-            }
-        } break;
-        case strsv: {
-            int order; int Uplo; int TransA; int Diag; int N; cste_c_binary A; int lda; c_binary X; int incX;
-            
-            if( !(error = narg == 9? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_diag, e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &order, &Uplo, &TransA, &Diag, &N, &A, &lda, &X, &incX))
-            ){
-                cblas_strsv(order, Uplo, TransA, Diag, N, get_cste_ptr(A), lda, get_ptr(X), incX);
-            }
-        } break;
-        case stbsv: {
-            int order; int Uplo; int TransA; int Diag; int N; int K; cste_c_binary A; int lda; c_binary X; int incX;
-            
-            if( !(error = narg == 10? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_diag, e_int, e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &order, &Uplo, &TransA, &Diag, &N, &K, &A, &lda, &X, &incX))
-            ){
-                cblas_stbsv(order, Uplo, TransA, Diag, N, K, get_cste_ptr(A), lda, get_ptr(X), incX);
-            }
-        } break;
-        case stpsv: {
-            int order; int Uplo; int TransA; int Diag; int N; cste_c_binary Ap; c_binary X; int incX;
-            
-            if( !(error = narg == 8? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_diag, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &order, &Uplo, &TransA, &Diag, &N, &Ap, &X, &incX))
-            ){
-                cblas_stpsv(order, Uplo, TransA, Diag, N, get_cste_ptr(Ap), get_ptr(X), incX);
-            }
-        } break;
-        case dgemv: {
-            int order; int TransA; int M; int N; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary X; int incX; cste_c_binary beta; c_binary Y; int incY;
-            
-            if( !(error = narg == 12? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_transpose, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &order, &TransA, &M, &N, &alpha, &A, &lda, &X, &incX, &beta, &Y, &incY))
-            ){
-                cblas_dgemv(order, TransA, M, N, get_cste_double(alpha), get_cste_ptr(A), lda, get_cste_ptr(X), incX, get_cste_double(beta), get_ptr(Y), incY);
-            }
-        } break;
-        case dgbmv: {
-            int order; int TransA; int M; int N; int KL; int KU; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary X; int incX; cste_c_binary beta; c_binary Y; int incY;
-            
-            if( !(error = narg == 14? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_transpose, e_int, e_int, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &order, &TransA, &M, &N, &KL, &KU, &alpha, &A, &lda, &X, &incX, &beta, &Y, &incY))
-            ){
-                cblas_dgbmv(order, TransA, M, N, KL, KU, get_cste_double(alpha), get_cste_ptr(A), lda, get_cste_ptr(X), incX, get_cste_double(beta), get_ptr(Y), incY);
-            }
-        } break;
-        case dtrmv: {
-            int order; int Uplo; int TransA; int Diag; int N; cste_c_binary A; int lda; c_binary X; int incX;
-            
-            if( !(error = narg == 9? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_diag, e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &order, &Uplo, &TransA, &Diag, &N, &A, &lda, &X, &incX))
-            ){
-                cblas_dtrmv(order, Uplo, TransA, Diag, N, get_cste_ptr(A), lda, get_ptr(X), incX);
-            }
-        } break;
-        case dtbmv: {
-            int order; int Uplo; int TransA; int Diag; int N; int K; cste_c_binary A; int lda; c_binary X; int incX;
-            
-            if( !(error = narg == 10? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_diag, e_int, e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &order, &Uplo, &TransA, &Diag, &N, &K, &A, &lda, &X, &incX))
-            ){
-                cblas_dtbmv(order, Uplo, TransA, Diag, N, K, get_cste_ptr(A), lda, get_ptr(X), incX);
-            }
-        } break;
-        case dtpmv: {
-            int order; int Uplo; int TransA; int Diag; int N; cste_c_binary Ap; c_binary X; int incX;
-            
-            if( !(error = narg == 8? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_diag, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &order, &Uplo, &TransA, &Diag, &N, &Ap, &X, &incX))
-            ){
-                cblas_dtpmv(order, Uplo, TransA, Diag, N, get_cste_ptr(Ap), get_ptr(X), incX);
-            }
-        } break;
-        case dtrsv: {
-            int order; int Uplo; int TransA; int Diag; int N; cste_c_binary A; int lda; c_binary X; int incX;
-            
-            if( !(error = narg == 9? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_diag, e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &order, &Uplo, &TransA, &Diag, &N, &A, &lda, &X, &incX))
-            ){
-                cblas_dtrsv(order, Uplo, TransA, Diag, N, get_cste_ptr(A), lda, get_ptr(X), incX);
-            }
-        } break;
-        case dtbsv: {
-            int order; int Uplo; int TransA; int Diag; int N; int K; cste_c_binary A; int lda; c_binary X; int incX;
-            
-            if( !(error = narg == 10? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_diag, e_int, e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &order, &Uplo, &TransA, &Diag, &N, &K, &A, &lda, &X, &incX))
-            ){
-                cblas_dtbsv(order, Uplo, TransA, Diag, N, K, get_cste_ptr(A), lda, get_ptr(X), incX);
-            }
-        } break;
-        case dtpsv: {
-            int order; int Uplo; int TransA; int Diag; int N; cste_c_binary Ap; c_binary X; int incX;
-            
-            if( !(error = narg == 8? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_diag, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &order, &Uplo, &TransA, &Diag, &N, &Ap, &X, &incX))
-            ){
-                cblas_dtpsv(order, Uplo, TransA, Diag, N, get_cste_ptr(Ap), get_ptr(X), incX);
-            }
-        } break;
-        case cgemv: {
-            int order; int TransA; int M; int N; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary X; int incX; cste_c_binary beta; c_binary Y; int incY;
-            
-            if( !(error = narg == 12? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_transpose, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &order, &TransA, &M, &N, &alpha, &A, &lda, &X, &incX, &beta, &Y, &incY))
-            ){
-                cblas_cgemv(order, TransA, M, N, get_cste_ptr(alpha), get_cste_ptr(A), lda, get_cste_ptr(X), incX, get_cste_ptr(beta), get_ptr(Y), incY);
-            }
-        } break;
-        case cgbmv: {
-            int order; int TransA; int M; int N; int KL; int KU; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary X; int incX; cste_c_binary beta; c_binary Y; int incY;
-            
-            if( !(error = narg == 14? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_transpose, e_int, e_int, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &order, &TransA, &M, &N, &KL, &KU, &alpha, &A, &lda, &X, &incX, &beta, &Y, &incY))
-            ){
-                cblas_cgbmv(order, TransA, M, N, KL, KU, get_cste_ptr(alpha), get_cste_ptr(A), lda, get_cste_ptr(X), incX, get_cste_ptr(beta), get_ptr(Y), incY);
-            }
-        } break;
-        case ctrmv: {
-            int order; int Uplo; int TransA; int Diag; int N; cste_c_binary A; int lda; c_binary X; int incX;
-            
-            if( !(error = narg == 9? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_diag, e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &order, &Uplo, &TransA, &Diag, &N, &A, &lda, &X, &incX))
-            ){
-                cblas_ctrmv(order, Uplo, TransA, Diag, N, get_cste_ptr(A), lda, get_ptr(X), incX);
-            }
-        } break;
-        case ctbmv: {
-            int order; int Uplo; int TransA; int Diag; int N; int K; cste_c_binary A; int lda; c_binary X; int incX;
-            
-            if( !(error = narg == 10? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_diag, e_int, e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &order, &Uplo, &TransA, &Diag, &N, &K, &A, &lda, &X, &incX))
-            ){
-                cblas_ctbmv(order, Uplo, TransA, Diag, N, K, get_cste_ptr(A), lda, get_ptr(X), incX);
-            }
-        } break;
-        case ctpmv: {
-            int order; int Uplo; int TransA; int Diag; int N; cste_c_binary Ap; c_binary X; int incX;
-            
-            if( !(error = narg == 8? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_diag, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &order, &Uplo, &TransA, &Diag, &N, &Ap, &X, &incX))
-            ){
-                cblas_ctpmv(order, Uplo, TransA, Diag, N, get_cste_ptr(Ap), get_ptr(X), incX);
-            }
-        } break;
-        case ctrsv: {
-            int order; int Uplo; int TransA; int Diag; int N; cste_c_binary A; int lda; c_binary X; int incX;
-            
-            if( !(error = narg == 9? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_diag, e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &order, &Uplo, &TransA, &Diag, &N, &A, &lda, &X, &incX))
-            ){
-                cblas_ctrsv(order, Uplo, TransA, Diag, N, get_cste_ptr(A), lda, get_ptr(X), incX);
-            }
-        } break;
-        case ctbsv: {
-            int order; int Uplo; int TransA; int Diag; int N; int K; cste_c_binary A; int lda; c_binary X; int incX;
-            
-            if( !(error = narg == 10? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_diag, e_int, e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &order, &Uplo, &TransA, &Diag, &N, &K, &A, &lda, &X, &incX))
-            ){
-                cblas_ctbsv(order, Uplo, TransA, Diag, N, K, get_cste_ptr(A), lda, get_ptr(X), incX);
-            }
-        } break;
-        case ctpsv: {
-            int order; int Uplo; int TransA; int Diag; int N; cste_c_binary Ap; c_binary X; int incX;
-            
-            if( !(error = narg == 8? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_diag, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &order, &Uplo, &TransA, &Diag, &N, &Ap, &X, &incX))
-            ){
-                cblas_ctpsv(order, Uplo, TransA, Diag, N, get_cste_ptr(Ap), get_ptr(X), incX);
-            }
-        } break;
-        case zgemv: {
-            int order; int TransA; int M; int N; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary X; int incX; cste_c_binary beta; c_binary Y; int incY;
-            
-            if( !(error = narg == 12? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_transpose, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &order, &TransA, &M, &N, &alpha, &A, &lda, &X, &incX, &beta, &Y, &incY))
-            ){
-                cblas_zgemv(order, TransA, M, N, get_cste_ptr(alpha), get_cste_ptr(A), lda, get_cste_ptr(X), incX, get_cste_ptr(beta), get_ptr(Y), incY);
-            }
-        } break;
-        case zgbmv: {
-            int order; int TransA; int M; int N; int KL; int KU; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary X; int incX; cste_c_binary beta; c_binary Y; int incY;
-            
-            if( !(error = narg == 14? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_transpose, e_int, e_int, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &order, &TransA, &M, &N, &KL, &KU, &alpha, &A, &lda, &X, &incX, &beta, &Y, &incY))
-            ){
-                cblas_zgbmv(order, TransA, M, N, KL, KU, get_cste_ptr(alpha), get_cste_ptr(A), lda, get_cste_ptr(X), incX, get_cste_ptr(beta), get_ptr(Y), incY);
-            }
-        } break;
-        case ztrmv: {
-            int order; int Uplo; int TransA; int Diag; int N; cste_c_binary A; int lda; c_binary X; int incX;
-            
-            if( !(error = narg == 9? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_diag, e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &order, &Uplo, &TransA, &Diag, &N, &A, &lda, &X, &incX))
-            ){
-                cblas_ztrmv(order, Uplo, TransA, Diag, N, get_cste_ptr(A), lda, get_ptr(X), incX);
-            }
-        } break;
-        case ztbmv: {
-            int order; int Uplo; int TransA; int Diag; int N; int K; cste_c_binary A; int lda; c_binary X; int incX;
-            
-            if( !(error = narg == 10? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_diag, e_int, e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &order, &Uplo, &TransA, &Diag, &N, &K, &A, &lda, &X, &incX))
-            ){
-                cblas_ztbmv(order, Uplo, TransA, Diag, N, K, get_cste_ptr(A), lda, get_ptr(X), incX);
-            }
-        } break;
-        case ztpmv: {
-            int order; int Uplo; int TransA; int Diag; int N; cste_c_binary Ap; c_binary X; int incX;
-            
-            if( !(error = narg == 8? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_diag, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &order, &Uplo, &TransA, &Diag, &N, &Ap, &X, &incX))
-            ){
-                cblas_ztpmv(order, Uplo, TransA, Diag, N, get_cste_ptr(Ap), get_ptr(X), incX);
-            }
-        } break;
-        case ztrsv: {
-            int order; int Uplo; int TransA; int Diag; int N; cste_c_binary A; int lda; c_binary X; int incX;
-            
-            if( !(error = narg == 9? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_diag, e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &order, &Uplo, &TransA, &Diag, &N, &A, &lda, &X, &incX))
-            ){
-                cblas_ztrsv(order, Uplo, TransA, Diag, N, get_cste_ptr(A), lda, get_ptr(X), incX);
-            }
-        } break;
-        case ztbsv: {
-            int order; int Uplo; int TransA; int Diag; int N; int K; cste_c_binary A; int lda; c_binary X; int incX;
-            
-            if( !(error = narg == 10? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_diag, e_int, e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &order, &Uplo, &TransA, &Diag, &N, &K, &A, &lda, &X, &incX))
-            ){
-                cblas_ztbsv(order, Uplo, TransA, Diag, N, K, get_cste_ptr(A), lda, get_ptr(X), incX);
-            }
-        } break;
-        case ztpsv: {
-            int order; int Uplo; int TransA; int Diag; int N; cste_c_binary Ap; c_binary X; int incX;
-            
-            if( !(error = narg == 8? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_diag, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &order, &Uplo, &TransA, &Diag, &N, &Ap, &X, &incX))
-            ){
-                cblas_ztpsv(order, Uplo, TransA, Diag, N, get_cste_ptr(Ap), get_ptr(X), incX);
-            }
-        } break;
-        case ssymv: {
-            int order; int Uplo; int N; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary X; int incX; cste_c_binary beta; c_binary Y; int incY;
-            
-            if( !(error = narg == 11? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &order, &Uplo, &N, &alpha, &A, &lda, &X, &incX, &beta, &Y, &incY))
-            ){
-                cblas_ssymv(order, Uplo, N, get_cste_float(alpha), get_cste_ptr(A), lda, get_cste_ptr(X), incX, get_cste_float(beta), get_ptr(Y), incY);
-            }
-        } break;
-        case ssbmv: {
-            int order; int Uplo; int N; int K; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary X; int incX; cste_c_binary beta; c_binary Y; int incY;
-            
-            if( !(error = narg == 12? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &order, &Uplo, &N, &K, &alpha, &A, &lda, &X, &incX, &beta, &Y, &incY))
-            ){
-                cblas_ssbmv(order, Uplo, N, K, get_cste_float(alpha), get_cste_ptr(A), lda, get_cste_ptr(X), incX, get_cste_float(beta), get_ptr(Y), incY);
-            }
-        } break;
-        case sspmv: {
-            int order; int Uplo; int N; cste_c_binary alpha; cste_c_binary Ap; cste_c_binary X; int incX; cste_c_binary beta; c_binary Y; int incY;
-            
-            if( !(error = narg == 10? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_int, e_cste_ptr, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &order, &Uplo, &N, &alpha, &Ap, &X, &incX, &beta, &Y, &incY))
-            ){
-                cblas_sspmv(order, Uplo, N, get_cste_float(alpha), get_cste_ptr(Ap), get_cste_ptr(X), incX, get_cste_float(beta), get_ptr(Y), incY);
-            }
-        } break;
-        case sger: {
-            int order; int M; int N; cste_c_binary alpha; cste_c_binary X; int incX; cste_c_binary Y; int incY; c_binary A; int lda;
-            
-            if( !(error = narg == 10? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &order, &M, &N, &alpha, &X, &incX, &Y, &incY, &A, &lda))
-            ){
-                cblas_sger(order, M, N, get_cste_float(alpha), get_cste_ptr(X), incX, get_cste_ptr(Y), incY, get_ptr(A), lda);
-            }
-        } break;
-        case ssyr: {
-            int order; int Uplo; int N; cste_c_binary alpha; cste_c_binary X; int incX; c_binary A; int lda;
-            
-            if( !(error = narg == 8? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_int, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &order, &Uplo, &N, &alpha, &X, &incX, &A, &lda))
-            ){
-                cblas_ssyr(order, Uplo, N, get_cste_float(alpha), get_cste_ptr(X), incX, get_ptr(A), lda);
-            }
-        } break;
-        case sspr: {
-            int order; int Uplo; int N; cste_c_binary alpha; cste_c_binary X; int incX; c_binary Ap;
-            
-            if( !(error = narg == 7? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_int, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_end}, &order, &Uplo, &N, &alpha, &X, &incX, &Ap))
-            ){
-                cblas_sspr(order, Uplo, N, get_cste_float(alpha), get_cste_ptr(X), incX, get_ptr(Ap));
-            }
-        } break;
-        case ssyr2: {
-            int order; int Uplo; int N; cste_c_binary alpha; cste_c_binary X; int incX; cste_c_binary Y; int incY; c_binary A; int lda;
-            
-            if( !(error = narg == 10? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &order, &Uplo, &N, &alpha, &X, &incX, &Y, &incY, &A, &lda))
-            ){
-                cblas_ssyr2(order, Uplo, N, get_cste_float(alpha), get_cste_ptr(X), incX, get_cste_ptr(Y), incY, get_ptr(A), lda);
-            }
-        } break;
-        case sspr2: {
-            int order; int Uplo; int N; cste_c_binary alpha; cste_c_binary X; int incX; cste_c_binary Y; int incY; c_binary A;
-            
-            if( !(error = narg == 9? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_ptr, e_end}, &order, &Uplo, &N, &alpha, &X, &incX, &Y, &incY, &A))
-            ){
-                cblas_sspr2(order, Uplo, N, get_cste_float(alpha), get_cste_ptr(X), incX, get_cste_ptr(Y), incY, get_ptr(A));
-            }
-        } break;
-        case dsymv: {
-            int order; int Uplo; int N; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary X; int incX; cste_c_binary beta; c_binary Y; int incY;
-            
-            if( !(error = narg == 11? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &order, &Uplo, &N, &alpha, &A, &lda, &X, &incX, &beta, &Y, &incY))
-            ){
-                cblas_dsymv(order, Uplo, N, get_cste_double(alpha), get_cste_ptr(A), lda, get_cste_ptr(X), incX, get_cste_double(beta), get_ptr(Y), incY);
-            }
-        } break;
-        case dsbmv: {
-            int order; int Uplo; int N; int K; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary X; int incX; cste_c_binary beta; c_binary Y; int incY;
-            
-            if( !(error = narg == 12? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &order, &Uplo, &N, &K, &alpha, &A, &lda, &X, &incX, &beta, &Y, &incY))
-            ){
-                cblas_dsbmv(order, Uplo, N, K, get_cste_double(alpha), get_cste_ptr(A), lda, get_cste_ptr(X), incX, get_cste_double(beta), get_ptr(Y), incY);
-            }
-        } break;
-        case dspmv: {
-            int order; int Uplo; int N; cste_c_binary alpha; cste_c_binary Ap; cste_c_binary X; int incX; cste_c_binary beta; c_binary Y; int incY;
-            
-            if( !(error = narg == 10? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_int, e_cste_ptr, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &order, &Uplo, &N, &alpha, &Ap, &X, &incX, &beta, &Y, &incY))
-            ){
-                cblas_dspmv(order, Uplo, N, get_cste_double(alpha), get_cste_ptr(Ap), get_cste_ptr(X), incX, get_cste_double(beta), get_ptr(Y), incY);
-            }
-        } break;
-        case dger: {
-            int order; int M; int N; cste_c_binary alpha; cste_c_binary X; int incX; cste_c_binary Y; int incY; c_binary A; int lda;
-            
-            if( !(error = narg == 10? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &order, &M, &N, &alpha, &X, &incX, &Y, &incY, &A, &lda))
-            ){
-                cblas_dger(order, M, N, get_cste_double(alpha), get_cste_ptr(X), incX, get_cste_ptr(Y), incY, get_ptr(A), lda);
-            }
-        } break;
-        case dsyr: {
-            int order; int Uplo; int N; cste_c_binary alpha; cste_c_binary X; int incX; c_binary A; int lda;
-            
-            if( !(error = narg == 8? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_int, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &order, &Uplo, &N, &alpha, &X, &incX, &A, &lda))
-            ){
-                cblas_dsyr(order, Uplo, N, get_cste_double(alpha), get_cste_ptr(X), incX, get_ptr(A), lda);
-            }
-        } break;
-        case dspr: {
-            int order; int Uplo; int N; cste_c_binary alpha; cste_c_binary X; int incX; c_binary Ap;
-            
-            if( !(error = narg == 7? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_int, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_end}, &order, &Uplo, &N, &alpha, &X, &incX, &Ap))
-            ){
-                cblas_dspr(order, Uplo, N, get_cste_double(alpha), get_cste_ptr(X), incX, get_ptr(Ap));
-            }
-        } break;
-        case dsyr2: {
-            int order; int Uplo; int N; cste_c_binary alpha; cste_c_binary X; int incX; cste_c_binary Y; int incY; c_binary A; int lda;
-            
-            if( !(error = narg == 10? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &order, &Uplo, &N, &alpha, &X, &incX, &Y, &incY, &A, &lda))
-            ){
-                cblas_dsyr2(order, Uplo, N, get_cste_double(alpha), get_cste_ptr(X), incX, get_cste_ptr(Y), incY, get_ptr(A), lda);
-            }
-        } break;
-        case dspr2: {
-            int order; int Uplo; int N; cste_c_binary alpha; cste_c_binary X; int incX; cste_c_binary Y; int incY; c_binary A;
-            
-            if( !(error = narg == 9? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_ptr, e_end}, &order, &Uplo, &N, &alpha, &X, &incX, &Y, &incY, &A))
-            ){
-                cblas_dspr2(order, Uplo, N, get_cste_double(alpha), get_cste_ptr(X), incX, get_cste_ptr(Y), incY, get_ptr(A));
-            }
-        } break;
-        case chemv: {
-            int order; int Uplo; int N; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary X; int incX; cste_c_binary beta; c_binary Y; int incY;
-            
-            if( !(error = narg == 11? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &order, &Uplo, &N, &alpha, &A, &lda, &X, &incX, &beta, &Y, &incY))
-            ){
-                cblas_chemv(order, Uplo, N, get_cste_ptr(alpha), get_cste_ptr(A), lda, get_cste_ptr(X), incX, get_cste_ptr(beta), get_ptr(Y), incY);
-            }
-        } break;
-        case chbmv: {
-            int order; int Uplo; int N; int K; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary X; int incX; cste_c_binary beta; c_binary Y; int incY;
-            
-            if( !(error = narg == 12? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &order, &Uplo, &N, &K, &alpha, &A, &lda, &X, &incX, &beta, &Y, &incY))
-            ){
-                cblas_chbmv(order, Uplo, N, K, get_cste_ptr(alpha), get_cste_ptr(A), lda, get_cste_ptr(X), incX, get_cste_ptr(beta), get_ptr(Y), incY);
-            }
-        } break;
-        case chpmv: {
-            int order; int Uplo; int N; cste_c_binary alpha; cste_c_binary Ap; cste_c_binary X; int incX; cste_c_binary beta; c_binary Y; int incY;
-            
-            if( !(error = narg == 10? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_int, e_cste_ptr, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &order, &Uplo, &N, &alpha, &Ap, &X, &incX, &beta, &Y, &incY))
-            ){
-                cblas_chpmv(order, Uplo, N, get_cste_ptr(alpha), get_cste_ptr(Ap), get_cste_ptr(X), incX, get_cste_ptr(beta), get_ptr(Y), incY);
-            }
-        } break;
-        case cgeru: {
-            int order; int M; int N; cste_c_binary alpha; cste_c_binary X; int incX; cste_c_binary Y; int incY; c_binary A; int lda;
-            
-            if( !(error = narg == 10? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &order, &M, &N, &alpha, &X, &incX, &Y, &incY, &A, &lda))
-            ){
-                cblas_cgeru(order, M, N, get_cste_ptr(alpha), get_cste_ptr(X), incX, get_cste_ptr(Y), incY, get_ptr(A), lda);
-            }
-        } break;
-        case cgerc: {
-            int order; int M; int N; cste_c_binary alpha; cste_c_binary X; int incX; cste_c_binary Y; int incY; c_binary A; int lda;
-            
-            if( !(error = narg == 10? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &order, &M, &N, &alpha, &X, &incX, &Y, &incY, &A, &lda))
-            ){
-                cblas_cgerc(order, M, N, get_cste_ptr(alpha), get_cste_ptr(X), incX, get_cste_ptr(Y), incY, get_ptr(A), lda);
-            }
-        } break;
-        case cher: {
-            int order; int Uplo; int N; cste_c_binary alpha; cste_c_binary X; int incX; c_binary A; int lda;
-            
-            if( !(error = narg == 8? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_int, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &order, &Uplo, &N, &alpha, &X, &incX, &A, &lda))
-            ){
-                cblas_cher(order, Uplo, N, get_cste_float(alpha), get_cste_ptr(X), incX, get_ptr(A), lda);
-            }
-        } break;
-        case chpr: {
-            int order; int Uplo; int N; cste_c_binary alpha; cste_c_binary X; int incX; c_binary A;
-            
-            if( !(error = narg == 7? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_int, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_end}, &order, &Uplo, &N, &alpha, &X, &incX, &A))
-            ){
-                cblas_chpr(order, Uplo, N, get_cste_float(alpha), get_cste_ptr(X), incX, get_ptr(A));
-            }
-        } break;
-        case cher2: {
-            int order; int Uplo; int N; cste_c_binary alpha; cste_c_binary X; int incX; cste_c_binary Y; int incY; c_binary A; int lda;
-            
-            if( !(error = narg == 10? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &order, &Uplo, &N, &alpha, &X, &incX, &Y, &incY, &A, &lda))
-            ){
-                cblas_cher2(order, Uplo, N, get_cste_ptr(alpha), get_cste_ptr(X), incX, get_cste_ptr(Y), incY, get_ptr(A), lda);
-            }
-        } break;
-        case chpr2: {
-            int order; int Uplo; int N; cste_c_binary alpha; cste_c_binary X; int incX; cste_c_binary Y; int incY; c_binary Ap;
-            
-            if( !(error = narg == 9? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_ptr, e_end}, &order, &Uplo, &N, &alpha, &X, &incX, &Y, &incY, &Ap))
-            ){
-                cblas_chpr2(order, Uplo, N, get_cste_ptr(alpha), get_cste_ptr(X), incX, get_cste_ptr(Y), incY, get_ptr(Ap));
-            }
-        } break;
-        case zhemv: {
-            int order; int Uplo; int N; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary X; int incX; cste_c_binary beta; c_binary Y; int incY;
-            
-            if( !(error = narg == 11? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &order, &Uplo, &N, &alpha, &A, &lda, &X, &incX, &beta, &Y, &incY))
-            ){
-                cblas_zhemv(order, Uplo, N, get_cste_ptr(alpha), get_cste_ptr(A), lda, get_cste_ptr(X), incX, get_cste_ptr(beta), get_ptr(Y), incY);
-            }
-        } break;
-        case zhbmv: {
-            int order; int Uplo; int N; int K; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary X; int incX; cste_c_binary beta; c_binary Y; int incY;
-            
-            if( !(error = narg == 12? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &order, &Uplo, &N, &K, &alpha, &A, &lda, &X, &incX, &beta, &Y, &incY))
-            ){
-                cblas_zhbmv(order, Uplo, N, K, get_cste_ptr(alpha), get_cste_ptr(A), lda, get_cste_ptr(X), incX, get_cste_ptr(beta), get_ptr(Y), incY);
-            }
-        } break;
-        case zhpmv: {
-            int order; int Uplo; int N; cste_c_binary alpha; cste_c_binary Ap; cste_c_binary X; int incX; cste_c_binary beta; c_binary Y; int incY;
-            
-            if( !(error = narg == 10? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_int, e_cste_ptr, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &order, &Uplo, &N, &alpha, &Ap, &X, &incX, &beta, &Y, &incY))
-            ){
-                cblas_zhpmv(order, Uplo, N, get_cste_ptr(alpha), get_cste_ptr(Ap), get_cste_ptr(X), incX, get_cste_ptr(beta), get_ptr(Y), incY);
-            }
-        } break;
-        case zgeru: {
-            int order; int M; int N; cste_c_binary alpha; cste_c_binary X; int incX; cste_c_binary Y; int incY; c_binary A; int lda;
-            
-            if( !(error = narg == 10? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &order, &M, &N, &alpha, &X, &incX, &Y, &incY, &A, &lda))
-            ){
-                cblas_zgeru(order, M, N, get_cste_ptr(alpha), get_cste_ptr(X), incX, get_cste_ptr(Y), incY, get_ptr(A), lda);
-            }
-        } break;
-        case zgerc: {
-            int order; int M; int N; cste_c_binary alpha; cste_c_binary X; int incX; cste_c_binary Y; int incY; c_binary A; int lda;
-            
-            if( !(error = narg == 10? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &order, &M, &N, &alpha, &X, &incX, &Y, &incY, &A, &lda))
-            ){
-                cblas_zgerc(order, M, N, get_cste_ptr(alpha), get_cste_ptr(X), incX, get_cste_ptr(Y), incY, get_ptr(A), lda);
-            }
-        } break;
-        case zher: {
-            int order; int Uplo; int N; cste_c_binary alpha; cste_c_binary X; int incX; c_binary A; int lda;
-            
-            if( !(error = narg == 8? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_int, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &order, &Uplo, &N, &alpha, &X, &incX, &A, &lda))
-            ){
-                cblas_zher(order, Uplo, N, get_cste_double(alpha), get_cste_ptr(X), incX, get_ptr(A), lda);
-            }
-        } break;
-        case zhpr: {
-            int order; int Uplo; int N; cste_c_binary alpha; cste_c_binary X; int incX; c_binary A;
-            
-            if( !(error = narg == 7? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_int, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_end}, &order, &Uplo, &N, &alpha, &X, &incX, &A))
-            ){
-                cblas_zhpr(order, Uplo, N, get_cste_double(alpha), get_cste_ptr(X), incX, get_ptr(A));
-            }
-        } break;
-        case zher2: {
-            int order; int Uplo; int N; cste_c_binary alpha; cste_c_binary X; int incX; cste_c_binary Y; int incY; c_binary A; int lda;
-            
-            if( !(error = narg == 10? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &order, &Uplo, &N, &alpha, &X, &incX, &Y, &incY, &A, &lda))
-            ){
-                cblas_zher2(order, Uplo, N, get_cste_ptr(alpha), get_cste_ptr(X), incX, get_cste_ptr(Y), incY, get_ptr(A), lda);
-            }
-        } break;
-        case zhpr2: {
-            int order; int Uplo; int N; cste_c_binary alpha; cste_c_binary X; int incX; cste_c_binary Y; int incY; c_binary Ap;
-            
-            if( !(error = narg == 9? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_ptr, e_end}, &order, &Uplo, &N, &alpha, &X, &incX, &Y, &incY, &Ap))
-            ){
-                cblas_zhpr2(order, Uplo, N, get_cste_ptr(alpha), get_cste_ptr(X), incX, get_cste_ptr(Y), incY, get_ptr(Ap));
-            }
-        } break;
-        case sgemm: {
-            int Order; int TransA; int TransB; int M; int N; int K; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary B; int ldb; cste_c_binary beta; c_binary C; int ldc;
-            
-            if( !(error = narg == 14? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_transpose, e_transpose, e_int, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &Order, &TransA, &TransB, &M, &N, &K, &alpha, &A, &lda, &B, &ldb, &beta, &C, &ldc))
-            ){
-                cblas_sgemm(Order, TransA, TransB, M, N, K, get_cste_float(alpha), get_cste_ptr(A), lda, get_cste_ptr(B), ldb, get_cste_float(beta), get_ptr(C), ldc);
-            }
-        } break;
-        case ssymm: {
-            int Order; int Side; int Uplo; int M; int N; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary B; int ldb; cste_c_binary beta; c_binary C; int ldc;
-            
-            if( !(error = narg == 13? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_side, e_uplo, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &Order, &Side, &Uplo, &M, &N, &alpha, &A, &lda, &B, &ldb, &beta, &C, &ldc))
-            ){
-                cblas_ssymm(Order, Side, Uplo, M, N, get_cste_float(alpha), get_cste_ptr(A), lda, get_cste_ptr(B), ldb, get_cste_float(beta), get_ptr(C), ldc);
-            }
-        } break;
-        case ssyrk: {
-            int Order; int Uplo; int Trans; int N; int K; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary beta; c_binary C; int ldc;
-            
-            if( !(error = narg == 11? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &Order, &Uplo, &Trans, &N, &K, &alpha, &A, &lda, &beta, &C, &ldc))
-            ){
-                cblas_ssyrk(Order, Uplo, Trans, N, K, get_cste_float(alpha), get_cste_ptr(A), lda, get_cste_float(beta), get_ptr(C), ldc);
-            }
-        } break;
-        case ssyr2k: {
-            int Order; int Uplo; int Trans; int N; int K; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary B; int ldb; cste_c_binary beta; c_binary C; int ldc;
-            
-            if( !(error = narg == 13? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &Order, &Uplo, &Trans, &N, &K, &alpha, &A, &lda, &B, &ldb, &beta, &C, &ldc))
-            ){
-                cblas_ssyr2k(Order, Uplo, Trans, N, K, get_cste_float(alpha), get_cste_ptr(A), lda, get_cste_ptr(B), ldb, get_cste_float(beta), get_ptr(C), ldc);
-            }
-        } break;
-        case strmm: {
-            int Order; int Side; int Uplo; int TransA; int Diag; int M; int N; cste_c_binary alpha; cste_c_binary A; int lda; c_binary B; int ldb;
-            
-            if( !(error = narg == 12? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_side, e_uplo, e_transpose, e_diag, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &Order, &Side, &Uplo, &TransA, &Diag, &M, &N, &alpha, &A, &lda, &B, &ldb))
-            ){
-                cblas_strmm(Order, Side, Uplo, TransA, Diag, M, N, get_cste_float(alpha), get_cste_ptr(A), lda, get_ptr(B), ldb);
-            }
-        } break;
-        case strsm: {
-            int Order; int Side; int Uplo; int TransA; int Diag; int M; int N; cste_c_binary alpha; cste_c_binary A; int lda; c_binary B; int ldb;
-            
-            if( !(error = narg == 12? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_side, e_uplo, e_transpose, e_diag, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &Order, &Side, &Uplo, &TransA, &Diag, &M, &N, &alpha, &A, &lda, &B, &ldb))
-            ){
-                cblas_strsm(Order, Side, Uplo, TransA, Diag, M, N, get_cste_float(alpha), get_cste_ptr(A), lda, get_ptr(B), ldb);
-            }
-        } break;
-        case dgemm: {
-            int Order; int TransA; int TransB; int M; int N; int K; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary B; int ldb; cste_c_binary beta; c_binary C; int ldc;
-            
-            if( !(error = narg == 14? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_transpose, e_transpose, e_int, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &Order, &TransA, &TransB, &M, &N, &K, &alpha, &A, &lda, &B, &ldb, &beta, &C, &ldc))
-            ){
-                cblas_dgemm(Order, TransA, TransB, M, N, K, get_cste_double(alpha), get_cste_ptr(A), lda, get_cste_ptr(B), ldb, get_cste_double(beta), get_ptr(C), ldc);
-            }
-        } break;
-        case dsymm: {
-            int Order; int Side; int Uplo; int M; int N; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary B; int ldb; cste_c_binary beta; c_binary C; int ldc;
-            
-            if( !(error = narg == 13? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_side, e_uplo, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &Order, &Side, &Uplo, &M, &N, &alpha, &A, &lda, &B, &ldb, &beta, &C, &ldc))
-            ){
-                cblas_dsymm(Order, Side, Uplo, M, N, get_cste_double(alpha), get_cste_ptr(A), lda, get_cste_ptr(B), ldb, get_cste_double(beta), get_ptr(C), ldc);
-            }
-        } break;
-        case dsyrk: {
-            int Order; int Uplo; int Trans; int N; int K; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary beta; c_binary C; int ldc;
-            
-            if( !(error = narg == 11? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &Order, &Uplo, &Trans, &N, &K, &alpha, &A, &lda, &beta, &C, &ldc))
-            ){
-                cblas_dsyrk(Order, Uplo, Trans, N, K, get_cste_double(alpha), get_cste_ptr(A), lda, get_cste_double(beta), get_ptr(C), ldc);
-            }
-        } break;
-        case dsyr2k: {
-            int Order; int Uplo; int Trans; int N; int K; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary B; int ldb; cste_c_binary beta; c_binary C; int ldc;
-            
-            if( !(error = narg == 13? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &Order, &Uplo, &Trans, &N, &K, &alpha, &A, &lda, &B, &ldb, &beta, &C, &ldc))
-            ){
-                cblas_dsyr2k(Order, Uplo, Trans, N, K, get_cste_double(alpha), get_cste_ptr(A), lda, get_cste_ptr(B), ldb, get_cste_double(beta), get_ptr(C), ldc);
-            }
-        } break;
-        case dtrmm: {
-            int Order; int Side; int Uplo; int TransA; int Diag; int M; int N; cste_c_binary alpha; cste_c_binary A; int lda; c_binary B; int ldb;
-            
-            if( !(error = narg == 12? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_side, e_uplo, e_transpose, e_diag, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &Order, &Side, &Uplo, &TransA, &Diag, &M, &N, &alpha, &A, &lda, &B, &ldb))
-            ){
-                cblas_dtrmm(Order, Side, Uplo, TransA, Diag, M, N, get_cste_double(alpha), get_cste_ptr(A), lda, get_ptr(B), ldb);
-            }
-        } break;
-        case dtrsm: {
-            int Order; int Side; int Uplo; int TransA; int Diag; int M; int N; cste_c_binary alpha; cste_c_binary A; int lda; c_binary B; int ldb;
-            
-            if( !(error = narg == 12? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_side, e_uplo, e_transpose, e_diag, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &Order, &Side, &Uplo, &TransA, &Diag, &M, &N, &alpha, &A, &lda, &B, &ldb))
-            ){
-                cblas_dtrsm(Order, Side, Uplo, TransA, Diag, M, N, get_cste_double(alpha), get_cste_ptr(A), lda, get_ptr(B), ldb);
-            }
-        } break;
-        case cgemm: {
-            int Order; int TransA; int TransB; int M; int N; int K; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary B; int ldb; cste_c_binary beta; c_binary C; int ldc;
-            
-            if( !(error = narg == 14? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_transpose, e_transpose, e_int, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &Order, &TransA, &TransB, &M, &N, &K, &alpha, &A, &lda, &B, &ldb, &beta, &C, &ldc))
-            ){
-                cblas_cgemm(Order, TransA, TransB, M, N, K, get_cste_ptr(alpha), get_cste_ptr(A), lda, get_cste_ptr(B), ldb, get_cste_ptr(beta), get_ptr(C), ldc);
-            }
-        } break;
-        case csymm: {
-            int Order; int Side; int Uplo; int M; int N; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary B; int ldb; cste_c_binary beta; c_binary C; int ldc;
-            
-            if( !(error = narg == 13? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_side, e_uplo, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &Order, &Side, &Uplo, &M, &N, &alpha, &A, &lda, &B, &ldb, &beta, &C, &ldc))
-            ){
-                cblas_csymm(Order, Side, Uplo, M, N, get_cste_ptr(alpha), get_cste_ptr(A), lda, get_cste_ptr(B), ldb, get_cste_ptr(beta), get_ptr(C), ldc);
-            }
-        } break;
-        case csyrk: {
-            int Order; int Uplo; int Trans; int N; int K; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary beta; c_binary C; int ldc;
-            
-            if( !(error = narg == 11? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &Order, &Uplo, &Trans, &N, &K, &alpha, &A, &lda, &beta, &C, &ldc))
-            ){
-                cblas_csyrk(Order, Uplo, Trans, N, K, get_cste_ptr(alpha), get_cste_ptr(A), lda, get_cste_ptr(beta), get_ptr(C), ldc);
-            }
-        } break;
-        case csyr2k: {
-            int Order; int Uplo; int Trans; int N; int K; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary B; int ldb; cste_c_binary beta; c_binary C; int ldc;
-            
-            if( !(error = narg == 13? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &Order, &Uplo, &Trans, &N, &K, &alpha, &A, &lda, &B, &ldb, &beta, &C, &ldc))
-            ){
-                cblas_csyr2k(Order, Uplo, Trans, N, K, get_cste_ptr(alpha), get_cste_ptr(A), lda, get_cste_ptr(B), ldb, get_cste_ptr(beta), get_ptr(C), ldc);
-            }
-        } break;
-        case ctrmm: {
-            int Order; int Side; int Uplo; int TransA; int Diag; int M; int N; cste_c_binary alpha; cste_c_binary A; int lda; c_binary B; int ldb;
-            
-            if( !(error = narg == 12? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_side, e_uplo, e_transpose, e_diag, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &Order, &Side, &Uplo, &TransA, &Diag, &M, &N, &alpha, &A, &lda, &B, &ldb))
-            ){
-                cblas_ctrmm(Order, Side, Uplo, TransA, Diag, M, N, get_cste_ptr(alpha), get_cste_ptr(A), lda, get_ptr(B), ldb);
-            }
-        } break;
-        case ctrsm: {
-            int Order; int Side; int Uplo; int TransA; int Diag; int M; int N; cste_c_binary alpha; cste_c_binary A; int lda; c_binary B; int ldb;
-            
-            if( !(error = narg == 12? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_side, e_uplo, e_transpose, e_diag, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &Order, &Side, &Uplo, &TransA, &Diag, &M, &N, &alpha, &A, &lda, &B, &ldb))
-            ){
-                cblas_ctrsm(Order, Side, Uplo, TransA, Diag, M, N, get_cste_ptr(alpha), get_cste_ptr(A), lda, get_ptr(B), ldb);
-            }
-        } break;
-        case zgemm: {
-            int Order; int TransA; int TransB; int M; int N; int K; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary B; int ldb; cste_c_binary beta; c_binary C; int ldc;
-            
-            if( !(error = narg == 14? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_transpose, e_transpose, e_int, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &Order, &TransA, &TransB, &M, &N, &K, &alpha, &A, &lda, &B, &ldb, &beta, &C, &ldc))
-            ){
-                cblas_zgemm(Order, TransA, TransB, M, N, K, get_cste_ptr(alpha), get_cste_ptr(A), lda, get_cste_ptr(B), ldb, get_cste_ptr(beta), get_ptr(C), ldc);
-            }
-        } break;
-        case zsymm: {
-            int Order; int Side; int Uplo; int M; int N; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary B; int ldb; cste_c_binary beta; c_binary C; int ldc;
-            
-            if( !(error = narg == 13? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_side, e_uplo, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &Order, &Side, &Uplo, &M, &N, &alpha, &A, &lda, &B, &ldb, &beta, &C, &ldc))
-            ){
-                cblas_zsymm(Order, Side, Uplo, M, N, get_cste_ptr(alpha), get_cste_ptr(A), lda, get_cste_ptr(B), ldb, get_cste_ptr(beta), get_ptr(C), ldc);
-            }
-        } break;
-        case zsyrk: {
-            int Order; int Uplo; int Trans; int N; int K; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary beta; c_binary C; int ldc;
-            
-            if( !(error = narg == 11? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &Order, &Uplo, &Trans, &N, &K, &alpha, &A, &lda, &beta, &C, &ldc))
-            ){
-                cblas_zsyrk(Order, Uplo, Trans, N, K, get_cste_ptr(alpha), get_cste_ptr(A), lda, get_cste_ptr(beta), get_ptr(C), ldc);
-            }
-        } break;
-        case zsyr2k: {
-            int Order; int Uplo; int Trans; int N; int K; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary B; int ldb; cste_c_binary beta; c_binary C; int ldc;
-            
-            if( !(error = narg == 13? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &Order, &Uplo, &Trans, &N, &K, &alpha, &A, &lda, &B, &ldb, &beta, &C, &ldc))
-            ){
-                cblas_zsyr2k(Order, Uplo, Trans, N, K, get_cste_ptr(alpha), get_cste_ptr(A), lda, get_cste_ptr(B), ldb, get_cste_ptr(beta), get_ptr(C), ldc);
-            }
-        } break;
-        case ztrmm: {
-            int Order; int Side; int Uplo; int TransA; int Diag; int M; int N; cste_c_binary alpha; cste_c_binary A; int lda; c_binary B; int ldb;
-            
-            if( !(error = narg == 12? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_side, e_uplo, e_transpose, e_diag, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &Order, &Side, &Uplo, &TransA, &Diag, &M, &N, &alpha, &A, &lda, &B, &ldb))
-            ){
-                cblas_ztrmm(Order, Side, Uplo, TransA, Diag, M, N, get_cste_ptr(alpha), get_cste_ptr(A), lda, get_ptr(B), ldb);
-            }
-        } break;
-        case ztrsm: {
-            int Order; int Side; int Uplo; int TransA; int Diag; int M; int N; cste_c_binary alpha; cste_c_binary A; int lda; c_binary B; int ldb;
-            
-            if( !(error = narg == 12? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_side, e_uplo, e_transpose, e_diag, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_end}, &Order, &Side, &Uplo, &TransA, &Diag, &M, &N, &alpha, &A, &lda, &B, &ldb))
-            ){
-                cblas_ztrsm(Order, Side, Uplo, TransA, Diag, M, N, get_cste_ptr(alpha), get_cste_ptr(A), lda, get_ptr(B), ldb);
-            }
-        } break;
-        case chemm: {
-            int Order; int Side; int Uplo; int M; int N; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary B; int ldb; cste_c_binary beta; c_binary C; int ldc;
-            
-            if( !(error = narg == 13? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_side, e_uplo, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &Order, &Side, &Uplo, &M, &N, &alpha, &A, &lda, &B, &ldb, &beta, &C, &ldc))
-            ){
-                cblas_chemm(Order, Side, Uplo, M, N, get_cste_ptr(alpha), get_cste_ptr(A), lda, get_cste_ptr(B), ldb, get_cste_ptr(beta), get_ptr(C), ldc);
-            }
-        } break;
-        case cherk: {
-            int Order; int Uplo; int Trans; int N; int K; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary beta; c_binary C; int ldc;
-            
-            if( !(error = narg == 11? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &Order, &Uplo, &Trans, &N, &K, &alpha, &A, &lda, &beta, &C, &ldc))
-            ){
-                cblas_cherk(Order, Uplo, Trans, N, K, get_cste_float(alpha), get_cste_ptr(A), lda, get_cste_float(beta), get_ptr(C), ldc);
-            }
-        } break;
-        case cher2k: {
-            int Order; int Uplo; int Trans; int N; int K; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary B; int ldb; cste_c_binary beta; c_binary C; int ldc;
-            
-            if( !(error = narg == 13? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &Order, &Uplo, &Trans, &N, &K, &alpha, &A, &lda, &B, &ldb, &beta, &C, &ldc))
-            ){
-                cblas_cher2k(Order, Uplo, Trans, N, K, get_cste_ptr(alpha), get_cste_ptr(A), lda, get_cste_ptr(B), ldb, get_cste_float(beta), get_ptr(C), ldc);
-            }
-        } break;
-        case zhemm: {
-            int Order; int Side; int Uplo; int M; int N; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary B; int ldb; cste_c_binary beta; c_binary C; int ldc;
-            
-            if( !(error = narg == 13? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_side, e_uplo, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &Order, &Side, &Uplo, &M, &N, &alpha, &A, &lda, &B, &ldb, &beta, &C, &ldc))
-            ){
-                cblas_zhemm(Order, Side, Uplo, M, N, get_cste_ptr(alpha), get_cste_ptr(A), lda, get_cste_ptr(B), ldb, get_cste_ptr(beta), get_ptr(C), ldc);
-            }
-        } break;
-        case zherk: {
-            int Order; int Uplo; int Trans; int N; int K; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary beta; c_binary C; int ldc;
-            
-            if( !(error = narg == 11? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &Order, &Uplo, &Trans, &N, &K, &alpha, &A, &lda, &beta, &C, &ldc))
-            ){
-                cblas_zherk(Order, Uplo, Trans, N, K, get_cste_double(alpha), get_cste_ptr(A), lda, get_cste_double(beta), get_ptr(C), ldc);
-            }
-        } break;
-        case zher2k: {
-            int Order; int Uplo; int Trans; int N; int K; cste_c_binary alpha; cste_c_binary A; int lda; cste_c_binary B; int ldb; cste_c_binary beta; c_binary C; int ldc;
-            
-            if( !(error = narg == 13? 0:ERROR_N_ARG)
-                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end}, &Order, &Uplo, &Trans, &N, &K, &alpha, &A, &lda, &B, &ldb, &beta, &C, &ldc))
-            ){
-                cblas_zher2k(Order, Uplo, Trans, N, K, get_cste_ptr(alpha), get_cste_ptr(A), lda, get_cste_ptr(B), ldb, get_cste_double(beta), get_ptr(C), ldc);
-            }
-        } break;
+                && !(error = translate(env, elements, (etypes[]) {e_ptr, e_ptr, e_ptr, e_cste_ptr, e_ptr, e_end}, &d1, &d2, &b1, &b2, &param))
+                && !(error = in_bounds(type, 1, 1, d1)) && !(error = in_bounds(type, 1, 1, d2)) && !(error = in_bounds(type, 1, 1, b1)) && !(error = in_cste_bounds(type, 1, 1, b2)) && !(error = in_bounds(type, 5, 1, param))
+            ){
+                switch(hash_name){
+                    case srotmg: cblas_srotmg(get_ptr(d1), get_ptr(d2), get_ptr(b1), get_cste_float(b2),  get_ptr(param)); break;
+                    case drotmg: cblas_srotmg(get_ptr(d1), get_ptr(d2), get_ptr(b1), get_cste_double(b2),  get_ptr(param)); break;
+                    default: error = ERROR_NOT_FOUND; break;
+                }
+            
+            }
+            
+        break;}
+
+        // BLAS LEVEL 2
+        // GENERAL MATRICES
+
+        case sgemv: case dgemv: case cgemv: case zgemv: {
+            int layout; int trans; int m; int n; cste_c_binary alpha; cste_c_binary a; int lda; cste_c_binary x; int incx; cste_c_binary beta; c_binary y; int incy;
+
+            if( !(error = narg == 12?0:ERROR_N_ARG)
+                && ! (error = translate(env, elements, (etypes[]) {e_layout, e_transpose, e_uint, e_uint, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end},
+                                                        &layout, &trans, &m, &n, &alpha, &a, &lda, &x, &incx, &beta, &y, &incy))
+                && !(error = in_cste_bounds(type, n, incx, x)) 
+                && !(error = in_bounds(type, n, incy, y))
+                && !(error = in_cste_bounds(type, 1, 1, alpha))
+                && !(error = in_cste_bounds(type, 1, 1, beta))
+                && !(error = in_cste_bounds(type, leading_dim(layout, trans, m, n), lda, a))
+            ){
+                switch(hash_name){
+                    case sgemv: cblas_sgemv(layout, trans, m, n,  get_cste_float(alpha), get_cste_ptr(a), lda, get_cste_ptr(x), incx,  get_cste_float(beta), get_ptr(y), incy); break;
+                    case dgemv: cblas_dgemv(layout, trans, m, n, get_cste_double(alpha), get_cste_ptr(a), lda, get_cste_ptr(x), incx, get_cste_double(beta), get_ptr(y), incy); break;
+                    case cgemv: cblas_cgemv(layout, trans, m, n,    get_cste_ptr(alpha), get_cste_ptr(a), lda, get_cste_ptr(x), incx,    get_cste_ptr(beta), get_ptr(y), incy); break;
+                    case zgemv: cblas_zgemv(layout, trans, m, n,    get_cste_ptr(alpha), get_cste_ptr(a), lda, get_cste_ptr(x), incx,     get_cste_ptr(beta), get_ptr(y), incy); break;
+                    default: error = ERROR_NOT_FOUND; break;
+                }
+                
+            }
+        break;}
+
+        case sgbmv: case dgbmv: case cgbmv: case zgbmv: {
+            int layout; int trans; int m; int n; int kl; int ku; cste_c_binary alpha; cste_c_binary a; int lda; cste_c_binary x; int incx; cste_c_binary beta; c_binary y; int incy;
+
+            if( !(error = narg == 14?0:ERROR_N_ARG)
+                && ! (error = translate(env, elements, (etypes[]) {e_layout, e_transpose, e_uint, e_uint, e_uint, e_uint, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end},
+                                                        &layout, &trans, &m, &n, &kl, &ku, &alpha, &a, &lda, &x, &incx, &beta, &y, &incy))
+                && !(error = in_cste_bounds(type, n, incx, x)) 
+                && !(error = in_bounds(type, n, incy, y))
+                && !(error = in_cste_bounds(type, 1, 1, alpha))
+                && !(error = in_cste_bounds(type, 1, 1, beta))
+                && !(error = in_cste_bounds(type, lda, n, a))
+
+            ){
+                switch(hash_name){
+                    case sgbmv: cblas_sgbmv(layout, trans, m, n, kl, ku,  get_cste_float(alpha), get_cste_ptr(a), lda, get_cste_ptr(x), incx,  get_cste_float(beta), get_ptr(y), incy); break;
+                    case dgbmv: cblas_dgbmv(layout, trans, m, n, kl, ku, get_cste_double(alpha), get_cste_ptr(a), lda, get_cste_ptr(x), incx, get_cste_double(beta), get_ptr(y), incy); break;
+                    case cgbmv: cblas_cgbmv(layout, trans, m, n, kl, ku,    get_cste_ptr(alpha), get_cste_ptr(a), lda, get_cste_ptr(x), incx,    get_cste_ptr(beta), get_ptr(y), incy); break;
+                    case zgbmv: cblas_zgbmv(layout, trans, m, n, kl, ku,    get_cste_ptr(alpha), get_cste_ptr(a), lda, get_cste_ptr(x), incx,    get_cste_ptr(beta), get_ptr(y), incy); break;
+                    default: error = ERROR_NOT_FOUND; break;
+                }
+                
+            }
+        break;}
+
+        case ssbmv: case dsbmv: {
+            int layout; int uplo; int m; int n; cste_c_binary alpha; cste_c_binary a; int lda; cste_c_binary x; int incx; cste_c_binary beta; c_binary y; int incy;
+            
+            if( !(error = narg == 12?0:ERROR_N_ARG)
+                && ! (error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_uint, e_uint, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end},
+                                                        &layout, &uplo, &m, &n, &alpha, &a, &lda, &x, &incx, &beta, &y, &incy))
+                &&!(error = in_cste_bounds(type, n, incx, x)) 
+                && !(error = in_bounds(type, n, incy, y))
+                && !(error = in_cste_bounds(type, 1, 1, alpha))
+                && !(error = in_cste_bounds(type, 1, 1, beta))
+                && !(error = in_cste_bounds(type, lda, n, a))
+            ){
+                switch(hash_name){
+                    case ssbmv: cblas_ssbmv(layout, uplo, m, n, get_cste_float(alpha), get_cste_ptr(a), lda, get_cste_ptr(x), incx, get_cste_float(beta), get_ptr(y), incy); break;
+                    case dsbmv: cblas_dsbmv(layout, uplo, m, n, get_cste_double(alpha), get_cste_ptr(a), lda, get_cste_ptr(x), incx,get_cste_double(beta), get_ptr(y), incy); break;
+                    default: error = ERROR_NOT_FOUND; break;
+                }
+                
+            }
+        break;}
+
+        case strmv: case dtrmv: case ctrmv: case ztrmv: {
+            int order; int uplo; int transa; int diag; int n; cste_c_binary a; int lda; c_binary x; int incx;
+
+            if( !(error = test_n_arg(narg, 9))
+                && ! (error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_diag, e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end},
+                                                        &order, &uplo, &transa, &diag, &n, &a, &lda, &x, &incx))
+                &&!(error = in_bounds(type, n, incx, x))
+                && !(error = in_cste_bounds(type, lda, n, a))
+            ){
+                switch(hash_name){
+                    case strmv: cblas_strmv(order, uplo, transa, diag, n, get_cste_ptr(a), lda, get_ptr(x), incx); break;
+                    case dtrmv: cblas_dtrmv(order, uplo, transa, diag, n, get_cste_ptr(a), lda, get_ptr(x), incx); break;
+                    case ctrmv: cblas_ctrmv(order, uplo, transa, diag, n, get_cste_ptr(a), lda, get_ptr(x), incx); break;
+                    case ztrmv: cblas_ztrmv(order, uplo, transa, diag, n, get_cste_ptr(a), lda, get_ptr(x), incx); break;
+                    default: error = ERROR_NOT_FOUND; break;
+                }
+            }
+                
+        break;}
+
+        //=======================
+
+        case strsv: case dtrsv: case ctrsv: case ztrsv: {
+			int order; int transa; int uplo; int diag; int n; cste_c_binary a; int lda; c_binary x; int incx;
+
+			if(!(error = test_n_arg(narg, 9))
+			&& !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_diag, e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end},
+			                                     &order, &uplo, &transa, &diag, &n, &a, &lda, &x, &incx))
+            && !(error = in_bounds(type, n, incx, x))
+            && !(error = in_cste_bounds(type, lda, n, a))
+			)
+            {
+                switch(hash_name){
+                    case strsv:	cblas_strsv(order, uplo, transa, diag, n,  get_cste_ptr(a), lda,  get_ptr(x), incx); break;
+                    case dtrsv:	cblas_dtrsv(order, uplo, transa, diag, n,  get_cste_ptr(a), lda,  get_ptr(x), incx); break;
+                    case ctrsv:	cblas_ctrsv(order, uplo, transa, diag, n,  get_cste_ptr(a), lda,  get_ptr(x), incx); break;
+                    case ztrsv:	cblas_ztrsv(order, uplo, transa, diag, n,  get_cste_ptr(a), lda,  get_ptr(x), incx); break;
+
+                    default: error = ERROR_NOT_FOUND; break;
+                }
+                
+            }
+		break;}
+
+        case strmm: case dtrmm: case ctrmm: case ztrmm: {
+            int order; int side; int uplo; int transa; int diag; int m; int n; cste_c_binary alpha; cste_c_binary a; int lda; c_binary b; int ldb;
+
+			if(!(error = test_n_arg(narg, 12))
+                && !(error = translate(env, elements, (etypes[]) {e_layout, e_side, e_uplo, e_transpose, e_diag, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_end},
+                                                    &order, &side, &uplo, &transa, &diag, &m, &n, &alpha, &a, &lda, &b, &ldb))
+                && !(error = in_cste_bounds(type, 1, 1, alpha))
+                && !(error = in_cste_bounds(type, lda, side == CblasLeft? m:n, a))
+			){
+                switch(hash_name){
+                    case strmm:	cblas_strmm(order, side, uplo, transa, diag, m, n,  get_cste_float(alpha), get_cste_ptr(a), lda,  get_ptr(b), ldb); break;
+                    case dtrmm:	cblas_dtrmm(order, side, uplo, transa, diag, m, n,  get_cste_double(alpha), get_cste_ptr(a), lda,  get_ptr(b), ldb); break;
+                    case ctrmm:	cblas_ctrmm(order, side, uplo, transa, diag, m, n,  get_cste_ptr(alpha), get_cste_ptr(a), lda,  get_ptr(b), ldb); break;
+                    case ztrmm:	cblas_ztrmm(order, side, uplo, transa, diag, m, n,  get_cste_ptr(alpha), get_cste_ptr(a), lda,  get_ptr(b), ldb); break;
+
+                    default: error = ERROR_NOT_FOUND; break;
+                }
+                
+            }
+		break;}
+
+
+		case sger: case dger: case cgeru: case cgerc: case zgeru: case zgerc: {
+			int order; int m; int n; cste_c_binary alpha; cste_c_binary x; int incx; cste_c_binary y; int incy; c_binary a; int lda;
+
+			if(!(error = test_n_arg(narg, 10))
+                && !(error = translate(env, elements, (etypes[]) {e_layout, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end},
+                                                    &order, &m, &n, &alpha, &x, &incx, &y, &incy, &a, &lda))
+                && !(error = in_cste_bounds(type, n, incx, x))
+                && !(error = in_cste_bounds(type, n, incy, y))
+                && !(error = in_cste_bounds(type, 1, 1, alpha))
+                && !(error = in_bounds(type, leading_dim(order, CblasNoTrans, m, n), lda, a))
+			){
+                switch(hash_name){
+                    case sger:	cblas_sger(order, m, n,  get_cste_float(alpha),  get_cste_ptr(x), incx,  get_cste_ptr(y), incy,  get_ptr(a), lda); break;
+                    case dger:	cblas_dger(order, m, n,  get_cste_double(alpha),  get_cste_ptr(x), incx,  get_cste_ptr(y), incy,  get_ptr(a), lda); break;
+                    case cgeru:	cblas_cgeru(order, m, n,  get_cste_ptr(alpha),  get_cste_ptr(x), incx,  get_cste_ptr(y), incy,  get_ptr(a), lda); break;
+                    case cgerc:	cblas_cgerc(order, m, n,  get_cste_ptr(alpha),  get_cste_ptr(x), incx,  get_cste_ptr(y), incy,  get_ptr(a), lda); break;
+                    case zgeru:	cblas_zgeru(order, m, n,  get_cste_ptr(alpha),  get_cste_ptr(x), incx,  get_cste_ptr(y), incy,  get_ptr(a), lda); break;
+                    case zgerc:	cblas_zgerc(order, m, n,  get_cste_ptr(alpha),  get_cste_ptr(x), incx,  get_cste_ptr(y), incy,  get_ptr(a), lda); break;
+
+                    default: error = ERROR_NOT_FOUND; break;
+                }
+                
+            }
+		break;}
+
+		case sgemm: case dgemm: case cgemm: case cgemm3m: case zgemm: case zgemm3m: {
+			int order; int transa; int transb; int m; int n; int k; cste_c_binary alpha; cste_c_binary a; int lda; cste_c_binary b; int ldb; cste_c_binary beta; c_binary c; int ldc;
+
+			if(!(error = test_n_arg(narg, 14))
+                && !(error = translate(env, elements, (etypes[]) {e_layout, e_transpose, e_transpose, e_int, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end},
+                                                    &order, &transa, &transb, &m, &n, &k, &alpha, &a, &lda, &b, &ldb, &beta, &c, &ldc))
+                && !(error = in_cste_bounds(type, 1, 1, alpha))
+                && !(error = in_cste_bounds(type, 1, 1, beta))
+                && !(error = in_cste_bounds(type, lda, leading_dim(order, transa, m, n), a))
+                && !(error = in_cste_bounds(type, ldb, leading_dim(order, transb, m, n), b))
+                && !(error = in_bounds(type, ldc, leading_dim(order, CblasNoTrans, m, n), c))
+            ){
+			switch(hash_name){
+				case sgemm:	  cblas_sgemm(  order, transa, transb, m, n, k,  get_cste_float(alpha),   get_cste_ptr(a), lda,  get_cste_ptr(b), ldb,  get_cste_float(beta),  get_ptr(c), ldc); break;
+				case dgemm:	  cblas_dgemm(  order, transa, transb, m, n, k,  get_cste_double(alpha),  get_cste_ptr(a), lda,  get_cste_ptr(b), ldb, get_cste_double(beta),  get_ptr(c), ldc); break;
+				case cgemm:	  cblas_cgemm(  order, transa, transb, m, n, k,  get_cste_ptr(alpha),     get_cste_ptr(a), lda,  get_cste_ptr(b), ldb,    get_cste_ptr(beta),  get_ptr(c), ldc); break;
+				case cgemm3m: cblas_cgemm3m(order, transa, transb, m, n, k,  get_cste_ptr(alpha),     get_cste_ptr(a), lda,  get_cste_ptr(b), ldb,    get_cste_ptr(beta),  get_ptr(c), ldc); break;
+				case zgemm:	  cblas_zgemm(  order, transa, transb, m, n, k,  get_cste_ptr(alpha),     get_cste_ptr(a), lda,  get_cste_ptr(b), ldb,    get_cste_ptr(beta),  get_ptr(c), ldc); break;
+				case zgemm3m: cblas_zgemm3m(order, transa, transb, m, n, k,  get_cste_ptr(alpha),     get_cste_ptr(a), lda,  get_cste_ptr(b), ldb,    get_cste_ptr(beta),  get_ptr(c), ldc); break;
+
+				default: error = ERROR_NOT_FOUND; break;
+			}
+            
+    }
+		break;}
+
+		case stbmv: case dtbmv: case ctbmv: case ztbmv: {
+			int order; int transa; int uplo; int diag; int n; int k; cste_c_binary a; int lda; c_binary x; int incx;
+
+			if(!(error = test_n_arg(narg, 10))
+			    && !(error = translate(env, elements, (etypes[]) {e_layout,  e_uplo, e_transpose,  e_diag, e_int, e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end},
+			                                     &order, &uplo, &transa, &diag, &n, &k, &a, &lda, &x, &incx))
+                && !(error = in_bounds(type, n, incx, x))
+                && !(error = in_cste_bounds(type, lda, n, a))
+			){
+                switch(hash_name){
+                    case stbmv:	cblas_stbmv(order, uplo, transa, diag, n, k,  get_cste_ptr(a), lda,  get_ptr(x), incx); break;
+                    case dtbmv:	cblas_dtbmv(order, uplo, transa, diag, n, k,  get_cste_ptr(a), lda,  get_ptr(x), incx); break;
+                    case ctbmv:	cblas_ctbmv(order, uplo, transa, diag, n, k,  get_cste_ptr(a), lda,  get_ptr(x), incx); break;
+                    case ztbmv:	cblas_ztbmv(order, uplo, transa, diag, n, k,  get_cste_ptr(a), lda,  get_ptr(x), incx); break;
+
+                    default: error = ERROR_NOT_FOUND; break;
+                }
+                
+            }
+		break;}
+
+		case stbsv: case dtbsv: case ctbsv: case ztbsv: {
+			int order; int transa; int uplo; int diag; int n; int k; cste_c_binary a;  int lda; c_binary x; int incx;
+
+			if(!(error = test_n_arg(narg, 10))
+			&& !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_diag, e_int, e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end},
+			                                     &order, &uplo, &transa, &diag, &n, &k, &a, &lda, &x, &incx))
+            && !(error = in_bounds(type, n, incx, x))
+            && !(error = in_cste_bounds(type, lda, n, a))
+			){
+                switch(hash_name){
+                    case stbsv:	cblas_stbsv(order, uplo, transa, diag, n, k, get_cste_ptr(a), lda, get_ptr(x), incx); break;
+                    case dtbsv:	cblas_dtbsv(order, uplo, transa, diag, n, k, get_cste_ptr(a), lda, get_ptr(x), incx); break;
+                    case ctbsv:	cblas_ctbsv(order, uplo, transa, diag, n, k, get_cste_ptr(a), lda, get_ptr(x), incx); break;
+                    case ztbsv:	cblas_ztbsv(order, uplo, transa, diag, n, k, get_cste_ptr(a), lda, get_ptr(x), incx); break;
+
+                    default: error = ERROR_NOT_FOUND; break;
+                }
+                
+            }
+		break;}
+
+		case stpmv: case dtpmv: case ctpmv: case ztpmv: {
+			int order; int transa; int uplo; int diag; int n; cste_c_binary ap; c_binary x; int incx;
+
+			if(!(error = test_n_arg(narg, 8))
+			&& !(error = translate(env, elements, (etypes[]) {e_layout,  e_uplo, e_transpose, e_diag, e_int, e_cste_ptr, e_ptr, e_int, e_end},
+			                                     &order, &uplo, &transa, &diag, &n, &ap, &x, &incx))
+            && !(error = in_bounds(type, n, incx, x))
+            && !(error = in_cste_bounds(type, (n*(n+1))/2, 1, ap)
+            )){
+                switch(hash_name){
+                    case stpmv:	cblas_stpmv(order,  uplo, transa, diag, n,  get_cste_ptr(ap),  get_ptr(x), incx); break;
+                    case dtpmv:	cblas_dtpmv(order,  uplo, transa, diag, n,  get_cste_ptr(ap),  get_ptr(x), incx); break;
+                    case ctpmv:	cblas_ctpmv(order,  uplo, transa, diag, n,  get_cste_ptr(ap),  get_ptr(x), incx); break;
+                    case ztpmv:	cblas_ztpmv(order,  uplo, transa, diag, n,  get_cste_ptr(ap),  get_ptr(x), incx); break;
+
+                    default: error = ERROR_NOT_FOUND; break;
+                }
+                
+                			}
+		break;}
+
+		case stpsv: case dtpsv: case ctpsv: case ztpsv: {
+			int order; int transa; int uplo; int diag; int n; cste_c_binary ap; c_binary x; int incx;
+
+			if(!(error = test_n_arg(narg, 8))
+			&& !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_diag, e_int, e_cste_ptr, e_ptr, e_int, e_end},
+			                                     &order, &uplo, &transa, &diag, &n, &ap, &x, &incx))
+            && !(error = in_bounds(type, n, incx, x))
+            && !(error = in_cste_bounds(type, (n*(n+1))/2, 1, ap)
+            )){
+                switch(hash_name){
+                    case stpsv:	cblas_stpsv(order, uplo, transa, diag, n,  get_cste_ptr(ap),  get_ptr(x), incx); break;
+                    case dtpsv:	cblas_dtpsv(order, uplo, transa, diag, n,  get_cste_ptr(ap),  get_ptr(x), incx); break;
+                    case ctpsv:	cblas_ctpsv(order, uplo, transa, diag, n,  get_cste_ptr(ap),  get_ptr(x), incx); break;
+                    case ztpsv:	cblas_ztpsv(order, uplo, transa, diag, n,  get_cste_ptr(ap),  get_ptr(x), incx); break;
+
+                    default: error = ERROR_NOT_FOUND; break;
+                }
+                
+                
+            }
+		break;}
+
+		case ssymv: case dsymv: case chemv: case zhemv: {
+			int order; int uplo; int n; cste_c_binary alpha; cste_c_binary a; int lda; cste_c_binary x; int incx; cste_c_binary beta; c_binary y; int incy;
+			if(
+                    !(error = test_n_arg(narg, 11))
+			    &&  !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end},
+			                                     &order, &uplo, &n, &alpha, &a, &lda, &x, &incx, &beta, &y, &incy))
+                &&  !(error = in_cste_bounds(type, n, incx, x))
+                &&  !(error = in_bounds(type, n, incy, y))
+                && !(error = in_cste_bounds(type, 1, 1, alpha))
+                && !(error = in_cste_bounds(type, 1, 1, beta))
+                && !(error = in_cste_bounds(type, lda, n, a))
+			){
+                switch(hash_name){
+                    case ssymv:	cblas_ssymv(order, uplo, n, get_cste_double(alpha),  get_cste_ptr(a), lda,  get_cste_ptr(x), incx, get_cste_double(beta),  get_ptr(y), incy); break;
+                    case dsymv:	cblas_dsymv(order, uplo, n, get_cste_double(alpha),  get_cste_ptr(a), lda,  get_cste_ptr(x), incx, get_cste_double(beta),  get_ptr(y), incy); break;
+                    case chemv:	cblas_chemv(order, uplo, n,  get_cste_ptr(alpha),  get_cste_ptr(a), lda,  get_cste_ptr(x), incx,  get_cste_ptr(beta),  get_ptr(y), incy); break;
+                    case zhemv:	cblas_zhemv(order, uplo, n,  get_cste_ptr(alpha),  get_cste_ptr(a), lda,  get_cste_ptr(x), incx,  get_cste_ptr(beta),  get_ptr(y), incy); break;
+
+                    default: error = ERROR_NOT_FOUND; break;
+                }
+                
+            }
+
+
+		break;}
+
+		case sspmv: case dspmv: {
+			int order; int uplo; int n; cste_c_binary alpha; cste_c_binary ap; cste_c_binary x; int incx; cste_c_binary beta; c_binary y; int incy;
+
+			if(!(error = test_n_arg(narg, 10))
+			&& !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_int, e_cste_ptr, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end},
+			                                     &order, &uplo, &n, &alpha, &ap, &x, &incx, &beta, &y, &incy))
+            && !(error = in_cste_bounds(type, n, incx, x))
+            && !(error = in_bounds(type, n, incx, y))
+            && !(error = in_cste_bounds(type, 1, 1, alpha))
+            && !(error = in_cste_bounds(type, 1, 1, beta))
+            && !(error = in_cste_bounds(type, (n*(n+1))/2, 1, ap))
+            ){
+                switch(hash_name){
+                    case sspmv:	cblas_sspmv(order, uplo, n, get_cste_float(alpha),  get_cste_ptr(ap),  get_cste_ptr(x), incx, get_cste_float(beta),  get_ptr(y), incy); break;
+                    case dspmv:	cblas_dspmv(order, uplo, n, get_cste_double(alpha),  get_cste_ptr(ap),  get_cste_ptr(x), incx, get_cste_double(beta),  get_ptr(y), incy); break;
+
+                    default: error = ERROR_NOT_FOUND; break;
+                }
+                
+            }
+		break;}
+
+		case sspr: case dspr: case chpr: case zhpr: {
+			int order; int uplo; int n; cste_c_binary alpha; cste_c_binary x; int incx; c_binary ap;
+
+			if(!(error = test_n_arg(narg, 7))
+			&& !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_int, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_end},
+			                                     &order, &uplo, &n, &alpha, &x, &incx, &ap))
+            && !(error = in_cste_bounds(type, n, incx, x))
+            && !(error = in_cste_bounds(type, 1, 1, alpha))
+            && !(error = in_bounds(type, (n*(n+1))/2, 1, ap))
+			){
+                switch(hash_name){
+                    case sspr:	cblas_sspr(order, uplo, n, get_cste_float(alpha),  get_cste_ptr(x), incx,  get_ptr(ap)); break;
+                    case dspr:	cblas_dspr(order, uplo, n, get_cste_double(alpha),  get_cste_ptr(x), incx,  get_ptr(ap)); break;
+                    case chpr:	cblas_chpr(order, uplo, n, get_cste_float(alpha),  get_cste_ptr(x), incx,  get_ptr(ap)); break;
+                    case zhpr:	cblas_zhpr(order, uplo, n, get_cste_double(alpha),  get_cste_ptr(x), incx,  get_ptr(ap)); break;
+
+                    default: error = ERROR_NOT_FOUND; break;
+                }
+                
+            }
+		break;}
+
+		case sspr2: case dspr2: case chpr2: case zhpr2: {
+			int order; int uplo; int n; cste_c_binary alpha; cste_c_binary x; int incx; cste_c_binary y; int incy; c_binary ap;
+
+			if(!(error = test_n_arg(narg, 9))
+                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_ptr, e_end},
+                                                    &order, &uplo, &n, &alpha, &x, &incx, &y, &incy, &ap))
+                && !(error = in_cste_bounds(type, n, incx, x))
+                && !(error = in_cste_bounds(type, n, incy, y))
+                && !(error = in_cste_bounds(type, 1, 1, alpha))
+                && !(error = in_bounds(type, (n*(n+1))/2, 1, ap))
+			){
+                switch(hash_name){
+                    case sspr2:	cblas_sspr2(order, uplo, n, get_cste_float(alpha),  get_cste_ptr(x), incx,  get_cste_ptr(y), incy,  get_ptr(ap)); break;
+                    case dspr2:	cblas_dspr2(order, uplo, n, get_cste_double(alpha),  get_cste_ptr(x), incx,  get_cste_ptr(y), incy,  get_ptr(ap)); break;
+                    case chpr2:	cblas_chpr2(order, uplo, n,  get_cste_ptr(alpha),  get_cste_ptr(x), incx,  get_cste_ptr(y), incy,  get_ptr(ap)); break;
+                    case zhpr2:	cblas_zhpr2(order, uplo, n,  get_cste_ptr(alpha),  get_cste_ptr(x), incx,  get_cste_ptr(y), incy,  get_ptr(ap)); break;
+
+                    default: error = ERROR_NOT_FOUND; break;
+                }
+                
+            }
+		break;}
+
+		case chbmv: case zhbmv: {
+			int order; int uplo; int n; int k; cste_c_binary alpha; cste_c_binary a; int lda; cste_c_binary x; int incx; cste_c_binary beta; c_binary y; int incy;
+
+			if(!(error = test_n_arg(narg, 12))
+                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end},
+                                                    &order, &uplo, &n, &k, &alpha, &a, &lda, &x, &incx, &beta, &y, &incy))
+                && !(error = in_cste_bounds(type, n, incx, x))
+                && !(error = in_bounds(type, n, incy, y))
+                && !(error = in_cste_bounds(type, 1, 1, alpha))
+                && !(error = in_cste_bounds(type, 1, 1, beta))
+                && !(error = in_cste_bounds(type, lda, n, a))
+			){
+                switch(hash_name){
+                    case chbmv:	cblas_chbmv(order, uplo, n, k,  get_cste_ptr(alpha),  get_cste_ptr(a), lda,  get_cste_ptr(x), incx,  get_cste_ptr(beta),  get_ptr(y), incy); break;
+                    case zhbmv:	cblas_zhbmv(order, uplo, n, k,  get_cste_ptr(alpha),  get_cste_ptr(a), lda,  get_cste_ptr(x), incx,  get_cste_ptr(beta),  get_ptr(y), incy); break;
+
+                    default: error = ERROR_NOT_FOUND; break;
+                }
+                
+            }
+		break;}
+
+		case chpmv: case zhpmv: {
+			int order; int uplo; int n; cste_c_binary alpha; cste_c_binary ap; cste_c_binary x; int incx; cste_c_binary beta; c_binary y; int incy;
+
+			if(!(error = test_n_arg(narg, 10))
+			&& !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_int, e_cste_ptr, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end},
+			                                     &order, &uplo, &n, &alpha, &ap, &x, &incx, &beta, &y, &incy))
+            && !(error = in_cste_bounds(type, n, incx, x))
+            && !(error = in_bounds(type, n, incy, y))
+            && !(error = in_cste_bounds(type, 1, 1, alpha))
+            && !(error = in_cste_bounds(type, 1, 1, beta))
+            && !(error = in_cste_bounds(type, (n*(n+1))/2, 1, ap))
+			){
+                switch(hash_name){
+                    case chpmv:	cblas_chpmv(order, uplo, n,  get_cste_ptr(alpha),  get_cste_ptr(ap),  get_cste_ptr(x), incx,  get_cste_ptr(beta),  get_ptr(y), incy); break;
+                    case zhpmv:	cblas_zhpmv(order, uplo, n,  get_cste_ptr(alpha),  get_cste_ptr(ap),  get_cste_ptr(x), incx,  get_cste_ptr(beta),  get_ptr(y), incy); break;
+
+                    default: error = ERROR_NOT_FOUND; break;
+                }
+                
+            }
+		break;}
+
+		case chemm: case zhemm: {
+			int order; int side; int uplo; int m; int n; cste_c_binary alpha; cste_c_binary a; int lda; cste_c_binary b; int ldb; cste_c_binary beta; c_binary c; int ldc;
+
+			if(!(error = test_n_arg(narg, 13))
+			&& !(error = translate(env, elements, (etypes[]) {e_layout, e_side, e_uplo, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end},
+			                                     &order,  &side, &uplo, &m, &n, &alpha, &a, &lda, &b, &ldb, &beta, &c, &ldc))
+			&& !(error = in_cste_bounds(type, 1, 1, alpha))
+            && !(error = in_cste_bounds(type, 1, 1, beta))
+            && !(error = in_cste_bounds(type, lda, side==CblasLeft?m:n, a))
+            ){
+                switch(hash_name){
+                    case chemm:	cblas_chemm(order, side, uplo, m, n,  get_cste_ptr(alpha),  get_cste_ptr(a), lda,  get_cste_ptr(b), ldb,  get_cste_ptr(beta),  get_ptr(c), ldc); break;
+                    case zhemm:	cblas_zhemm(order, side, uplo, m, n,  get_cste_ptr(alpha),  get_cste_ptr(a), lda,  get_cste_ptr(b), ldb,  get_cste_ptr(beta),  get_ptr(c), ldc); break;
+
+                    default: error = ERROR_NOT_FOUND; break;
+                }
+                
+            }
+		break;}
+
+        case ssyr: case dsyr: case cher: case zher: {
+            int order; int uplo; int n; cste_c_binary alpha; cste_c_binary x; int incx; c_binary a; int lda;
+
+			if(!(error = test_n_arg(narg, 8))
+			&& !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_int, e_cste_ptr, e_cste_ptr, e_int, e_ptr, e_int, e_end},
+			                                                  &order, &uplo, &n, &alpha, &x, &incx, &a, &lda))
+			&& !(error = in_cste_bounds(type, 1, 1, alpha))
+            ){
+                switch(hash_name){
+                    case ssyr:	cblas_ssyr(order, uplo, n,get_cste_float(alpha), get_cste_ptr(x), incx, get_ptr(a), lda); break;
+                    case dsyr:	cblas_dsyr(order, uplo, n,get_cste_double(alpha), get_cste_ptr(x), incx, get_ptr(a), lda); break;
+                    case cher:	cblas_cher(order, uplo, n,get_cste_float(alpha), get_cste_ptr(x), incx, get_ptr(a), lda); break;
+                    case zher:	cblas_zher(order, uplo, n,get_cste_double(alpha), get_cste_ptr(x), incx, get_ptr(a), lda); break;
+
+                    default: error = ERROR_NOT_FOUND; break;
+                }
+                
+            }
+		break;}
+
+        case ssyr2: case dsyr2: case cher2: case zher2: {
+            int order; int uplo; int n; cste_c_binary alpha; cste_c_binary x; int incx; cste_c_binary y; int incy; c_binary a; int lda;
+
+			if(!(error = test_n_arg(narg, 10))
+			&& !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_ptr, e_int, e_end},
+			                                                  &order, &uplo, &n, &alpha, &x, &incx, &y, &incy, &a, &lda))
+			&& !(error = in_cste_bounds(type, 1, 1, alpha))
+            ){
+                switch(hash_name){
+                    case ssyr2:	cblas_ssyr2(order, uplo, n,get_cste_float(alpha), get_cste_ptr(x), incx, get_cste_ptr(y), incy, get_ptr(a), lda); break;
+                    case dsyr2:	cblas_dsyr2(order, uplo, n,get_cste_double(alpha), get_cste_ptr(x), incx, get_cste_ptr(y), incy, get_ptr(a), lda); break;
+                    case cher2:	cblas_cher2(order, uplo, n,            get_cste_ptr(alpha), get_cste_ptr(x), incx, get_cste_ptr(y), incy, get_ptr(a), lda); break;
+                    case zher2:	cblas_zher2(order, uplo, n,            get_cste_ptr(alpha), get_cste_ptr(x), incx, get_cste_ptr(y), incy, get_ptr(a), lda); break;
+
+                    default: error = ERROR_NOT_FOUND; break;
+                }
+                
+            }
+		break;}
+
+		case cherk: case zherk: {
+			int order; int uplo; int trans; int n; int k; cste_c_binary alpha; cste_c_binary a; int lda; cste_c_binary beta; c_binary c; int ldc;
+
+			if(!(error = test_n_arg(narg, 11))
+			&& !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end},
+			                                     &order, &uplo, &trans, &n, &k, &alpha, &a, &lda, &beta, &c, &ldc))
+			&& !(error = in_cste_bounds(type, 1, 1, alpha))
+            && !(error = in_cste_bounds(type, 1, 1, beta))
+            ){
+                switch(hash_name){
+                    case cherk:	cblas_cherk(order, uplo, trans, n, k, get_cste_float(alpha),  get_cste_ptr(a), lda, get_cste_float(beta),  get_ptr(c), ldc); break;
+                    case zherk:	cblas_zherk(order, uplo, trans, n, k, get_cste_double(alpha),  get_cste_ptr(a), lda, get_cste_double(beta),  get_ptr(c), ldc); break;
+
+                    default: error = ERROR_NOT_FOUND; break;
+                }
+                
+            }
+		break;}
+
+		case cher2k: case zher2k: {
+			int order; int uplo; int trans; int n; int k; cste_c_binary alpha; cste_c_binary a; int lda; cste_c_binary b; int ldb; cste_c_binary beta; c_binary c; int ldc;
+
+			if(!(error = test_n_arg(narg, 13))
+			&& !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end},
+			                                     &order, &uplo, &trans, &n, &k, &alpha, &a, &lda, &b, &ldb, &beta, &c, &ldc))
+			&& !(error = in_cste_bounds(type, 1, 1, alpha))
+            && !(error = in_cste_bounds(type, 1, 1, beta))
+            ){
+                switch(hash_name){
+                    case cher2k:	cblas_cher2k(order, uplo, trans, n, k,  get_cste_ptr(alpha),  get_cste_ptr(a), lda,  get_cste_ptr(b), ldb, get_cste_float(beta),  get_ptr(c), ldc); break;
+                    case zher2k:	cblas_zher2k(order, uplo, trans, n, k,  get_cste_ptr(alpha),  get_cste_ptr(a), lda,  get_cste_ptr(b), ldb, get_cste_double(beta),  get_ptr(c), ldc); break;
+
+                    default: error = ERROR_NOT_FOUND; break;
+                }
+                
+            }
+		break;}
+
+		case ssymm: case dsymm: case csymm: case zsymm: {
+			int order; int side; int uplo; int m; int n; cste_c_binary alpha; cste_c_binary a; int lda; cste_c_binary b; int ldb; cste_c_binary beta; c_binary c; int ldc;
+
+			if(!(error = test_n_arg(narg, 13))
+			&& !(error = translate(env, elements, (etypes[]) {e_layout, e_side, e_uplo, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end},
+			                                     &order, &side, &uplo, &m, &n, &alpha, &a, &lda, &b, &ldb, &beta, &c, &ldc))
+			&& !(error = in_cste_bounds(type, 1, 1, alpha))
+            && !(error = in_cste_bounds(type, 1, 1, beta))
+            ){
+                switch(hash_name){
+                    case ssymm:	cblas_ssymm(order, side, uplo, m, n, get_cste_float(alpha),  get_cste_ptr(a), lda,  get_cste_ptr(b), ldb, get_cste_float(beta),  get_ptr(c), ldc); break;
+                    case dsymm:	cblas_dsymm(order, side, uplo, m, n, get_cste_double(alpha),  get_cste_ptr(a), lda,  get_cste_ptr(b), ldb, get_cste_double(beta),  get_ptr(c), ldc); break;
+                    case csymm:	cblas_csymm(order, side, uplo, m, n,  get_cste_ptr(alpha),  get_cste_ptr(a), lda,  get_cste_ptr(b), ldb,  get_cste_ptr(beta),  get_ptr(c), ldc); break;
+                    case zsymm:	cblas_zsymm(order, side, uplo, m, n,  get_cste_ptr(alpha),  get_cste_ptr(a), lda,  get_cste_ptr(b), ldb,  get_cste_ptr(beta),  get_ptr(c), ldc); break;
+
+                    default: error = ERROR_NOT_FOUND; break;
+                }
+                
+            }
+		break;}
+
+		case ssyrk: case dsyrk: case csyrk: case zsyrk: {
+			int order; int trans; int uplo; int n; int k; cste_c_binary alpha; cste_c_binary a; int lda; cste_c_binary beta; c_binary c; int ldc;
+
+			if(!(error = test_n_arg(narg, 11))
+                && !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose, e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end},
+                                                    &order, &uplo, &trans, &n, &k, &alpha, &a, &lda, &beta, &c, &ldc))
+                && !(error = in_cste_bounds(type, 1, 1, alpha))
+                && !(error = in_cste_bounds(type, 1, 1, beta))
+                && !(error = in_cste_bounds(type, leading_dim(order, trans, n, k), lda, a))
+                && !(error = in_cste_bounds(type, n, ldc, a))
+            ){
+                switch(hash_name){
+                    case ssyrk:	cblas_ssyrk(order, uplo, trans,  n, k, get_cste_float(alpha),  get_cste_ptr(a), lda, get_cste_float(beta),  get_ptr(c), ldc); break;
+                    case dsyrk:	cblas_dsyrk(order, uplo, trans, n, k, get_cste_double(alpha),  get_cste_ptr(a), lda, get_cste_double(beta),  get_ptr(c), ldc); break;
+                    case csyrk:	cblas_csyrk(order, uplo, trans, n, k,  get_cste_ptr(alpha),  get_cste_ptr(a), lda,  get_cste_ptr(beta),  get_ptr(c), ldc); break;
+                    case zsyrk:	cblas_zsyrk(order, uplo, trans, n, k,  get_cste_ptr(alpha),  get_cste_ptr(a), lda,  get_cste_ptr(beta),  get_ptr(c), ldc); break;
+
+                    default: error = ERROR_NOT_FOUND; break;
+                }
+                
+            }
+		break;}
+
+		case ssyr2k: case dsyr2k: case csyr2k: case zsyr2k: {
+			int order; int trans; int uplo; int n; int k; cste_c_binary alpha; cste_c_binary a; int lda; cste_c_binary b; int ldb; cste_c_binary beta; c_binary c; int ldc;
+			
+            if(!(error = test_n_arg(narg, 13))
+			&& !(error = translate(env, elements, (etypes[]) {e_layout, e_uplo, e_transpose,  e_int, e_int, e_cste_ptr, e_cste_ptr, e_int, e_cste_ptr, e_int, e_cste_ptr, e_ptr, e_int, e_end},
+			                                     &order, &trans, &uplo, &n, &k, &alpha, &a, &lda, &b, &ldb, &beta, &c, &ldc))
+			&& !(error = in_cste_bounds(type, 1, 1, alpha))
+            && !(error = in_cste_bounds(type, 1, 1, beta))
+            && !(error = in_cste_bounds(type, leading_dim(order, trans, k, n), lda, a))
+            && !(error = in_cste_bounds(type, leading_dim(order, trans, k, n), lda, a))
+            && !(error = in_cste_bounds(type, n, ldc, a))
+            ){
+                switch(hash_name){
+                    case ssyr2k:    cblas_ssyr2k(order, trans, uplo, n, k, get_cste_float(alpha),  get_cste_ptr(a), lda,  get_cste_ptr(b), ldb, get_cste_float(beta),  get_ptr(c), ldc); break;
+                    case dsyr2k:	cblas_dsyr2k(order, trans, uplo, n, k, get_cste_double(alpha),  get_cste_ptr(a), lda,  get_cste_ptr(b), ldb, get_cste_double(beta),  get_ptr(c), ldc); break;
+                    case csyr2k:	cblas_csyr2k(order, trans, uplo, n, k,  get_cste_ptr(alpha),  get_cste_ptr(a), lda,  get_cste_ptr(b), ldb,  get_cste_ptr(beta),  get_ptr(c), ldc); break;
+                    case zsyr2k:	cblas_zsyr2k(order, trans, uplo, n, k,  get_cste_ptr(alpha),  get_cste_ptr(a), lda,  get_cste_ptr(b), ldb,  get_cste_ptr(beta),  get_ptr(c), ldc); break;
+
+                    default: error = ERROR_NOT_FOUND; break;
+                }
+                
+            }
+        break;}
+
+
         case sbdsdc: {
             int matrix_layout; char uplo; char compq; int n; c_binary d; c_binary e; c_binary u; int ldu; c_binary vt; int ldvt; c_binary q; c_binary iq;
             
@@ -1608,7 +1162,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sbdsdc(matrix_layout, uplo, compq, n, get_ptr(d), get_ptr(e), get_ptr(u), ldu, get_ptr(vt), ldvt, get_ptr(q), get_ptr(iq));
             }
-        } break;
+        break; }
         case dbdsdc: {
             int matrix_layout; char uplo; char compq; int n; c_binary d; c_binary e; c_binary u; int ldu; c_binary vt; int ldvt; c_binary q; c_binary iq;
             
@@ -1617,7 +1171,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dbdsdc(matrix_layout, uplo, compq, n, get_ptr(d), get_ptr(e), get_ptr(u), ldu, get_ptr(vt), ldvt, get_ptr(q), get_ptr(iq));
             }
-        } break;
+        break; }
         case sbdsqr: {
             int matrix_layout; char uplo; int n; int ncvt; int nru; int ncc; c_binary d; c_binary e; c_binary vt; int ldvt; c_binary u; int ldu; c_binary c; int ldc;
             
@@ -1626,7 +1180,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sbdsqr(matrix_layout, uplo, n, ncvt, nru, ncc, get_ptr(d), get_ptr(e), get_ptr(vt), ldvt, get_ptr(u), ldu, get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case dbdsqr: {
             int matrix_layout; char uplo; int n; int ncvt; int nru; int ncc; c_binary d; c_binary e; c_binary vt; int ldvt; c_binary u; int ldu; c_binary c; int ldc;
             
@@ -1635,7 +1189,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dbdsqr(matrix_layout, uplo, n, ncvt, nru, ncc, get_ptr(d), get_ptr(e), get_ptr(vt), ldvt, get_ptr(u), ldu, get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case cbdsqr: {
             int matrix_layout; char uplo; int n; int ncvt; int nru; int ncc; c_binary d; c_binary e; c_binary vt; int ldvt; c_binary u; int ldu; c_binary c; int ldc;
             
@@ -1644,7 +1198,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cbdsqr(matrix_layout, uplo, n, ncvt, nru, ncc, get_ptr(d), get_ptr(e), get_ptr(vt), ldvt, get_ptr(u), ldu, get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case zbdsqr: {
             int matrix_layout; char uplo; int n; int ncvt; int nru; int ncc; c_binary d; c_binary e; c_binary vt; int ldvt; c_binary u; int ldu; c_binary c; int ldc;
             
@@ -1653,7 +1207,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zbdsqr(matrix_layout, uplo, n, ncvt, nru, ncc, get_ptr(d), get_ptr(e), get_ptr(vt), ldvt, get_ptr(u), ldu, get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case sdisna: {
             char job; int m; int n; cste_c_binary d; c_binary sep;
             
@@ -1662,7 +1216,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sdisna(job, m, n, get_cste_ptr(d), get_ptr(sep));
             }
-        } break;
+        break; }
         case ddisna: {
             char job; int m; int n; cste_c_binary d; c_binary sep;
             
@@ -1671,7 +1225,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ddisna(job, m, n, get_cste_ptr(d), get_ptr(sep));
             }
-        } break;
+        break; }
         case sgbbrd: {
             int matrix_layout; char vect; int m; int n; int ncc; int kl; int ku; c_binary ab; int ldab; c_binary d; c_binary e; c_binary q; int ldq; c_binary pt; int ldpt; c_binary c; int ldc;
             
@@ -1680,7 +1234,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgbbrd(matrix_layout, vect, m, n, ncc, kl, ku, get_ptr(ab), ldab, get_ptr(d), get_ptr(e), get_ptr(q), ldq, get_ptr(pt), ldpt, get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case dgbbrd: {
             int matrix_layout; char vect; int m; int n; int ncc; int kl; int ku; c_binary ab; int ldab; c_binary d; c_binary e; c_binary q; int ldq; c_binary pt; int ldpt; c_binary c; int ldc;
             
@@ -1689,7 +1243,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgbbrd(matrix_layout, vect, m, n, ncc, kl, ku, get_ptr(ab), ldab, get_ptr(d), get_ptr(e), get_ptr(q), ldq, get_ptr(pt), ldpt, get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case cgbbrd: {
             int matrix_layout; char vect; int m; int n; int ncc; int kl; int ku; c_binary ab; int ldab; c_binary d; c_binary e; c_binary q; int ldq; c_binary pt; int ldpt; c_binary c; int ldc;
             
@@ -1698,7 +1252,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgbbrd(matrix_layout, vect, m, n, ncc, kl, ku, get_ptr(ab), ldab, get_ptr(d), get_ptr(e), get_ptr(q), ldq, get_ptr(pt), ldpt, get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case zgbbrd: {
             int matrix_layout; char vect; int m; int n; int ncc; int kl; int ku; c_binary ab; int ldab; c_binary d; c_binary e; c_binary q; int ldq; c_binary pt; int ldpt; c_binary c; int ldc;
             
@@ -1707,7 +1261,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgbbrd(matrix_layout, vect, m, n, ncc, kl, ku, get_ptr(ab), ldab, get_ptr(d), get_ptr(e), get_ptr(q), ldq, get_ptr(pt), ldpt, get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case sgbcon: {
             int matrix_layout; char norm; int n; int kl; int ku; cste_c_binary ab; int ldab; cste_c_binary ipiv; cste_c_binary anorm; c_binary rcond;
             
@@ -1716,7 +1270,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgbcon(matrix_layout, norm, n, kl, ku, get_cste_ptr(ab), ldab, get_cste_ptr(ipiv), get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case dgbcon: {
             int matrix_layout; char norm; int n; int kl; int ku; cste_c_binary ab; int ldab; cste_c_binary ipiv; cste_c_binary anorm; c_binary rcond;
             
@@ -1725,7 +1279,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgbcon(matrix_layout, norm, n, kl, ku, get_cste_ptr(ab), ldab, get_cste_ptr(ipiv), get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case cgbcon: {
             int matrix_layout; char norm; int n; int kl; int ku; cste_c_binary ab; int ldab; cste_c_binary ipiv; cste_c_binary anorm; c_binary rcond;
             
@@ -1734,7 +1288,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgbcon(matrix_layout, norm, n, kl, ku, get_cste_ptr(ab), ldab, get_cste_ptr(ipiv), get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case zgbcon: {
             int matrix_layout; char norm; int n; int kl; int ku; cste_c_binary ab; int ldab; cste_c_binary ipiv; cste_c_binary anorm; c_binary rcond;
             
@@ -1743,7 +1297,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgbcon(matrix_layout, norm, n, kl, ku, get_cste_ptr(ab), ldab, get_cste_ptr(ipiv), get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case sgbequ: {
             int matrix_layout; int m; int n; int kl; int ku; cste_c_binary ab; int ldab; c_binary r; c_binary c; c_binary rowcnd; c_binary colcnd; c_binary amax;
             
@@ -1752,7 +1306,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgbequ(matrix_layout, m, n, kl, ku, get_cste_ptr(ab), ldab, get_ptr(r), get_ptr(c), get_ptr(rowcnd), get_ptr(colcnd), get_ptr(amax));
             }
-        } break;
+        break; }
         case dgbequ: {
             int matrix_layout; int m; int n; int kl; int ku; cste_c_binary ab; int ldab; c_binary r; c_binary c; c_binary rowcnd; c_binary colcnd; c_binary amax;
             
@@ -1761,7 +1315,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgbequ(matrix_layout, m, n, kl, ku, get_cste_ptr(ab), ldab, get_ptr(r), get_ptr(c), get_ptr(rowcnd), get_ptr(colcnd), get_ptr(amax));
             }
-        } break;
+        break; }
         case cgbequ: {
             int matrix_layout; int m; int n; int kl; int ku; cste_c_binary ab; int ldab; c_binary r; c_binary c; c_binary rowcnd; c_binary colcnd; c_binary amax;
             
@@ -1770,7 +1324,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgbequ(matrix_layout, m, n, kl, ku, get_cste_ptr(ab), ldab, get_ptr(r), get_ptr(c), get_ptr(rowcnd), get_ptr(colcnd), get_ptr(amax));
             }
-        } break;
+        break; }
         case zgbequ: {
             int matrix_layout; int m; int n; int kl; int ku; cste_c_binary ab; int ldab; c_binary r; c_binary c; c_binary rowcnd; c_binary colcnd; c_binary amax;
             
@@ -1779,7 +1333,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgbequ(matrix_layout, m, n, kl, ku, get_cste_ptr(ab), ldab, get_ptr(r), get_ptr(c), get_ptr(rowcnd), get_ptr(colcnd), get_ptr(amax));
             }
-        } break;
+        break; }
         case sgbequb: {
             int matrix_layout; int m; int n; int kl; int ku; cste_c_binary ab; int ldab; c_binary r; c_binary c; c_binary rowcnd; c_binary colcnd; c_binary amax;
             
@@ -1788,7 +1342,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgbequb(matrix_layout, m, n, kl, ku, get_cste_ptr(ab), ldab, get_ptr(r), get_ptr(c), get_ptr(rowcnd), get_ptr(colcnd), get_ptr(amax));
             }
-        } break;
+        break; }
         case dgbequb: {
             int matrix_layout; int m; int n; int kl; int ku; cste_c_binary ab; int ldab; c_binary r; c_binary c; c_binary rowcnd; c_binary colcnd; c_binary amax;
             
@@ -1797,7 +1351,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgbequb(matrix_layout, m, n, kl, ku, get_cste_ptr(ab), ldab, get_ptr(r), get_ptr(c), get_ptr(rowcnd), get_ptr(colcnd), get_ptr(amax));
             }
-        } break;
+        break; }
         case cgbequb: {
             int matrix_layout; int m; int n; int kl; int ku; cste_c_binary ab; int ldab; c_binary r; c_binary c; c_binary rowcnd; c_binary colcnd; c_binary amax;
             
@@ -1806,7 +1360,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgbequb(matrix_layout, m, n, kl, ku, get_cste_ptr(ab), ldab, get_ptr(r), get_ptr(c), get_ptr(rowcnd), get_ptr(colcnd), get_ptr(amax));
             }
-        } break;
+        break; }
         case zgbequb: {
             int matrix_layout; int m; int n; int kl; int ku; cste_c_binary ab; int ldab; c_binary r; c_binary c; c_binary rowcnd; c_binary colcnd; c_binary amax;
             
@@ -1815,7 +1369,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgbequb(matrix_layout, m, n, kl, ku, get_cste_ptr(ab), ldab, get_ptr(r), get_ptr(c), get_ptr(rowcnd), get_ptr(colcnd), get_ptr(amax));
             }
-        } break;
+        break; }
         case sgbrfs: {
             int matrix_layout; char trans; int n; int kl; int ku; int nrhs; cste_c_binary ab; int ldab; cste_c_binary afb; int ldafb; cste_c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -1824,7 +1378,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgbrfs(matrix_layout, trans, n, kl, ku, nrhs, get_cste_ptr(ab), ldab, get_cste_ptr(afb), ldafb, get_cste_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case dgbrfs: {
             int matrix_layout; char trans; int n; int kl; int ku; int nrhs; cste_c_binary ab; int ldab; cste_c_binary afb; int ldafb; cste_c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -1833,7 +1387,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgbrfs(matrix_layout, trans, n, kl, ku, nrhs, get_cste_ptr(ab), ldab, get_cste_ptr(afb), ldafb, get_cste_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case cgbrfs: {
             int matrix_layout; char trans; int n; int kl; int ku; int nrhs; cste_c_binary ab; int ldab; cste_c_binary afb; int ldafb; cste_c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -1842,7 +1396,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgbrfs(matrix_layout, trans, n, kl, ku, nrhs, get_cste_ptr(ab), ldab, get_cste_ptr(afb), ldafb, get_cste_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case zgbrfs: {
             int matrix_layout; char trans; int n; int kl; int ku; int nrhs; cste_c_binary ab; int ldab; cste_c_binary afb; int ldafb; cste_c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -1851,7 +1405,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgbrfs(matrix_layout, trans, n, kl, ku, nrhs, get_cste_ptr(ab), ldab, get_cste_ptr(afb), ldafb, get_cste_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case sgbsv: {
             int matrix_layout; int n; int kl; int ku; int nrhs; c_binary ab; int ldab; c_binary ipiv; c_binary b; int ldb;
             
@@ -1860,7 +1414,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgbsv(matrix_layout, n, kl, ku, nrhs, get_ptr(ab), ldab, get_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case dgbsv: {
             int matrix_layout; int n; int kl; int ku; int nrhs; c_binary ab; int ldab; c_binary ipiv; c_binary b; int ldb;
             
@@ -1869,7 +1423,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgbsv(matrix_layout, n, kl, ku, nrhs, get_ptr(ab), ldab, get_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case cgbsv: {
             int matrix_layout; int n; int kl; int ku; int nrhs; c_binary ab; int ldab; c_binary ipiv; c_binary b; int ldb;
             
@@ -1878,7 +1432,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgbsv(matrix_layout, n, kl, ku, nrhs, get_ptr(ab), ldab, get_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case zgbsv: {
             int matrix_layout; int n; int kl; int ku; int nrhs; c_binary ab; int ldab; c_binary ipiv; c_binary b; int ldb;
             
@@ -1887,7 +1441,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgbsv(matrix_layout, n, kl, ku, nrhs, get_ptr(ab), ldab, get_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case sgbtrf: {
             int matrix_layout; int m; int n; int kl; int ku; c_binary ab; int ldab; c_binary ipiv;
             
@@ -1896,7 +1450,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgbtrf(matrix_layout, m, n, kl, ku, get_ptr(ab), ldab, get_ptr(ipiv));
             }
-        } break;
+        break; }
         case dgbtrf: {
             int matrix_layout; int m; int n; int kl; int ku; c_binary ab; int ldab; c_binary ipiv;
             
@@ -1905,7 +1459,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgbtrf(matrix_layout, m, n, kl, ku, get_ptr(ab), ldab, get_ptr(ipiv));
             }
-        } break;
+        break; }
         case cgbtrf: {
             int matrix_layout; int m; int n; int kl; int ku; c_binary ab; int ldab; c_binary ipiv;
             
@@ -1914,7 +1468,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgbtrf(matrix_layout, m, n, kl, ku, get_ptr(ab), ldab, get_ptr(ipiv));
             }
-        } break;
+        break; }
         case zgbtrf: {
             int matrix_layout; int m; int n; int kl; int ku; c_binary ab; int ldab; c_binary ipiv;
             
@@ -1923,7 +1477,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgbtrf(matrix_layout, m, n, kl, ku, get_ptr(ab), ldab, get_ptr(ipiv));
             }
-        } break;
+        break; }
         case sgbtrs: {
             int matrix_layout; char trans; int n; int kl; int ku; int nrhs; cste_c_binary ab; int ldab; cste_c_binary ipiv; c_binary b; int ldb;
             
@@ -1932,7 +1486,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgbtrs(matrix_layout, trans, n, kl, ku, nrhs, get_cste_ptr(ab), ldab, get_cste_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case dgbtrs: {
             int matrix_layout; char trans; int n; int kl; int ku; int nrhs; cste_c_binary ab; int ldab; cste_c_binary ipiv; c_binary b; int ldb;
             
@@ -1941,7 +1495,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgbtrs(matrix_layout, trans, n, kl, ku, nrhs, get_cste_ptr(ab), ldab, get_cste_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case cgbtrs: {
             int matrix_layout; char trans; int n; int kl; int ku; int nrhs; cste_c_binary ab; int ldab; cste_c_binary ipiv; c_binary b; int ldb;
             
@@ -1950,7 +1504,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgbtrs(matrix_layout, trans, n, kl, ku, nrhs, get_cste_ptr(ab), ldab, get_cste_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case zgbtrs: {
             int matrix_layout; char trans; int n; int kl; int ku; int nrhs; cste_c_binary ab; int ldab; cste_c_binary ipiv; c_binary b; int ldb;
             
@@ -1959,7 +1513,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgbtrs(matrix_layout, trans, n, kl, ku, nrhs, get_cste_ptr(ab), ldab, get_cste_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case sgebak: {
             int matrix_layout; char job; char side; int n; int ilo; int ihi; cste_c_binary scale; int m; c_binary v; int ldv;
             
@@ -1968,7 +1522,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgebak(matrix_layout, job, side, n, ilo, ihi, get_cste_ptr(scale), m, get_ptr(v), ldv);
             }
-        } break;
+        break; }
         case dgebak: {
             int matrix_layout; char job; char side; int n; int ilo; int ihi; cste_c_binary scale; int m; c_binary v; int ldv;
             
@@ -1977,7 +1531,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgebak(matrix_layout, job, side, n, ilo, ihi, get_cste_ptr(scale), m, get_ptr(v), ldv);
             }
-        } break;
+        break; }
         case cgebak: {
             int matrix_layout; char job; char side; int n; int ilo; int ihi; cste_c_binary scale; int m; c_binary v; int ldv;
             
@@ -1986,7 +1540,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgebak(matrix_layout, job, side, n, ilo, ihi, get_cste_ptr(scale), m, get_ptr(v), ldv);
             }
-        } break;
+        break; }
         case zgebak: {
             int matrix_layout; char job; char side; int n; int ilo; int ihi; cste_c_binary scale; int m; c_binary v; int ldv;
             
@@ -1995,7 +1549,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgebak(matrix_layout, job, side, n, ilo, ihi, get_cste_ptr(scale), m, get_ptr(v), ldv);
             }
-        } break;
+        break; }
         case sgebal: {
             int matrix_layout; char job; int n; c_binary a; int lda; c_binary ilo; c_binary ihi; c_binary scale;
             
@@ -2004,7 +1558,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgebal(matrix_layout, job, n, get_ptr(a), lda, get_ptr(ilo), get_ptr(ihi), get_ptr(scale));
             }
-        } break;
+        break; }
         case dgebal: {
             int matrix_layout; char job; int n; c_binary a; int lda; c_binary ilo; c_binary ihi; c_binary scale;
             
@@ -2013,7 +1567,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgebal(matrix_layout, job, n, get_ptr(a), lda, get_ptr(ilo), get_ptr(ihi), get_ptr(scale));
             }
-        } break;
+        break; }
         case cgebal: {
             int matrix_layout; char job; int n; c_binary a; int lda; c_binary ilo; c_binary ihi; c_binary scale;
             
@@ -2022,7 +1576,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgebal(matrix_layout, job, n, get_ptr(a), lda, get_ptr(ilo), get_ptr(ihi), get_ptr(scale));
             }
-        } break;
+        break; }
         case zgebal: {
             int matrix_layout; char job; int n; c_binary a; int lda; c_binary ilo; c_binary ihi; c_binary scale;
             
@@ -2031,7 +1585,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgebal(matrix_layout, job, n, get_ptr(a), lda, get_ptr(ilo), get_ptr(ihi), get_ptr(scale));
             }
-        } break;
+        break; }
         case sgebrd: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary d; c_binary e; c_binary tauq; c_binary taup;
             
@@ -2040,7 +1594,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgebrd(matrix_layout, m, n, get_ptr(a), lda, get_ptr(d), get_ptr(e), get_ptr(tauq), get_ptr(taup));
             }
-        } break;
+        break; }
         case dgebrd: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary d; c_binary e; c_binary tauq; c_binary taup;
             
@@ -2049,7 +1603,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgebrd(matrix_layout, m, n, get_ptr(a), lda, get_ptr(d), get_ptr(e), get_ptr(tauq), get_ptr(taup));
             }
-        } break;
+        break; }
         case cgebrd: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary d; c_binary e; c_binary tauq; c_binary taup;
             
@@ -2058,7 +1612,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgebrd(matrix_layout, m, n, get_ptr(a), lda, get_ptr(d), get_ptr(e), get_ptr(tauq), get_ptr(taup));
             }
-        } break;
+        break; }
         case zgebrd: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary d; c_binary e; c_binary tauq; c_binary taup;
             
@@ -2067,7 +1621,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgebrd(matrix_layout, m, n, get_ptr(a), lda, get_ptr(d), get_ptr(e), get_ptr(tauq), get_ptr(taup));
             }
-        } break;
+        break; }
         case sgecon: {
             int matrix_layout; char norm; int n; cste_c_binary a; int lda; cste_c_binary anorm; c_binary rcond;
             
@@ -2076,7 +1630,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgecon(matrix_layout, norm, n, get_cste_ptr(a), lda, get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case dgecon: {
             int matrix_layout; char norm; int n; cste_c_binary a; int lda; cste_c_binary anorm; c_binary rcond;
             
@@ -2085,7 +1639,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgecon(matrix_layout, norm, n, get_cste_ptr(a), lda, get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case cgecon: {
             int matrix_layout; char norm; int n; cste_c_binary a; int lda; cste_c_binary anorm; c_binary rcond;
             
@@ -2094,7 +1648,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgecon(matrix_layout, norm, n, get_cste_ptr(a), lda, get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case zgecon: {
             int matrix_layout; char norm; int n; cste_c_binary a; int lda; cste_c_binary anorm; c_binary rcond;
             
@@ -2103,7 +1657,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgecon(matrix_layout, norm, n, get_cste_ptr(a), lda, get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case sgeequ: {
             int matrix_layout; int m; int n; cste_c_binary a; int lda; c_binary r; c_binary c; c_binary rowcnd; c_binary colcnd; c_binary amax;
             
@@ -2112,7 +1666,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgeequ(matrix_layout, m, n, get_cste_ptr(a), lda, get_ptr(r), get_ptr(c), get_ptr(rowcnd), get_ptr(colcnd), get_ptr(amax));
             }
-        } break;
+        break; }
         case dgeequ: {
             int matrix_layout; int m; int n; cste_c_binary a; int lda; c_binary r; c_binary c; c_binary rowcnd; c_binary colcnd; c_binary amax;
             
@@ -2121,7 +1675,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgeequ(matrix_layout, m, n, get_cste_ptr(a), lda, get_ptr(r), get_ptr(c), get_ptr(rowcnd), get_ptr(colcnd), get_ptr(amax));
             }
-        } break;
+        break; }
         case cgeequ: {
             int matrix_layout; int m; int n; cste_c_binary a; int lda; c_binary r; c_binary c; c_binary rowcnd; c_binary colcnd; c_binary amax;
             
@@ -2130,7 +1684,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgeequ(matrix_layout, m, n, get_cste_ptr(a), lda, get_ptr(r), get_ptr(c), get_ptr(rowcnd), get_ptr(colcnd), get_ptr(amax));
             }
-        } break;
+        break; }
         case zgeequ: {
             int matrix_layout; int m; int n; cste_c_binary a; int lda; c_binary r; c_binary c; c_binary rowcnd; c_binary colcnd; c_binary amax;
             
@@ -2139,7 +1693,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgeequ(matrix_layout, m, n, get_cste_ptr(a), lda, get_ptr(r), get_ptr(c), get_ptr(rowcnd), get_ptr(colcnd), get_ptr(amax));
             }
-        } break;
+        break; }
         case sgeequb: {
             int matrix_layout; int m; int n; cste_c_binary a; int lda; c_binary r; c_binary c; c_binary rowcnd; c_binary colcnd; c_binary amax;
             
@@ -2148,7 +1702,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgeequb(matrix_layout, m, n, get_cste_ptr(a), lda, get_ptr(r), get_ptr(c), get_ptr(rowcnd), get_ptr(colcnd), get_ptr(amax));
             }
-        } break;
+        break; }
         case dgeequb: {
             int matrix_layout; int m; int n; cste_c_binary a; int lda; c_binary r; c_binary c; c_binary rowcnd; c_binary colcnd; c_binary amax;
             
@@ -2157,7 +1711,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgeequb(matrix_layout, m, n, get_cste_ptr(a), lda, get_ptr(r), get_ptr(c), get_ptr(rowcnd), get_ptr(colcnd), get_ptr(amax));
             }
-        } break;
+        break; }
         case cgeequb: {
             int matrix_layout; int m; int n; cste_c_binary a; int lda; c_binary r; c_binary c; c_binary rowcnd; c_binary colcnd; c_binary amax;
             
@@ -2166,7 +1720,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgeequb(matrix_layout, m, n, get_cste_ptr(a), lda, get_ptr(r), get_ptr(c), get_ptr(rowcnd), get_ptr(colcnd), get_ptr(amax));
             }
-        } break;
+        break; }
         case zgeequb: {
             int matrix_layout; int m; int n; cste_c_binary a; int lda; c_binary r; c_binary c; c_binary rowcnd; c_binary colcnd; c_binary amax;
             
@@ -2175,7 +1729,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgeequb(matrix_layout, m, n, get_cste_ptr(a), lda, get_ptr(r), get_ptr(c), get_ptr(rowcnd), get_ptr(colcnd), get_ptr(amax));
             }
-        } break;
+        break; }
         case sgeev: {
             int matrix_layout; char jobvl; char jobvr; int n; c_binary a; int lda; c_binary wr; c_binary wi; c_binary vl; int ldvl; c_binary vr; int ldvr;
             
@@ -2184,7 +1738,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgeev(matrix_layout, jobvl, jobvr, n, get_ptr(a), lda, get_ptr(wr), get_ptr(wi), get_ptr(vl), ldvl, get_ptr(vr), ldvr);
             }
-        } break;
+        break; }
         case dgeev: {
             int matrix_layout; char jobvl; char jobvr; int n; c_binary a; int lda; c_binary wr; c_binary wi; c_binary vl; int ldvl; c_binary vr; int ldvr;
             
@@ -2193,7 +1747,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgeev(matrix_layout, jobvl, jobvr, n, get_ptr(a), lda, get_ptr(wr), get_ptr(wi), get_ptr(vl), ldvl, get_ptr(vr), ldvr);
             }
-        } break;
+        break; }
         case cgeev: {
             int matrix_layout; char jobvl; char jobvr; int n; c_binary a; int lda; c_binary w; c_binary vl; int ldvl; c_binary vr; int ldvr;
             
@@ -2202,7 +1756,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgeev(matrix_layout, jobvl, jobvr, n, get_ptr(a), lda, get_ptr(w), get_ptr(vl), ldvl, get_ptr(vr), ldvr);
             }
-        } break;
+        break; }
         case zgeev: {
             int matrix_layout; char jobvl; char jobvr; int n; c_binary a; int lda; c_binary w; c_binary vl; int ldvl; c_binary vr; int ldvr;
             
@@ -2211,7 +1765,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgeev(matrix_layout, jobvl, jobvr, n, get_ptr(a), lda, get_ptr(w), get_ptr(vl), ldvl, get_ptr(vr), ldvr);
             }
-        } break;
+        break; }
         case sgeevx: {
             int matrix_layout; char balanc; char jobvl; char jobvr; char sense; int n; c_binary a; int lda; c_binary wr; c_binary wi; c_binary vl; int ldvl; c_binary vr; int ldvr; c_binary ilo; c_binary ihi; c_binary scale; c_binary abnrm; c_binary rconde; c_binary rcondv;
             
@@ -2220,7 +1774,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgeevx(matrix_layout, balanc, jobvl, jobvr, sense, n, get_ptr(a), lda, get_ptr(wr), get_ptr(wi), get_ptr(vl), ldvl, get_ptr(vr), ldvr, get_ptr(ilo), get_ptr(ihi), get_ptr(scale), get_ptr(abnrm), get_ptr(rconde), get_ptr(rcondv));
             }
-        } break;
+        break; }
         case dgeevx: {
             int matrix_layout; char balanc; char jobvl; char jobvr; char sense; int n; c_binary a; int lda; c_binary wr; c_binary wi; c_binary vl; int ldvl; c_binary vr; int ldvr; c_binary ilo; c_binary ihi; c_binary scale; c_binary abnrm; c_binary rconde; c_binary rcondv;
             
@@ -2229,7 +1783,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgeevx(matrix_layout, balanc, jobvl, jobvr, sense, n, get_ptr(a), lda, get_ptr(wr), get_ptr(wi), get_ptr(vl), ldvl, get_ptr(vr), ldvr, get_ptr(ilo), get_ptr(ihi), get_ptr(scale), get_ptr(abnrm), get_ptr(rconde), get_ptr(rcondv));
             }
-        } break;
+        break; }
         case cgeevx: {
             int matrix_layout; char balanc; char jobvl; char jobvr; char sense; int n; c_binary a; int lda; c_binary w; c_binary vl; int ldvl; c_binary vr; int ldvr; c_binary ilo; c_binary ihi; c_binary scale; c_binary abnrm; c_binary rconde; c_binary rcondv;
             
@@ -2238,7 +1792,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgeevx(matrix_layout, balanc, jobvl, jobvr, sense, n, get_ptr(a), lda, get_ptr(w), get_ptr(vl), ldvl, get_ptr(vr), ldvr, get_ptr(ilo), get_ptr(ihi), get_ptr(scale), get_ptr(abnrm), get_ptr(rconde), get_ptr(rcondv));
             }
-        } break;
+        break; }
         case zgeevx: {
             int matrix_layout; char balanc; char jobvl; char jobvr; char sense; int n; c_binary a; int lda; c_binary w; c_binary vl; int ldvl; c_binary vr; int ldvr; c_binary ilo; c_binary ihi; c_binary scale; c_binary abnrm; c_binary rconde; c_binary rcondv;
             
@@ -2247,7 +1801,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgeevx(matrix_layout, balanc, jobvl, jobvr, sense, n, get_ptr(a), lda, get_ptr(w), get_ptr(vl), ldvl, get_ptr(vr), ldvr, get_ptr(ilo), get_ptr(ihi), get_ptr(scale), get_ptr(abnrm), get_ptr(rconde), get_ptr(rcondv));
             }
-        } break;
+        break; }
         case sgehrd: {
             int matrix_layout; int n; int ilo; int ihi; c_binary a; int lda; c_binary tau;
             
@@ -2256,7 +1810,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgehrd(matrix_layout, n, ilo, ihi, get_ptr(a), lda, get_ptr(tau));
             }
-        } break;
+        break; }
         case dgehrd: {
             int matrix_layout; int n; int ilo; int ihi; c_binary a; int lda; c_binary tau;
             
@@ -2265,7 +1819,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgehrd(matrix_layout, n, ilo, ihi, get_ptr(a), lda, get_ptr(tau));
             }
-        } break;
+        break; }
         case cgehrd: {
             int matrix_layout; int n; int ilo; int ihi; c_binary a; int lda; c_binary tau;
             
@@ -2274,7 +1828,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgehrd(matrix_layout, n, ilo, ihi, get_ptr(a), lda, get_ptr(tau));
             }
-        } break;
+        break; }
         case zgehrd: {
             int matrix_layout; int n; int ilo; int ihi; c_binary a; int lda; c_binary tau;
             
@@ -2283,7 +1837,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgehrd(matrix_layout, n, ilo, ihi, get_ptr(a), lda, get_ptr(tau));
             }
-        } break;
+        break; }
         case sgejsv: {
             int matrix_layout; char joba; char jobu; char jobv; char jobr; char jobt; char jobp; int m; int n; c_binary a; int lda; c_binary sva; c_binary u; int ldu; c_binary v; int ldv; c_binary stat; c_binary istat;
             
@@ -2292,7 +1846,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgejsv(matrix_layout, joba, jobu, jobv, jobr, jobt, jobp, m, n, get_ptr(a), lda, get_ptr(sva), get_ptr(u), ldu, get_ptr(v), ldv, get_ptr(stat), get_ptr(istat));
             }
-        } break;
+        break; }
         case dgejsv: {
             int matrix_layout; char joba; char jobu; char jobv; char jobr; char jobt; char jobp; int m; int n; c_binary a; int lda; c_binary sva; c_binary u; int ldu; c_binary v; int ldv; c_binary stat; c_binary istat;
             
@@ -2301,7 +1855,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgejsv(matrix_layout, joba, jobu, jobv, jobr, jobt, jobp, m, n, get_ptr(a), lda, get_ptr(sva), get_ptr(u), ldu, get_ptr(v), ldv, get_ptr(stat), get_ptr(istat));
             }
-        } break;
+        break; }
         case sgelqf: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary tau;
             
@@ -2310,7 +1864,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgelqf(matrix_layout, m, n, get_ptr(a), lda, get_ptr(tau));
             }
-        } break;
+        break; }
         case dgelqf: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary tau;
             
@@ -2319,7 +1873,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgelqf(matrix_layout, m, n, get_ptr(a), lda, get_ptr(tau));
             }
-        } break;
+        break; }
         case cgelqf: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary tau;
             
@@ -2328,7 +1882,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgelqf(matrix_layout, m, n, get_ptr(a), lda, get_ptr(tau));
             }
-        } break;
+        break; }
         case zgelqf: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary tau;
             
@@ -2337,7 +1891,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgelqf(matrix_layout, m, n, get_ptr(a), lda, get_ptr(tau));
             }
-        } break;
+        break; }
         case sgels: {
             int matrix_layout; char trans; int m; int n; int nrhs; c_binary a; int lda; c_binary b; int ldb;
             
@@ -2346,7 +1900,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgels(matrix_layout, trans, m, n, nrhs, get_ptr(a), lda, get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case dgels: {
             int matrix_layout; char trans; int m; int n; int nrhs; c_binary a; int lda; c_binary b; int ldb;
             
@@ -2355,7 +1909,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgels(matrix_layout, trans, m, n, nrhs, get_ptr(a), lda, get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case cgels: {
             int matrix_layout; char trans; int m; int n; int nrhs; c_binary a; int lda; c_binary b; int ldb;
             
@@ -2364,7 +1918,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgels(matrix_layout, trans, m, n, nrhs, get_ptr(a), lda, get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case zgels: {
             int matrix_layout; char trans; int m; int n; int nrhs; c_binary a; int lda; c_binary b; int ldb;
             
@@ -2373,7 +1927,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgels(matrix_layout, trans, m, n, nrhs, get_ptr(a), lda, get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case sgelsd: {
             int matrix_layout; int m; int n; int nrhs; c_binary a; int lda; c_binary b; int ldb; c_binary s; cste_c_binary rcond; c_binary rank;
             
@@ -2382,7 +1936,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgelsd(matrix_layout, m, n, nrhs, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(s), get_cste_double(rcond), get_ptr(rank));
             }
-        } break;
+        break; }
         case dgelsd: {
             int matrix_layout; int m; int n; int nrhs; c_binary a; int lda; c_binary b; int ldb; c_binary s; cste_c_binary rcond; c_binary rank;
             
@@ -2391,7 +1945,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgelsd(matrix_layout, m, n, nrhs, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(s), get_cste_double(rcond), get_ptr(rank));
             }
-        } break;
+        break; }
         case cgelsd: {
             int matrix_layout; int m; int n; int nrhs; c_binary a; int lda; c_binary b; int ldb; c_binary s; cste_c_binary rcond; c_binary rank;
             
@@ -2400,7 +1954,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgelsd(matrix_layout, m, n, nrhs, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(s), get_cste_double(rcond), get_ptr(rank));
             }
-        } break;
+        break; }
         case zgelsd: {
             int matrix_layout; int m; int n; int nrhs; c_binary a; int lda; c_binary b; int ldb; c_binary s; cste_c_binary rcond; c_binary rank;
             
@@ -2409,7 +1963,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgelsd(matrix_layout, m, n, nrhs, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(s), get_cste_double(rcond), get_ptr(rank));
             }
-        } break;
+        break; }
         case sgelss: {
             int matrix_layout; int m; int n; int nrhs; c_binary a; int lda; c_binary b; int ldb; c_binary s; cste_c_binary rcond; c_binary rank;
             
@@ -2418,7 +1972,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgelss(matrix_layout, m, n, nrhs, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(s), get_cste_double(rcond), get_ptr(rank));
             }
-        } break;
+        break; }
         case dgelss: {
             int matrix_layout; int m; int n; int nrhs; c_binary a; int lda; c_binary b; int ldb; c_binary s; cste_c_binary rcond; c_binary rank;
             
@@ -2427,7 +1981,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgelss(matrix_layout, m, n, nrhs, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(s), get_cste_double(rcond), get_ptr(rank));
             }
-        } break;
+        break; }
         case cgelss: {
             int matrix_layout; int m; int n; int nrhs; c_binary a; int lda; c_binary b; int ldb; c_binary s; cste_c_binary rcond; c_binary rank;
             
@@ -2436,7 +1990,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgelss(matrix_layout, m, n, nrhs, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(s), get_cste_double(rcond), get_ptr(rank));
             }
-        } break;
+        break; }
         case zgelss: {
             int matrix_layout; int m; int n; int nrhs; c_binary a; int lda; c_binary b; int ldb; c_binary s; cste_c_binary rcond; c_binary rank;
             
@@ -2445,7 +1999,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgelss(matrix_layout, m, n, nrhs, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(s), get_cste_double(rcond), get_ptr(rank));
             }
-        } break;
+        break; }
         case sgelsy: {
             int matrix_layout; int m; int n; int nrhs; c_binary a; int lda; c_binary b; int ldb; c_binary jpvt; cste_c_binary rcond; c_binary rank;
             
@@ -2454,7 +2008,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgelsy(matrix_layout, m, n, nrhs, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(jpvt), get_cste_double(rcond), get_ptr(rank));
             }
-        } break;
+        break; }
         case dgelsy: {
             int matrix_layout; int m; int n; int nrhs; c_binary a; int lda; c_binary b; int ldb; c_binary jpvt; cste_c_binary rcond; c_binary rank;
             
@@ -2463,7 +2017,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgelsy(matrix_layout, m, n, nrhs, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(jpvt), get_cste_double(rcond), get_ptr(rank));
             }
-        } break;
+        break; }
         case cgelsy: {
             int matrix_layout; int m; int n; int nrhs; c_binary a; int lda; c_binary b; int ldb; c_binary jpvt; cste_c_binary rcond; c_binary rank;
             
@@ -2472,7 +2026,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgelsy(matrix_layout, m, n, nrhs, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(jpvt), get_cste_double(rcond), get_ptr(rank));
             }
-        } break;
+        break; }
         case zgelsy: {
             int matrix_layout; int m; int n; int nrhs; c_binary a; int lda; c_binary b; int ldb; c_binary jpvt; cste_c_binary rcond; c_binary rank;
             
@@ -2481,7 +2035,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgelsy(matrix_layout, m, n, nrhs, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(jpvt), get_cste_double(rcond), get_ptr(rank));
             }
-        } break;
+        break; }
         case sgeqlf: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary tau;
             
@@ -2490,7 +2044,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgeqlf(matrix_layout, m, n, get_ptr(a), lda, get_ptr(tau));
             }
-        } break;
+        break; }
         case dgeqlf: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary tau;
             
@@ -2499,7 +2053,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgeqlf(matrix_layout, m, n, get_ptr(a), lda, get_ptr(tau));
             }
-        } break;
+        break; }
         case cgeqlf: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary tau;
             
@@ -2508,7 +2062,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgeqlf(matrix_layout, m, n, get_ptr(a), lda, get_ptr(tau));
             }
-        } break;
+        break; }
         case zgeqlf: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary tau;
             
@@ -2517,7 +2071,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgeqlf(matrix_layout, m, n, get_ptr(a), lda, get_ptr(tau));
             }
-        } break;
+        break; }
         case sgeqp3: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary jpvt; c_binary tau;
             
@@ -2526,7 +2080,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgeqp3(matrix_layout, m, n, get_ptr(a), lda, get_ptr(jpvt), get_ptr(tau));
             }
-        } break;
+        break; }
         case dgeqp3: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary jpvt; c_binary tau;
             
@@ -2535,7 +2089,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgeqp3(matrix_layout, m, n, get_ptr(a), lda, get_ptr(jpvt), get_ptr(tau));
             }
-        } break;
+        break; }
         case cgeqp3: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary jpvt; c_binary tau;
             
@@ -2544,7 +2098,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgeqp3(matrix_layout, m, n, get_ptr(a), lda, get_ptr(jpvt), get_ptr(tau));
             }
-        } break;
+        break; }
         case zgeqp3: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary jpvt; c_binary tau;
             
@@ -2553,7 +2107,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgeqp3(matrix_layout, m, n, get_ptr(a), lda, get_ptr(jpvt), get_ptr(tau));
             }
-        } break;
+        break; }
         case sgeqpf: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary jpvt; c_binary tau;
             
@@ -2562,7 +2116,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgeqpf(matrix_layout, m, n, get_ptr(a), lda, get_ptr(jpvt), get_ptr(tau));
             }
-        } break;
+        break; }
         case dgeqpf: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary jpvt; c_binary tau;
             
@@ -2571,7 +2125,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgeqpf(matrix_layout, m, n, get_ptr(a), lda, get_ptr(jpvt), get_ptr(tau));
             }
-        } break;
+        break; }
         case cgeqpf: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary jpvt; c_binary tau;
             
@@ -2580,7 +2134,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgeqpf(matrix_layout, m, n, get_ptr(a), lda, get_ptr(jpvt), get_ptr(tau));
             }
-        } break;
+        break; }
         case zgeqpf: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary jpvt; c_binary tau;
             
@@ -2589,7 +2143,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgeqpf(matrix_layout, m, n, get_ptr(a), lda, get_ptr(jpvt), get_ptr(tau));
             }
-        } break;
+        break; }
         case sgeqrf: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary tau;
             
@@ -2598,7 +2152,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgeqrf(matrix_layout, m, n, get_ptr(a), lda, get_ptr(tau));
             }
-        } break;
+        break; }
         case dgeqrf: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary tau;
             
@@ -2607,7 +2161,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgeqrf(matrix_layout, m, n, get_ptr(a), lda, get_ptr(tau));
             }
-        } break;
+        break; }
         case cgeqrf: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary tau;
             
@@ -2616,7 +2170,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgeqrf(matrix_layout, m, n, get_ptr(a), lda, get_ptr(tau));
             }
-        } break;
+        break; }
         case zgeqrf: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary tau;
             
@@ -2625,7 +2179,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgeqrf(matrix_layout, m, n, get_ptr(a), lda, get_ptr(tau));
             }
-        } break;
+        break; }
         case sgeqrfp: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary tau;
             
@@ -2634,7 +2188,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgeqrfp(matrix_layout, m, n, get_ptr(a), lda, get_ptr(tau));
             }
-        } break;
+        break; }
         case dgeqrfp: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary tau;
             
@@ -2643,7 +2197,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgeqrfp(matrix_layout, m, n, get_ptr(a), lda, get_ptr(tau));
             }
-        } break;
+        break; }
         case cgeqrfp: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary tau;
             
@@ -2652,7 +2206,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgeqrfp(matrix_layout, m, n, get_ptr(a), lda, get_ptr(tau));
             }
-        } break;
+        break; }
         case zgeqrfp: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary tau;
             
@@ -2661,7 +2215,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgeqrfp(matrix_layout, m, n, get_ptr(a), lda, get_ptr(tau));
             }
-        } break;
+        break; }
         case sgerfs: {
             int matrix_layout; char trans; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary af; int ldaf; cste_c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -2670,7 +2224,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgerfs(matrix_layout, trans, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(af), ldaf, get_cste_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case dgerfs: {
             int matrix_layout; char trans; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary af; int ldaf; cste_c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -2679,7 +2233,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgerfs(matrix_layout, trans, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(af), ldaf, get_cste_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case cgerfs: {
             int matrix_layout; char trans; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary af; int ldaf; cste_c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -2688,7 +2242,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgerfs(matrix_layout, trans, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(af), ldaf, get_cste_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case zgerfs: {
             int matrix_layout; char trans; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary af; int ldaf; cste_c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -2697,7 +2251,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgerfs(matrix_layout, trans, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(af), ldaf, get_cste_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case sgerqf: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary tau;
             
@@ -2706,7 +2260,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgerqf(matrix_layout, m, n, get_ptr(a), lda, get_ptr(tau));
             }
-        } break;
+        break; }
         case dgerqf: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary tau;
             
@@ -2715,7 +2269,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgerqf(matrix_layout, m, n, get_ptr(a), lda, get_ptr(tau));
             }
-        } break;
+        break; }
         case cgerqf: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary tau;
             
@@ -2724,7 +2278,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgerqf(matrix_layout, m, n, get_ptr(a), lda, get_ptr(tau));
             }
-        } break;
+        break; }
         case zgerqf: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary tau;
             
@@ -2733,7 +2287,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgerqf(matrix_layout, m, n, get_ptr(a), lda, get_ptr(tau));
             }
-        } break;
+        break; }
         case sgesdd: {
             int matrix_layout; char jobz; int m; int n; c_binary a; int lda; c_binary s; c_binary u; int ldu; c_binary vt; int ldvt;
             
@@ -2742,7 +2296,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgesdd(matrix_layout, jobz, m, n, get_ptr(a), lda, get_ptr(s), get_ptr(u), ldu, get_ptr(vt), ldvt);
             }
-        } break;
+        break; }
         case dgesdd: {
             int matrix_layout; char jobz; int m; int n; c_binary a; int lda; c_binary s; c_binary u; int ldu; c_binary vt; int ldvt;
             
@@ -2751,7 +2305,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgesdd(matrix_layout, jobz, m, n, get_ptr(a), lda, get_ptr(s), get_ptr(u), ldu, get_ptr(vt), ldvt);
             }
-        } break;
+        break; }
         case cgesdd: {
             int matrix_layout; char jobz; int m; int n; c_binary a; int lda; c_binary s; c_binary u; int ldu; c_binary vt; int ldvt;
             
@@ -2760,7 +2314,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgesdd(matrix_layout, jobz, m, n, get_ptr(a), lda, get_ptr(s), get_ptr(u), ldu, get_ptr(vt), ldvt);
             }
-        } break;
+        break; }
         case zgesdd: {
             int matrix_layout; char jobz; int m; int n; c_binary a; int lda; c_binary s; c_binary u; int ldu; c_binary vt; int ldvt;
             
@@ -2769,7 +2323,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgesdd(matrix_layout, jobz, m, n, get_ptr(a), lda, get_ptr(s), get_ptr(u), ldu, get_ptr(vt), ldvt);
             }
-        } break;
+        break; }
         case sgesv: {
             int matrix_layout; int n; int nrhs; c_binary a; int lda; c_binary ipiv; c_binary b; int ldb;
             
@@ -2778,7 +2332,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgesv(matrix_layout, n, nrhs, get_ptr(a), lda, get_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case dgesv: {
             int matrix_layout; int n; int nrhs; c_binary a; int lda; c_binary ipiv; c_binary b; int ldb;
             
@@ -2787,7 +2341,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgesv(matrix_layout, n, nrhs, get_ptr(a), lda, get_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case cgesv: {
             int matrix_layout; int n; int nrhs; c_binary a; int lda; c_binary ipiv; c_binary b; int ldb;
             
@@ -2796,7 +2350,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgesv(matrix_layout, n, nrhs, get_ptr(a), lda, get_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case zgesv: {
             int matrix_layout; int n; int nrhs; c_binary a; int lda; c_binary ipiv; c_binary b; int ldb;
             
@@ -2805,7 +2359,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgesv(matrix_layout, n, nrhs, get_ptr(a), lda, get_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case sgesvd: {
             int matrix_layout; char jobu; char jobvt; int m; int n; c_binary a; int lda; c_binary s; c_binary u; int ldu; c_binary vt; int ldvt; c_binary superb;
             
@@ -2814,7 +2368,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgesvd(matrix_layout, jobu, jobvt, m, n, get_ptr(a), lda, get_ptr(s), get_ptr(u), ldu, get_ptr(vt), ldvt, get_ptr(superb));
             }
-        } break;
+        break; }
         case dgesvd: {
             int matrix_layout; char jobu; char jobvt; int m; int n; c_binary a; int lda; c_binary s; c_binary u; int ldu; c_binary vt; int ldvt; c_binary superb;
             
@@ -2823,7 +2377,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgesvd(matrix_layout, jobu, jobvt, m, n, get_ptr(a), lda, get_ptr(s), get_ptr(u), ldu, get_ptr(vt), ldvt, get_ptr(superb));
             }
-        } break;
+        break; }
         case cgesvd: {
             int matrix_layout; char jobu; char jobvt; int m; int n; c_binary a; int lda; c_binary s; c_binary u; int ldu; c_binary vt; int ldvt; c_binary superb;
             
@@ -2832,7 +2386,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgesvd(matrix_layout, jobu, jobvt, m, n, get_ptr(a), lda, get_ptr(s), get_ptr(u), ldu, get_ptr(vt), ldvt, get_ptr(superb));
             }
-        } break;
+        break; }
         case zgesvd: {
             int matrix_layout; char jobu; char jobvt; int m; int n; c_binary a; int lda; c_binary s; c_binary u; int ldu; c_binary vt; int ldvt; c_binary superb;
             
@@ -2841,7 +2395,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgesvd(matrix_layout, jobu, jobvt, m, n, get_ptr(a), lda, get_ptr(s), get_ptr(u), ldu, get_ptr(vt), ldvt, get_ptr(superb));
             }
-        } break;
+        break; }
         case sgesvj: {
             int matrix_layout; char joba; char jobu; char jobv; int m; int n; c_binary a; int lda; c_binary sva; int mv; c_binary v; int ldv; c_binary stat;
             
@@ -2850,7 +2404,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgesvj(matrix_layout, joba, jobu, jobv, m, n, get_ptr(a), lda, get_ptr(sva), mv, get_ptr(v), ldv, get_ptr(stat));
             }
-        } break;
+        break; }
         case dgesvj: {
             int matrix_layout; char joba; char jobu; char jobv; int m; int n; c_binary a; int lda; c_binary sva; int mv; c_binary v; int ldv; c_binary stat;
             
@@ -2859,7 +2413,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgesvj(matrix_layout, joba, jobu, jobv, m, n, get_ptr(a), lda, get_ptr(sva), mv, get_ptr(v), ldv, get_ptr(stat));
             }
-        } break;
+        break; }
         case sgetrf: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary ipiv;
             
@@ -2868,7 +2422,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgetrf(matrix_layout, m, n, get_ptr(a), lda, get_ptr(ipiv));
             }
-        } break;
+        break; }
         case dgetrf: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary ipiv;
             
@@ -2877,7 +2431,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgetrf(matrix_layout, m, n, get_ptr(a), lda, get_ptr(ipiv));
             }
-        } break;
+        break; }
         case cgetrf: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary ipiv;
             
@@ -2886,7 +2440,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgetrf(matrix_layout, m, n, get_ptr(a), lda, get_ptr(ipiv));
             }
-        } break;
+        break; }
         case zgetrf: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary ipiv;
             
@@ -2895,7 +2449,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgetrf(matrix_layout, m, n, get_ptr(a), lda, get_ptr(ipiv));
             }
-        } break;
+        break; }
         case sgetri: {
             int matrix_layout; int n; c_binary a; int lda; cste_c_binary ipiv;
             
@@ -2904,7 +2458,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgetri(matrix_layout, n, get_ptr(a), lda, get_cste_ptr(ipiv));
             }
-        } break;
+        break; }
         case dgetri: {
             int matrix_layout; int n; c_binary a; int lda; cste_c_binary ipiv;
             
@@ -2913,7 +2467,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgetri(matrix_layout, n, get_ptr(a), lda, get_cste_ptr(ipiv));
             }
-        } break;
+        break; }
         case cgetri: {
             int matrix_layout; int n; c_binary a; int lda; cste_c_binary ipiv;
             
@@ -2922,7 +2476,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgetri(matrix_layout, n, get_ptr(a), lda, get_cste_ptr(ipiv));
             }
-        } break;
+        break; }
         case zgetri: {
             int matrix_layout; int n; c_binary a; int lda; cste_c_binary ipiv;
             
@@ -2931,7 +2485,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgetri(matrix_layout, n, get_ptr(a), lda, get_cste_ptr(ipiv));
             }
-        } break;
+        break; }
         case sgetrs: {
             int matrix_layout; char trans; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary ipiv; c_binary b; int ldb;
             
@@ -2940,7 +2494,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgetrs(matrix_layout, trans, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case dgetrs: {
             int matrix_layout; char trans; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary ipiv; c_binary b; int ldb;
             
@@ -2949,7 +2503,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgetrs(matrix_layout, trans, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case cgetrs: {
             int matrix_layout; char trans; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary ipiv; c_binary b; int ldb;
             
@@ -2958,7 +2512,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgetrs(matrix_layout, trans, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case zgetrs: {
             int matrix_layout; char trans; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary ipiv; c_binary b; int ldb;
             
@@ -2967,7 +2521,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgetrs(matrix_layout, trans, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case sggbak: {
             int matrix_layout; char job; char side; int n; int ilo; int ihi; cste_c_binary lscale; cste_c_binary rscale; int m; c_binary v; int ldv;
             
@@ -2976,7 +2530,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sggbak(matrix_layout, job, side, n, ilo, ihi, get_cste_ptr(lscale), get_cste_ptr(rscale), m, get_ptr(v), ldv);
             }
-        } break;
+        break; }
         case dggbak: {
             int matrix_layout; char job; char side; int n; int ilo; int ihi; cste_c_binary lscale; cste_c_binary rscale; int m; c_binary v; int ldv;
             
@@ -2985,7 +2539,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dggbak(matrix_layout, job, side, n, ilo, ihi, get_cste_ptr(lscale), get_cste_ptr(rscale), m, get_ptr(v), ldv);
             }
-        } break;
+        break; }
         case cggbak: {
             int matrix_layout; char job; char side; int n; int ilo; int ihi; cste_c_binary lscale; cste_c_binary rscale; int m; c_binary v; int ldv;
             
@@ -2994,7 +2548,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cggbak(matrix_layout, job, side, n, ilo, ihi, get_cste_ptr(lscale), get_cste_ptr(rscale), m, get_ptr(v), ldv);
             }
-        } break;
+        break; }
         case zggbak: {
             int matrix_layout; char job; char side; int n; int ilo; int ihi; cste_c_binary lscale; cste_c_binary rscale; int m; c_binary v; int ldv;
             
@@ -3003,7 +2557,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zggbak(matrix_layout, job, side, n, ilo, ihi, get_cste_ptr(lscale), get_cste_ptr(rscale), m, get_ptr(v), ldv);
             }
-        } break;
+        break; }
         case sggbal: {
             int matrix_layout; char job; int n; c_binary a; int lda; c_binary b; int ldb; c_binary ilo; c_binary ihi; c_binary lscale; c_binary rscale;
             
@@ -3012,7 +2566,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sggbal(matrix_layout, job, n, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(ilo), get_ptr(ihi), get_ptr(lscale), get_ptr(rscale));
             }
-        } break;
+        break; }
         case dggbal: {
             int matrix_layout; char job; int n; c_binary a; int lda; c_binary b; int ldb; c_binary ilo; c_binary ihi; c_binary lscale; c_binary rscale;
             
@@ -3021,7 +2575,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dggbal(matrix_layout, job, n, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(ilo), get_ptr(ihi), get_ptr(lscale), get_ptr(rscale));
             }
-        } break;
+        break; }
         case cggbal: {
             int matrix_layout; char job; int n; c_binary a; int lda; c_binary b; int ldb; c_binary ilo; c_binary ihi; c_binary lscale; c_binary rscale;
             
@@ -3030,7 +2584,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cggbal(matrix_layout, job, n, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(ilo), get_ptr(ihi), get_ptr(lscale), get_ptr(rscale));
             }
-        } break;
+        break; }
         case zggbal: {
             int matrix_layout; char job; int n; c_binary a; int lda; c_binary b; int ldb; c_binary ilo; c_binary ihi; c_binary lscale; c_binary rscale;
             
@@ -3039,7 +2593,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zggbal(matrix_layout, job, n, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(ilo), get_ptr(ihi), get_ptr(lscale), get_ptr(rscale));
             }
-        } break;
+        break; }
         case sggev: {
             int matrix_layout; char jobvl; char jobvr; int n; c_binary a; int lda; c_binary b; int ldb; c_binary alphar; c_binary alphai; c_binary beta; c_binary vl; int ldvl; c_binary vr; int ldvr;
             
@@ -3048,7 +2602,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sggev(matrix_layout, jobvl, jobvr, n, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(alphar), get_ptr(alphai), get_ptr(beta), get_ptr(vl), ldvl, get_ptr(vr), ldvr);
             }
-        } break;
+        break; }
         case dggev: {
             int matrix_layout; char jobvl; char jobvr; int n; c_binary a; int lda; c_binary b; int ldb; c_binary alphar; c_binary alphai; c_binary beta; c_binary vl; int ldvl; c_binary vr; int ldvr;
             
@@ -3057,7 +2611,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dggev(matrix_layout, jobvl, jobvr, n, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(alphar), get_ptr(alphai), get_ptr(beta), get_ptr(vl), ldvl, get_ptr(vr), ldvr);
             }
-        } break;
+        break; }
         case cggev: {
             int matrix_layout; char jobvl; char jobvr; int n; c_binary a; int lda; c_binary b; int ldb; c_binary alpha; c_binary beta; c_binary vl; int ldvl; c_binary vr; int ldvr;
             
@@ -3066,7 +2620,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cggev(matrix_layout, jobvl, jobvr, n, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(alpha), get_ptr(beta), get_ptr(vl), ldvl, get_ptr(vr), ldvr);
             }
-        } break;
+        break; }
         case zggev: {
             int matrix_layout; char jobvl; char jobvr; int n; c_binary a; int lda; c_binary b; int ldb; c_binary alpha; c_binary beta; c_binary vl; int ldvl; c_binary vr; int ldvr;
             
@@ -3075,7 +2629,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zggev(matrix_layout, jobvl, jobvr, n, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(alpha), get_ptr(beta), get_ptr(vl), ldvl, get_ptr(vr), ldvr);
             }
-        } break;
+        break; }
         case sggevx: {
             int matrix_layout; char balanc; char jobvl; char jobvr; char sense; int n; c_binary a; int lda; c_binary b; int ldb; c_binary alphar; c_binary alphai; c_binary beta; c_binary vl; int ldvl; c_binary vr; int ldvr; c_binary ilo; c_binary ihi; c_binary lscale; c_binary rscale; c_binary abnrm; c_binary bbnrm; c_binary rconde; c_binary rcondv;
             
@@ -3084,7 +2638,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sggevx(matrix_layout, balanc, jobvl, jobvr, sense, n, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(alphar), get_ptr(alphai), get_ptr(beta), get_ptr(vl), ldvl, get_ptr(vr), ldvr, get_ptr(ilo), get_ptr(ihi), get_ptr(lscale), get_ptr(rscale), get_ptr(abnrm), get_ptr(bbnrm), get_ptr(rconde), get_ptr(rcondv));
             }
-        } break;
+        break; }
         case dggevx: {
             int matrix_layout; char balanc; char jobvl; char jobvr; char sense; int n; c_binary a; int lda; c_binary b; int ldb; c_binary alphar; c_binary alphai; c_binary beta; c_binary vl; int ldvl; c_binary vr; int ldvr; c_binary ilo; c_binary ihi; c_binary lscale; c_binary rscale; c_binary abnrm; c_binary bbnrm; c_binary rconde; c_binary rcondv;
             
@@ -3093,7 +2647,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dggevx(matrix_layout, balanc, jobvl, jobvr, sense, n, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(alphar), get_ptr(alphai), get_ptr(beta), get_ptr(vl), ldvl, get_ptr(vr), ldvr, get_ptr(ilo), get_ptr(ihi), get_ptr(lscale), get_ptr(rscale), get_ptr(abnrm), get_ptr(bbnrm), get_ptr(rconde), get_ptr(rcondv));
             }
-        } break;
+        break; }
         case cggevx: {
             int matrix_layout; char balanc; char jobvl; char jobvr; char sense; int n; c_binary a; int lda; c_binary b; int ldb; c_binary alpha; c_binary beta; c_binary vl; int ldvl; c_binary vr; int ldvr; c_binary ilo; c_binary ihi; c_binary lscale; c_binary rscale; c_binary abnrm; c_binary bbnrm; c_binary rconde; c_binary rcondv;
             
@@ -3102,7 +2656,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cggevx(matrix_layout, balanc, jobvl, jobvr, sense, n, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(alpha), get_ptr(beta), get_ptr(vl), ldvl, get_ptr(vr), ldvr, get_ptr(ilo), get_ptr(ihi), get_ptr(lscale), get_ptr(rscale), get_ptr(abnrm), get_ptr(bbnrm), get_ptr(rconde), get_ptr(rcondv));
             }
-        } break;
+        break; }
         case zggevx: {
             int matrix_layout; char balanc; char jobvl; char jobvr; char sense; int n; c_binary a; int lda; c_binary b; int ldb; c_binary alpha; c_binary beta; c_binary vl; int ldvl; c_binary vr; int ldvr; c_binary ilo; c_binary ihi; c_binary lscale; c_binary rscale; c_binary abnrm; c_binary bbnrm; c_binary rconde; c_binary rcondv;
             
@@ -3111,7 +2665,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zggevx(matrix_layout, balanc, jobvl, jobvr, sense, n, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(alpha), get_ptr(beta), get_ptr(vl), ldvl, get_ptr(vr), ldvr, get_ptr(ilo), get_ptr(ihi), get_ptr(lscale), get_ptr(rscale), get_ptr(abnrm), get_ptr(bbnrm), get_ptr(rconde), get_ptr(rcondv));
             }
-        } break;
+        break; }
         case sggglm: {
             int matrix_layout; int n; int m; int p; c_binary a; int lda; c_binary b; int ldb; c_binary d; c_binary x; c_binary y;
             
@@ -3120,7 +2674,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sggglm(matrix_layout, n, m, p, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(d), get_ptr(x), get_ptr(y));
             }
-        } break;
+        break; }
         case dggglm: {
             int matrix_layout; int n; int m; int p; c_binary a; int lda; c_binary b; int ldb; c_binary d; c_binary x; c_binary y;
             
@@ -3129,7 +2683,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dggglm(matrix_layout, n, m, p, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(d), get_ptr(x), get_ptr(y));
             }
-        } break;
+        break; }
         case cggglm: {
             int matrix_layout; int n; int m; int p; c_binary a; int lda; c_binary b; int ldb; c_binary d; c_binary x; c_binary y;
             
@@ -3138,7 +2692,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cggglm(matrix_layout, n, m, p, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(d), get_ptr(x), get_ptr(y));
             }
-        } break;
+        break; }
         case zggglm: {
             int matrix_layout; int n; int m; int p; c_binary a; int lda; c_binary b; int ldb; c_binary d; c_binary x; c_binary y;
             
@@ -3147,7 +2701,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zggglm(matrix_layout, n, m, p, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(d), get_ptr(x), get_ptr(y));
             }
-        } break;
+        break; }
         case sgghrd: {
             int matrix_layout; char compq; char compz; int n; int ilo; int ihi; c_binary a; int lda; c_binary b; int ldb; c_binary q; int ldq; c_binary z; int ldz;
             
@@ -3156,7 +2710,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgghrd(matrix_layout, compq, compz, n, ilo, ihi, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(q), ldq, get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case dgghrd: {
             int matrix_layout; char compq; char compz; int n; int ilo; int ihi; c_binary a; int lda; c_binary b; int ldb; c_binary q; int ldq; c_binary z; int ldz;
             
@@ -3165,7 +2719,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgghrd(matrix_layout, compq, compz, n, ilo, ihi, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(q), ldq, get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case cgghrd: {
             int matrix_layout; char compq; char compz; int n; int ilo; int ihi; c_binary a; int lda; c_binary b; int ldb; c_binary q; int ldq; c_binary z; int ldz;
             
@@ -3174,7 +2728,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgghrd(matrix_layout, compq, compz, n, ilo, ihi, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(q), ldq, get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case zgghrd: {
             int matrix_layout; char compq; char compz; int n; int ilo; int ihi; c_binary a; int lda; c_binary b; int ldb; c_binary q; int ldq; c_binary z; int ldz;
             
@@ -3183,7 +2737,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgghrd(matrix_layout, compq, compz, n, ilo, ihi, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(q), ldq, get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case sgglse: {
             int matrix_layout; int m; int n; int p; c_binary a; int lda; c_binary b; int ldb; c_binary c; c_binary d; c_binary x;
             
@@ -3192,7 +2746,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgglse(matrix_layout, m, n, p, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(c), get_ptr(d), get_ptr(x));
             }
-        } break;
+        break; }
         case dgglse: {
             int matrix_layout; int m; int n; int p; c_binary a; int lda; c_binary b; int ldb; c_binary c; c_binary d; c_binary x;
             
@@ -3201,7 +2755,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgglse(matrix_layout, m, n, p, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(c), get_ptr(d), get_ptr(x));
             }
-        } break;
+        break; }
         case cgglse: {
             int matrix_layout; int m; int n; int p; c_binary a; int lda; c_binary b; int ldb; c_binary c; c_binary d; c_binary x;
             
@@ -3210,7 +2764,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgglse(matrix_layout, m, n, p, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(c), get_ptr(d), get_ptr(x));
             }
-        } break;
+        break; }
         case zgglse: {
             int matrix_layout; int m; int n; int p; c_binary a; int lda; c_binary b; int ldb; c_binary c; c_binary d; c_binary x;
             
@@ -3219,7 +2773,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgglse(matrix_layout, m, n, p, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(c), get_ptr(d), get_ptr(x));
             }
-        } break;
+        break; }
         case sggqrf: {
             int matrix_layout; int n; int m; int p; c_binary a; int lda; c_binary taua; c_binary b; int ldb; c_binary taub;
             
@@ -3228,7 +2782,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sggqrf(matrix_layout, n, m, p, get_ptr(a), lda, get_ptr(taua), get_ptr(b), ldb, get_ptr(taub));
             }
-        } break;
+        break; }
         case dggqrf: {
             int matrix_layout; int n; int m; int p; c_binary a; int lda; c_binary taua; c_binary b; int ldb; c_binary taub;
             
@@ -3237,7 +2791,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dggqrf(matrix_layout, n, m, p, get_ptr(a), lda, get_ptr(taua), get_ptr(b), ldb, get_ptr(taub));
             }
-        } break;
+        break; }
         case cggqrf: {
             int matrix_layout; int n; int m; int p; c_binary a; int lda; c_binary taua; c_binary b; int ldb; c_binary taub;
             
@@ -3246,7 +2800,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cggqrf(matrix_layout, n, m, p, get_ptr(a), lda, get_ptr(taua), get_ptr(b), ldb, get_ptr(taub));
             }
-        } break;
+        break; }
         case zggqrf: {
             int matrix_layout; int n; int m; int p; c_binary a; int lda; c_binary taua; c_binary b; int ldb; c_binary taub;
             
@@ -3255,7 +2809,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zggqrf(matrix_layout, n, m, p, get_ptr(a), lda, get_ptr(taua), get_ptr(b), ldb, get_ptr(taub));
             }
-        } break;
+        break; }
         case sggrqf: {
             int matrix_layout; int m; int p; int n; c_binary a; int lda; c_binary taua; c_binary b; int ldb; c_binary taub;
             
@@ -3264,7 +2818,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sggrqf(matrix_layout, m, p, n, get_ptr(a), lda, get_ptr(taua), get_ptr(b), ldb, get_ptr(taub));
             }
-        } break;
+        break; }
         case dggrqf: {
             int matrix_layout; int m; int p; int n; c_binary a; int lda; c_binary taua; c_binary b; int ldb; c_binary taub;
             
@@ -3273,7 +2827,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dggrqf(matrix_layout, m, p, n, get_ptr(a), lda, get_ptr(taua), get_ptr(b), ldb, get_ptr(taub));
             }
-        } break;
+        break; }
         case cggrqf: {
             int matrix_layout; int m; int p; int n; c_binary a; int lda; c_binary taua; c_binary b; int ldb; c_binary taub;
             
@@ -3282,7 +2836,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cggrqf(matrix_layout, m, p, n, get_ptr(a), lda, get_ptr(taua), get_ptr(b), ldb, get_ptr(taub));
             }
-        } break;
+        break; }
         case zggrqf: {
             int matrix_layout; int m; int p; int n; c_binary a; int lda; c_binary taua; c_binary b; int ldb; c_binary taub;
             
@@ -3291,7 +2845,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zggrqf(matrix_layout, m, p, n, get_ptr(a), lda, get_ptr(taua), get_ptr(b), ldb, get_ptr(taub));
             }
-        } break;
+        break; }
         case sggsvd: {
             int matrix_layout; char jobu; char jobv; char jobq; int m; int n; int p; c_binary k; c_binary l; c_binary a; int lda; c_binary b; int ldb; c_binary alpha; c_binary beta; c_binary u; int ldu; c_binary v; int ldv; c_binary q; int ldq; c_binary iwork;
             
@@ -3300,7 +2854,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sggsvd(matrix_layout, jobu, jobv, jobq, m, n, p, get_ptr(k), get_ptr(l), get_ptr(a), lda, get_ptr(b), ldb, get_ptr(alpha), get_ptr(beta), get_ptr(u), ldu, get_ptr(v), ldv, get_ptr(q), ldq, get_ptr(iwork));
             }
-        } break;
+        break; }
         case dggsvd: {
             int matrix_layout; char jobu; char jobv; char jobq; int m; int n; int p; c_binary k; c_binary l; c_binary a; int lda; c_binary b; int ldb; c_binary alpha; c_binary beta; c_binary u; int ldu; c_binary v; int ldv; c_binary q; int ldq; c_binary iwork;
             
@@ -3309,7 +2863,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dggsvd(matrix_layout, jobu, jobv, jobq, m, n, p, get_ptr(k), get_ptr(l), get_ptr(a), lda, get_ptr(b), ldb, get_ptr(alpha), get_ptr(beta), get_ptr(u), ldu, get_ptr(v), ldv, get_ptr(q), ldq, get_ptr(iwork));
             }
-        } break;
+        break; }
         case cggsvd: {
             int matrix_layout; char jobu; char jobv; char jobq; int m; int n; int p; c_binary k; c_binary l; c_binary a; int lda; c_binary b; int ldb; c_binary alpha; c_binary beta; c_binary u; int ldu; c_binary v; int ldv; c_binary q; int ldq; c_binary iwork;
             
@@ -3318,7 +2872,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cggsvd(matrix_layout, jobu, jobv, jobq, m, n, p, get_ptr(k), get_ptr(l), get_ptr(a), lda, get_ptr(b), ldb, get_ptr(alpha), get_ptr(beta), get_ptr(u), ldu, get_ptr(v), ldv, get_ptr(q), ldq, get_ptr(iwork));
             }
-        } break;
+        break; }
         case zggsvd: {
             int matrix_layout; char jobu; char jobv; char jobq; int m; int n; int p; c_binary k; c_binary l; c_binary a; int lda; c_binary b; int ldb; c_binary alpha; c_binary beta; c_binary u; int ldu; c_binary v; int ldv; c_binary q; int ldq; c_binary iwork;
             
@@ -3327,7 +2881,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zggsvd(matrix_layout, jobu, jobv, jobq, m, n, p, get_ptr(k), get_ptr(l), get_ptr(a), lda, get_ptr(b), ldb, get_ptr(alpha), get_ptr(beta), get_ptr(u), ldu, get_ptr(v), ldv, get_ptr(q), ldq, get_ptr(iwork));
             }
-        } break;
+        break; }
         case sggsvp: {
             int matrix_layout; char jobu; char jobv; char jobq; int m; int p; int n; c_binary a; int lda; c_binary b; int ldb; cste_c_binary tola; cste_c_binary tolb; c_binary k; c_binary l; c_binary u; int ldu; c_binary v; int ldv; c_binary q; int ldq;
             
@@ -3336,7 +2890,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sggsvp(matrix_layout, jobu, jobv, jobq, m, p, n, get_ptr(a), lda, get_ptr(b), ldb, get_cste_double(tola), get_cste_double(tolb), get_ptr(k), get_ptr(l), get_ptr(u), ldu, get_ptr(v), ldv, get_ptr(q), ldq);
             }
-        } break;
+        break; }
         case dggsvp: {
             int matrix_layout; char jobu; char jobv; char jobq; int m; int p; int n; c_binary a; int lda; c_binary b; int ldb; cste_c_binary tola; cste_c_binary tolb; c_binary k; c_binary l; c_binary u; int ldu; c_binary v; int ldv; c_binary q; int ldq;
             
@@ -3345,7 +2899,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dggsvp(matrix_layout, jobu, jobv, jobq, m, p, n, get_ptr(a), lda, get_ptr(b), ldb, get_cste_double(tola), get_cste_double(tolb), get_ptr(k), get_ptr(l), get_ptr(u), ldu, get_ptr(v), ldv, get_ptr(q), ldq);
             }
-        } break;
+        break; }
         case cggsvp: {
             int matrix_layout; char jobu; char jobv; char jobq; int m; int p; int n; c_binary a; int lda; c_binary b; int ldb; cste_c_binary tola; cste_c_binary tolb; c_binary k; c_binary l; c_binary u; int ldu; c_binary v; int ldv; c_binary q; int ldq;
             
@@ -3354,7 +2908,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cggsvp(matrix_layout, jobu, jobv, jobq, m, p, n, get_ptr(a), lda, get_ptr(b), ldb, get_cste_double(tola), get_cste_double(tolb), get_ptr(k), get_ptr(l), get_ptr(u), ldu, get_ptr(v), ldv, get_ptr(q), ldq);
             }
-        } break;
+        break; }
         case zggsvp: {
             int matrix_layout; char jobu; char jobv; char jobq; int m; int p; int n; c_binary a; int lda; c_binary b; int ldb; cste_c_binary tola; cste_c_binary tolb; c_binary k; c_binary l; c_binary u; int ldu; c_binary v; int ldv; c_binary q; int ldq;
             
@@ -3363,7 +2917,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zggsvp(matrix_layout, jobu, jobv, jobq, m, p, n, get_ptr(a), lda, get_ptr(b), ldb, get_cste_double(tola), get_cste_double(tolb), get_ptr(k), get_ptr(l), get_ptr(u), ldu, get_ptr(v), ldv, get_ptr(q), ldq);
             }
-        } break;
+        break; }
         case sgtcon: {
             char norm; int n; cste_c_binary dl; cste_c_binary d; cste_c_binary du; cste_c_binary du2; cste_c_binary ipiv; cste_c_binary anorm; c_binary rcond;
             
@@ -3372,7 +2926,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgtcon(norm, n, get_cste_ptr(dl), get_cste_ptr(d), get_cste_ptr(du), get_cste_ptr(du2), get_cste_ptr(ipiv), get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case dgtcon: {
             char norm; int n; cste_c_binary dl; cste_c_binary d; cste_c_binary du; cste_c_binary du2; cste_c_binary ipiv; cste_c_binary anorm; c_binary rcond;
             
@@ -3381,7 +2935,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgtcon(norm, n, get_cste_ptr(dl), get_cste_ptr(d), get_cste_ptr(du), get_cste_ptr(du2), get_cste_ptr(ipiv), get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case cgtcon: {
             char norm; int n; cste_c_binary dl; cste_c_binary d; cste_c_binary du; cste_c_binary du2; cste_c_binary ipiv; cste_c_binary anorm; c_binary rcond;
             
@@ -3390,7 +2944,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgtcon(norm, n, get_cste_ptr(dl), get_cste_ptr(d), get_cste_ptr(du), get_cste_ptr(du2), get_cste_ptr(ipiv), get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case zgtcon: {
             char norm; int n; cste_c_binary dl; cste_c_binary d; cste_c_binary du; cste_c_binary du2; cste_c_binary ipiv; cste_c_binary anorm; c_binary rcond;
             
@@ -3399,7 +2953,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgtcon(norm, n, get_cste_ptr(dl), get_cste_ptr(d), get_cste_ptr(du), get_cste_ptr(du2), get_cste_ptr(ipiv), get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case sgtrfs: {
             int matrix_layout; char trans; int n; int nrhs; cste_c_binary dl; cste_c_binary d; cste_c_binary du; cste_c_binary dlf; cste_c_binary df; cste_c_binary duf; cste_c_binary du2; cste_c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -3408,7 +2962,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgtrfs(matrix_layout, trans, n, nrhs, get_cste_ptr(dl), get_cste_ptr(d), get_cste_ptr(du), get_cste_ptr(dlf), get_cste_ptr(df), get_cste_ptr(duf), get_cste_ptr(du2), get_cste_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case dgtrfs: {
             int matrix_layout; char trans; int n; int nrhs; cste_c_binary dl; cste_c_binary d; cste_c_binary du; cste_c_binary dlf; cste_c_binary df; cste_c_binary duf; cste_c_binary du2; cste_c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -3417,7 +2971,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgtrfs(matrix_layout, trans, n, nrhs, get_cste_ptr(dl), get_cste_ptr(d), get_cste_ptr(du), get_cste_ptr(dlf), get_cste_ptr(df), get_cste_ptr(duf), get_cste_ptr(du2), get_cste_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case cgtrfs: {
             int matrix_layout; char trans; int n; int nrhs; cste_c_binary dl; cste_c_binary d; cste_c_binary du; cste_c_binary dlf; cste_c_binary df; cste_c_binary duf; cste_c_binary du2; cste_c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -3426,7 +2980,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgtrfs(matrix_layout, trans, n, nrhs, get_cste_ptr(dl), get_cste_ptr(d), get_cste_ptr(du), get_cste_ptr(dlf), get_cste_ptr(df), get_cste_ptr(duf), get_cste_ptr(du2), get_cste_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case zgtrfs: {
             int matrix_layout; char trans; int n; int nrhs; cste_c_binary dl; cste_c_binary d; cste_c_binary du; cste_c_binary dlf; cste_c_binary df; cste_c_binary duf; cste_c_binary du2; cste_c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -3435,7 +2989,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgtrfs(matrix_layout, trans, n, nrhs, get_cste_ptr(dl), get_cste_ptr(d), get_cste_ptr(du), get_cste_ptr(dlf), get_cste_ptr(df), get_cste_ptr(duf), get_cste_ptr(du2), get_cste_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case sgtsv: {
             int matrix_layout; int n; int nrhs; c_binary dl; c_binary d; c_binary du; c_binary b; int ldb;
             
@@ -3444,7 +2998,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgtsv(matrix_layout, n, nrhs, get_ptr(dl), get_ptr(d), get_ptr(du), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case dgtsv: {
             int matrix_layout; int n; int nrhs; c_binary dl; c_binary d; c_binary du; c_binary b; int ldb;
             
@@ -3453,7 +3007,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgtsv(matrix_layout, n, nrhs, get_ptr(dl), get_ptr(d), get_ptr(du), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case cgtsv: {
             int matrix_layout; int n; int nrhs; c_binary dl; c_binary d; c_binary du; c_binary b; int ldb;
             
@@ -3462,7 +3016,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgtsv(matrix_layout, n, nrhs, get_ptr(dl), get_ptr(d), get_ptr(du), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case zgtsv: {
             int matrix_layout; int n; int nrhs; c_binary dl; c_binary d; c_binary du; c_binary b; int ldb;
             
@@ -3471,7 +3025,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgtsv(matrix_layout, n, nrhs, get_ptr(dl), get_ptr(d), get_ptr(du), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case sgtsvx: {
             int matrix_layout; char fact; char trans; int n; int nrhs; cste_c_binary dl; cste_c_binary d; cste_c_binary du; c_binary dlf; c_binary df; c_binary duf; c_binary du2; c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary ferr; c_binary berr;
             
@@ -3480,7 +3034,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgtsvx(matrix_layout, fact, trans, n, nrhs, get_cste_ptr(dl), get_cste_ptr(d), get_cste_ptr(du), get_ptr(dlf), get_ptr(df), get_ptr(duf), get_ptr(du2), get_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case dgtsvx: {
             int matrix_layout; char fact; char trans; int n; int nrhs; cste_c_binary dl; cste_c_binary d; cste_c_binary du; c_binary dlf; c_binary df; c_binary duf; c_binary du2; c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary ferr; c_binary berr;
             
@@ -3489,7 +3043,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgtsvx(matrix_layout, fact, trans, n, nrhs, get_cste_ptr(dl), get_cste_ptr(d), get_cste_ptr(du), get_ptr(dlf), get_ptr(df), get_ptr(duf), get_ptr(du2), get_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case cgtsvx: {
             int matrix_layout; char fact; char trans; int n; int nrhs; cste_c_binary dl; cste_c_binary d; cste_c_binary du; c_binary dlf; c_binary df; c_binary duf; c_binary du2; c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary ferr; c_binary berr;
             
@@ -3498,7 +3052,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgtsvx(matrix_layout, fact, trans, n, nrhs, get_cste_ptr(dl), get_cste_ptr(d), get_cste_ptr(du), get_ptr(dlf), get_ptr(df), get_ptr(duf), get_ptr(du2), get_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case zgtsvx: {
             int matrix_layout; char fact; char trans; int n; int nrhs; cste_c_binary dl; cste_c_binary d; cste_c_binary du; c_binary dlf; c_binary df; c_binary duf; c_binary du2; c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary ferr; c_binary berr;
             
@@ -3507,7 +3061,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgtsvx(matrix_layout, fact, trans, n, nrhs, get_cste_ptr(dl), get_cste_ptr(d), get_cste_ptr(du), get_ptr(dlf), get_ptr(df), get_ptr(duf), get_ptr(du2), get_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case sgttrf: {
             int n; c_binary dl; c_binary d; c_binary du; c_binary du2; c_binary ipiv;
             
@@ -3516,7 +3070,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgttrf(n, get_ptr(dl), get_ptr(d), get_ptr(du), get_ptr(du2), get_ptr(ipiv));
             }
-        } break;
+        break; }
         case dgttrf: {
             int n; c_binary dl; c_binary d; c_binary du; c_binary du2; c_binary ipiv;
             
@@ -3525,7 +3079,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgttrf(n, get_ptr(dl), get_ptr(d), get_ptr(du), get_ptr(du2), get_ptr(ipiv));
             }
-        } break;
+        break; }
         case cgttrf: {
             int n; c_binary dl; c_binary d; c_binary du; c_binary du2; c_binary ipiv;
             
@@ -3534,7 +3088,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgttrf(n, get_ptr(dl), get_ptr(d), get_ptr(du), get_ptr(du2), get_ptr(ipiv));
             }
-        } break;
+        break; }
         case zgttrf: {
             int n; c_binary dl; c_binary d; c_binary du; c_binary du2; c_binary ipiv;
             
@@ -3543,7 +3097,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgttrf(n, get_ptr(dl), get_ptr(d), get_ptr(du), get_ptr(du2), get_ptr(ipiv));
             }
-        } break;
+        break; }
         case sgttrs: {
             int matrix_layout; char trans; int n; int nrhs; cste_c_binary dl; cste_c_binary d; cste_c_binary du; cste_c_binary du2; cste_c_binary ipiv; c_binary b; int ldb;
             
@@ -3552,7 +3106,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sgttrs(matrix_layout, trans, n, nrhs, get_cste_ptr(dl), get_cste_ptr(d), get_cste_ptr(du), get_cste_ptr(du2), get_cste_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case dgttrs: {
             int matrix_layout; char trans; int n; int nrhs; cste_c_binary dl; cste_c_binary d; cste_c_binary du; cste_c_binary du2; cste_c_binary ipiv; c_binary b; int ldb;
             
@@ -3561,7 +3115,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dgttrs(matrix_layout, trans, n, nrhs, get_cste_ptr(dl), get_cste_ptr(d), get_cste_ptr(du), get_cste_ptr(du2), get_cste_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case cgttrs: {
             int matrix_layout; char trans; int n; int nrhs; cste_c_binary dl; cste_c_binary d; cste_c_binary du; cste_c_binary du2; cste_c_binary ipiv; c_binary b; int ldb;
             
@@ -3570,7 +3124,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cgttrs(matrix_layout, trans, n, nrhs, get_cste_ptr(dl), get_cste_ptr(d), get_cste_ptr(du), get_cste_ptr(du2), get_cste_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case zgttrs: {
             int matrix_layout; char trans; int n; int nrhs; cste_c_binary dl; cste_c_binary d; cste_c_binary du; cste_c_binary du2; cste_c_binary ipiv; c_binary b; int ldb;
             
@@ -3579,7 +3133,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zgttrs(matrix_layout, trans, n, nrhs, get_cste_ptr(dl), get_cste_ptr(d), get_cste_ptr(du), get_cste_ptr(du2), get_cste_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case chbev: {
             int matrix_layout; char jobz; char uplo; int n; int kd; c_binary ab; int ldab; c_binary w; c_binary z; int ldz;
             
@@ -3588,7 +3142,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chbev(matrix_layout, jobz, uplo, n, kd, get_ptr(ab), ldab, get_ptr(w), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case zhbev: {
             int matrix_layout; char jobz; char uplo; int n; int kd; c_binary ab; int ldab; c_binary w; c_binary z; int ldz;
             
@@ -3597,7 +3151,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhbev(matrix_layout, jobz, uplo, n, kd, get_ptr(ab), ldab, get_ptr(w), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case chbevd: {
             int matrix_layout; char jobz; char uplo; int n; int kd; c_binary ab; int ldab; c_binary w; c_binary z; int ldz;
             
@@ -3606,7 +3160,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chbevd(matrix_layout, jobz, uplo, n, kd, get_ptr(ab), ldab, get_ptr(w), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case zhbevd: {
             int matrix_layout; char jobz; char uplo; int n; int kd; c_binary ab; int ldab; c_binary w; c_binary z; int ldz;
             
@@ -3615,7 +3169,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhbevd(matrix_layout, jobz, uplo, n, kd, get_ptr(ab), ldab, get_ptr(w), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case chbevx: {
             int matrix_layout; char jobz; char range; char uplo; int n; int kd; c_binary ab; int ldab; c_binary q; int ldq; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; c_binary m; c_binary w; c_binary z; int ldz; c_binary ifail;
             
@@ -3624,7 +3178,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chbevx(matrix_layout, jobz, range, uplo, n, kd, get_ptr(ab), ldab, get_ptr(q), ldq, get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_ptr(m), get_ptr(w), get_ptr(z), ldz, get_ptr(ifail));
             }
-        } break;
+        break; }
         case zhbevx: {
             int matrix_layout; char jobz; char range; char uplo; int n; int kd; c_binary ab; int ldab; c_binary q; int ldq; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; c_binary m; c_binary w; c_binary z; int ldz; c_binary ifail;
             
@@ -3633,7 +3187,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhbevx(matrix_layout, jobz, range, uplo, n, kd, get_ptr(ab), ldab, get_ptr(q), ldq, get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_ptr(m), get_ptr(w), get_ptr(z), ldz, get_ptr(ifail));
             }
-        } break;
+        break; }
         case chbgst: {
             int matrix_layout; char vect; char uplo; int n; int ka; int kb; c_binary ab; int ldab; cste_c_binary bb; int ldbb; c_binary x; int ldx;
             
@@ -3642,7 +3196,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chbgst(matrix_layout, vect, uplo, n, ka, kb, get_ptr(ab), ldab, get_cste_ptr(bb), ldbb, get_ptr(x), ldx);
             }
-        } break;
+        break; }
         case zhbgst: {
             int matrix_layout; char vect; char uplo; int n; int ka; int kb; c_binary ab; int ldab; cste_c_binary bb; int ldbb; c_binary x; int ldx;
             
@@ -3651,7 +3205,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhbgst(matrix_layout, vect, uplo, n, ka, kb, get_ptr(ab), ldab, get_cste_ptr(bb), ldbb, get_ptr(x), ldx);
             }
-        } break;
+        break; }
         case chbgv: {
             int matrix_layout; char jobz; char uplo; int n; int ka; int kb; c_binary ab; int ldab; c_binary bb; int ldbb; c_binary w; c_binary z; int ldz;
             
@@ -3660,7 +3214,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chbgv(matrix_layout, jobz, uplo, n, ka, kb, get_ptr(ab), ldab, get_ptr(bb), ldbb, get_ptr(w), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case zhbgv: {
             int matrix_layout; char jobz; char uplo; int n; int ka; int kb; c_binary ab; int ldab; c_binary bb; int ldbb; c_binary w; c_binary z; int ldz;
             
@@ -3669,7 +3223,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhbgv(matrix_layout, jobz, uplo, n, ka, kb, get_ptr(ab), ldab, get_ptr(bb), ldbb, get_ptr(w), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case chbgvd: {
             int matrix_layout; char jobz; char uplo; int n; int ka; int kb; c_binary ab; int ldab; c_binary bb; int ldbb; c_binary w; c_binary z; int ldz;
             
@@ -3678,7 +3232,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chbgvd(matrix_layout, jobz, uplo, n, ka, kb, get_ptr(ab), ldab, get_ptr(bb), ldbb, get_ptr(w), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case zhbgvd: {
             int matrix_layout; char jobz; char uplo; int n; int ka; int kb; c_binary ab; int ldab; c_binary bb; int ldbb; c_binary w; c_binary z; int ldz;
             
@@ -3687,7 +3241,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhbgvd(matrix_layout, jobz, uplo, n, ka, kb, get_ptr(ab), ldab, get_ptr(bb), ldbb, get_ptr(w), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case chbgvx: {
             int matrix_layout; char jobz; char range; char uplo; int n; int ka; int kb; c_binary ab; int ldab; c_binary bb; int ldbb; c_binary q; int ldq; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; c_binary m; c_binary w; c_binary z; int ldz; c_binary ifail;
             
@@ -3696,7 +3250,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chbgvx(matrix_layout, jobz, range, uplo, n, ka, kb, get_ptr(ab), ldab, get_ptr(bb), ldbb, get_ptr(q), ldq, get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_ptr(m), get_ptr(w), get_ptr(z), ldz, get_ptr(ifail));
             }
-        } break;
+        break; }
         case zhbgvx: {
             int matrix_layout; char jobz; char range; char uplo; int n; int ka; int kb; c_binary ab; int ldab; c_binary bb; int ldbb; c_binary q; int ldq; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; c_binary m; c_binary w; c_binary z; int ldz; c_binary ifail;
             
@@ -3705,7 +3259,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhbgvx(matrix_layout, jobz, range, uplo, n, ka, kb, get_ptr(ab), ldab, get_ptr(bb), ldbb, get_ptr(q), ldq, get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_ptr(m), get_ptr(w), get_ptr(z), ldz, get_ptr(ifail));
             }
-        } break;
+        break; }
         case chbtrd: {
             int matrix_layout; char vect; char uplo; int n; int kd; c_binary ab; int ldab; c_binary d; c_binary e; c_binary q; int ldq;
             
@@ -3714,7 +3268,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chbtrd(matrix_layout, vect, uplo, n, kd, get_ptr(ab), ldab, get_ptr(d), get_ptr(e), get_ptr(q), ldq);
             }
-        } break;
+        break; }
         case zhbtrd: {
             int matrix_layout; char vect; char uplo; int n; int kd; c_binary ab; int ldab; c_binary d; c_binary e; c_binary q; int ldq;
             
@@ -3723,7 +3277,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhbtrd(matrix_layout, vect, uplo, n, kd, get_ptr(ab), ldab, get_ptr(d), get_ptr(e), get_ptr(q), ldq);
             }
-        } break;
+        break; }
         case checon: {
             int matrix_layout; char uplo; int n; cste_c_binary a; int lda; cste_c_binary ipiv; cste_c_binary anorm; c_binary rcond;
             
@@ -3732,7 +3286,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_checon(matrix_layout, uplo, n, get_cste_ptr(a), lda, get_cste_ptr(ipiv), get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case zhecon: {
             int matrix_layout; char uplo; int n; cste_c_binary a; int lda; cste_c_binary ipiv; cste_c_binary anorm; c_binary rcond;
             
@@ -3741,7 +3295,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhecon(matrix_layout, uplo, n, get_cste_ptr(a), lda, get_cste_ptr(ipiv), get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case cheequb: {
             int matrix_layout; char uplo; int n; cste_c_binary a; int lda; c_binary s; c_binary scond; c_binary amax;
             
@@ -3750,7 +3304,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cheequb(matrix_layout, uplo, n, get_cste_ptr(a), lda, get_ptr(s), get_ptr(scond), get_ptr(amax));
             }
-        } break;
+        break; }
         case zheequb: {
             int matrix_layout; char uplo; int n; cste_c_binary a; int lda; c_binary s; c_binary scond; c_binary amax;
             
@@ -3759,7 +3313,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zheequb(matrix_layout, uplo, n, get_cste_ptr(a), lda, get_ptr(s), get_ptr(scond), get_ptr(amax));
             }
-        } break;
+        break; }
         case cheev: {
             int matrix_layout; char jobz; char uplo; int n; c_binary a; int lda; c_binary w;
             
@@ -3768,7 +3322,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cheev(matrix_layout, jobz, uplo, n, get_ptr(a), lda, get_ptr(w));
             }
-        } break;
+        break; }
         case zheev: {
             int matrix_layout; char jobz; char uplo; int n; c_binary a; int lda; c_binary w;
             
@@ -3777,7 +3331,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zheev(matrix_layout, jobz, uplo, n, get_ptr(a), lda, get_ptr(w));
             }
-        } break;
+        break; }
         case cheevd: {
             int matrix_layout; char jobz; char uplo; int n; c_binary a; int lda; c_binary w;
             
@@ -3786,7 +3340,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cheevd(matrix_layout, jobz, uplo, n, get_ptr(a), lda, get_ptr(w));
             }
-        } break;
+        break; }
         case zheevd: {
             int matrix_layout; char jobz; char uplo; int n; c_binary a; int lda; c_binary w;
             
@@ -3795,7 +3349,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zheevd(matrix_layout, jobz, uplo, n, get_ptr(a), lda, get_ptr(w));
             }
-        } break;
+        break; }
         case cheevr: {
             int matrix_layout; char jobz; char range; char uplo; int n; c_binary a; int lda; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; c_binary m; c_binary w; c_binary z; int ldz; c_binary isuppz;
             
@@ -3804,7 +3358,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cheevr(matrix_layout, jobz, range, uplo, n, get_ptr(a), lda, get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_ptr(m), get_ptr(w), get_ptr(z), ldz, get_ptr(isuppz));
             }
-        } break;
+        break; }
         case zheevr: {
             int matrix_layout; char jobz; char range; char uplo; int n; c_binary a; int lda; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; c_binary m; c_binary w; c_binary z; int ldz; c_binary isuppz;
             
@@ -3813,7 +3367,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zheevr(matrix_layout, jobz, range, uplo, n, get_ptr(a), lda, get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_ptr(m), get_ptr(w), get_ptr(z), ldz, get_ptr(isuppz));
             }
-        } break;
+        break; }
         case cheevx: {
             int matrix_layout; char jobz; char range; char uplo; int n; c_binary a; int lda; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; c_binary m; c_binary w; c_binary z; int ldz; c_binary ifail;
             
@@ -3822,7 +3376,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cheevx(matrix_layout, jobz, range, uplo, n, get_ptr(a), lda, get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_ptr(m), get_ptr(w), get_ptr(z), ldz, get_ptr(ifail));
             }
-        } break;
+        break; }
         case zheevx: {
             int matrix_layout; char jobz; char range; char uplo; int n; c_binary a; int lda; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; c_binary m; c_binary w; c_binary z; int ldz; c_binary ifail;
             
@@ -3831,7 +3385,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zheevx(matrix_layout, jobz, range, uplo, n, get_ptr(a), lda, get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_ptr(m), get_ptr(w), get_ptr(z), ldz, get_ptr(ifail));
             }
-        } break;
+        break; }
         case chegst: {
             int matrix_layout; int itype; char uplo; int n; c_binary a; int lda; cste_c_binary b; int ldb;
             
@@ -3840,7 +3394,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chegst(matrix_layout, itype, uplo, n, get_ptr(a), lda, get_cste_ptr(b), ldb);
             }
-        } break;
+        break; }
         case zhegst: {
             int matrix_layout; int itype; char uplo; int n; c_binary a; int lda; cste_c_binary b; int ldb;
             
@@ -3849,7 +3403,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhegst(matrix_layout, itype, uplo, n, get_ptr(a), lda, get_cste_ptr(b), ldb);
             }
-        } break;
+        break; }
         case chegv: {
             int matrix_layout; int itype; char jobz; char uplo; int n; c_binary a; int lda; c_binary b; int ldb; c_binary w;
             
@@ -3858,7 +3412,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chegv(matrix_layout, itype, jobz, uplo, n, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(w));
             }
-        } break;
+        break; }
         case zhegv: {
             int matrix_layout; int itype; char jobz; char uplo; int n; c_binary a; int lda; c_binary b; int ldb; c_binary w;
             
@@ -3867,7 +3421,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhegv(matrix_layout, itype, jobz, uplo, n, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(w));
             }
-        } break;
+        break; }
         case chegvd: {
             int matrix_layout; int itype; char jobz; char uplo; int n; c_binary a; int lda; c_binary b; int ldb; c_binary w;
             
@@ -3876,7 +3430,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chegvd(matrix_layout, itype, jobz, uplo, n, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(w));
             }
-        } break;
+        break; }
         case zhegvd: {
             int matrix_layout; int itype; char jobz; char uplo; int n; c_binary a; int lda; c_binary b; int ldb; c_binary w;
             
@@ -3885,7 +3439,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhegvd(matrix_layout, itype, jobz, uplo, n, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(w));
             }
-        } break;
+        break; }
         case chegvx: {
             int matrix_layout; int itype; char jobz; char range; char uplo; int n; c_binary a; int lda; c_binary b; int ldb; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; c_binary m; c_binary w; c_binary z; int ldz; c_binary ifail;
             
@@ -3894,7 +3448,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chegvx(matrix_layout, itype, jobz, range, uplo, n, get_ptr(a), lda, get_ptr(b), ldb, get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_ptr(m), get_ptr(w), get_ptr(z), ldz, get_ptr(ifail));
             }
-        } break;
+        break; }
         case zhegvx: {
             int matrix_layout; int itype; char jobz; char range; char uplo; int n; c_binary a; int lda; c_binary b; int ldb; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; c_binary m; c_binary w; c_binary z; int ldz; c_binary ifail;
             
@@ -3903,7 +3457,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhegvx(matrix_layout, itype, jobz, range, uplo, n, get_ptr(a), lda, get_ptr(b), ldb, get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_ptr(m), get_ptr(w), get_ptr(z), ldz, get_ptr(ifail));
             }
-        } break;
+        break; }
         case cherfs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary af; int ldaf; cste_c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -3912,7 +3466,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cherfs(matrix_layout, uplo, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(af), ldaf, get_cste_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case zherfs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary af; int ldaf; cste_c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -3921,7 +3475,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zherfs(matrix_layout, uplo, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(af), ldaf, get_cste_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case chesv: {
             int matrix_layout; char uplo; int n; int nrhs; c_binary a; int lda; c_binary ipiv; c_binary b; int ldb;
             
@@ -3930,7 +3484,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chesv(matrix_layout, uplo, n, nrhs, get_ptr(a), lda, get_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case zhesv: {
             int matrix_layout; char uplo; int n; int nrhs; c_binary a; int lda; c_binary ipiv; c_binary b; int ldb;
             
@@ -3939,7 +3493,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhesv(matrix_layout, uplo, n, nrhs, get_ptr(a), lda, get_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case chesvx: {
             int matrix_layout; char fact; char uplo; int n; int nrhs; cste_c_binary a; int lda; c_binary af; int ldaf; c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary ferr; c_binary berr;
             
@@ -3948,7 +3502,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chesvx(matrix_layout, fact, uplo, n, nrhs, get_cste_ptr(a), lda, get_ptr(af), ldaf, get_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case zhesvx: {
             int matrix_layout; char fact; char uplo; int n; int nrhs; cste_c_binary a; int lda; c_binary af; int ldaf; c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary ferr; c_binary berr;
             
@@ -3957,7 +3511,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhesvx(matrix_layout, fact, uplo, n, nrhs, get_cste_ptr(a), lda, get_ptr(af), ldaf, get_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case chetrd: {
             int matrix_layout; char uplo; int n; c_binary a; int lda; c_binary d; c_binary e; c_binary tau;
             
@@ -3966,7 +3520,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chetrd(matrix_layout, uplo, n, get_ptr(a), lda, get_ptr(d), get_ptr(e), get_ptr(tau));
             }
-        } break;
+        break; }
         case zhetrd: {
             int matrix_layout; char uplo; int n; c_binary a; int lda; c_binary d; c_binary e; c_binary tau;
             
@@ -3975,7 +3529,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhetrd(matrix_layout, uplo, n, get_ptr(a), lda, get_ptr(d), get_ptr(e), get_ptr(tau));
             }
-        } break;
+        break; }
         case chetrf: {
             int matrix_layout; char uplo; int n; c_binary a; int lda; c_binary ipiv;
             
@@ -3984,7 +3538,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chetrf(matrix_layout, uplo, n, get_ptr(a), lda, get_ptr(ipiv));
             }
-        } break;
+        break; }
         case zhetrf: {
             int matrix_layout; char uplo; int n; c_binary a; int lda; c_binary ipiv;
             
@@ -3993,7 +3547,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhetrf(matrix_layout, uplo, n, get_ptr(a), lda, get_ptr(ipiv));
             }
-        } break;
+        break; }
         case chetri: {
             int matrix_layout; char uplo; int n; c_binary a; int lda; cste_c_binary ipiv;
             
@@ -4002,7 +3556,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chetri(matrix_layout, uplo, n, get_ptr(a), lda, get_cste_ptr(ipiv));
             }
-        } break;
+        break; }
         case zhetri: {
             int matrix_layout; char uplo; int n; c_binary a; int lda; cste_c_binary ipiv;
             
@@ -4011,7 +3565,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhetri(matrix_layout, uplo, n, get_ptr(a), lda, get_cste_ptr(ipiv));
             }
-        } break;
+        break; }
         case chetrs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary ipiv; c_binary b; int ldb;
             
@@ -4020,7 +3574,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chetrs(matrix_layout, uplo, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case zhetrs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary ipiv; c_binary b; int ldb;
             
@@ -4029,7 +3583,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhetrs(matrix_layout, uplo, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case chfrk: {
             int matrix_layout; char transr; char uplo; char trans; int n; int k; cste_c_binary alpha; cste_c_binary a; int lda; cste_c_binary beta; c_binary c;
             
@@ -4038,7 +3592,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chfrk(matrix_layout, transr, uplo, trans, n, k, get_cste_double(alpha), get_cste_ptr(a), lda, get_cste_double(beta), get_ptr(c));
             }
-        } break;
+        break; }
         case zhfrk: {
             int matrix_layout; char transr; char uplo; char trans; int n; int k; cste_c_binary alpha; cste_c_binary a; int lda; cste_c_binary beta; c_binary c;
             
@@ -4047,7 +3601,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhfrk(matrix_layout, transr, uplo, trans, n, k, get_cste_double(alpha), get_cste_ptr(a), lda, get_cste_double(beta), get_ptr(c));
             }
-        } break;
+        break; }
         case shgeqz: {
             int matrix_layout; char job; char compq; char compz; int n; int ilo; int ihi; c_binary h; int ldh; c_binary t; int ldt; c_binary alphar; c_binary alphai; c_binary beta; c_binary q; int ldq; c_binary z; int ldz;
             
@@ -4056,7 +3610,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_shgeqz(matrix_layout, job, compq, compz, n, ilo, ihi, get_ptr(h), ldh, get_ptr(t), ldt, get_ptr(alphar), get_ptr(alphai), get_ptr(beta), get_ptr(q), ldq, get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case dhgeqz: {
             int matrix_layout; char job; char compq; char compz; int n; int ilo; int ihi; c_binary h; int ldh; c_binary t; int ldt; c_binary alphar; c_binary alphai; c_binary beta; c_binary q; int ldq; c_binary z; int ldz;
             
@@ -4065,7 +3619,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dhgeqz(matrix_layout, job, compq, compz, n, ilo, ihi, get_ptr(h), ldh, get_ptr(t), ldt, get_ptr(alphar), get_ptr(alphai), get_ptr(beta), get_ptr(q), ldq, get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case chgeqz: {
             int matrix_layout; char job; char compq; char compz; int n; int ilo; int ihi; c_binary h; int ldh; c_binary t; int ldt; c_binary alpha; c_binary beta; c_binary q; int ldq; c_binary z; int ldz;
             
@@ -4074,7 +3628,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chgeqz(matrix_layout, job, compq, compz, n, ilo, ihi, get_ptr(h), ldh, get_ptr(t), ldt, get_ptr(alpha), get_ptr(beta), get_ptr(q), ldq, get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case zhgeqz: {
             int matrix_layout; char job; char compq; char compz; int n; int ilo; int ihi; c_binary h; int ldh; c_binary t; int ldt; c_binary alpha; c_binary beta; c_binary q; int ldq; c_binary z; int ldz;
             
@@ -4083,7 +3637,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhgeqz(matrix_layout, job, compq, compz, n, ilo, ihi, get_ptr(h), ldh, get_ptr(t), ldt, get_ptr(alpha), get_ptr(beta), get_ptr(q), ldq, get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case chpcon: {
             int matrix_layout; char uplo; int n; cste_c_binary ap; cste_c_binary ipiv; cste_c_binary anorm; c_binary rcond;
             
@@ -4092,7 +3646,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chpcon(matrix_layout, uplo, n, get_cste_ptr(ap), get_cste_ptr(ipiv), get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case zhpcon: {
             int matrix_layout; char uplo; int n; cste_c_binary ap; cste_c_binary ipiv; cste_c_binary anorm; c_binary rcond;
             
@@ -4101,7 +3655,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhpcon(matrix_layout, uplo, n, get_cste_ptr(ap), get_cste_ptr(ipiv), get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case chpev: {
             int matrix_layout; char jobz; char uplo; int n; c_binary ap; c_binary w; c_binary z; int ldz;
             
@@ -4110,7 +3664,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chpev(matrix_layout, jobz, uplo, n, get_ptr(ap), get_ptr(w), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case zhpev: {
             int matrix_layout; char jobz; char uplo; int n; c_binary ap; c_binary w; c_binary z; int ldz;
             
@@ -4119,7 +3673,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhpev(matrix_layout, jobz, uplo, n, get_ptr(ap), get_ptr(w), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case chpevd: {
             int matrix_layout; char jobz; char uplo; int n; c_binary ap; c_binary w; c_binary z; int ldz;
             
@@ -4128,7 +3682,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chpevd(matrix_layout, jobz, uplo, n, get_ptr(ap), get_ptr(w), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case zhpevd: {
             int matrix_layout; char jobz; char uplo; int n; c_binary ap; c_binary w; c_binary z; int ldz;
             
@@ -4137,7 +3691,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhpevd(matrix_layout, jobz, uplo, n, get_ptr(ap), get_ptr(w), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case chpevx: {
             int matrix_layout; char jobz; char range; char uplo; int n; c_binary ap; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; c_binary m; c_binary w; c_binary z; int ldz; c_binary ifail;
             
@@ -4146,7 +3700,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chpevx(matrix_layout, jobz, range, uplo, n, get_ptr(ap), get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_ptr(m), get_ptr(w), get_ptr(z), ldz, get_ptr(ifail));
             }
-        } break;
+        break; }
         case zhpevx: {
             int matrix_layout; char jobz; char range; char uplo; int n; c_binary ap; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; c_binary m; c_binary w; c_binary z; int ldz; c_binary ifail;
             
@@ -4155,7 +3709,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhpevx(matrix_layout, jobz, range, uplo, n, get_ptr(ap), get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_ptr(m), get_ptr(w), get_ptr(z), ldz, get_ptr(ifail));
             }
-        } break;
+        break; }
         case chpgst: {
             int matrix_layout; int itype; char uplo; int n; c_binary ap; cste_c_binary bp;
             
@@ -4164,7 +3718,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chpgst(matrix_layout, itype, uplo, n, get_ptr(ap), get_cste_ptr(bp));
             }
-        } break;
+        break; }
         case zhpgst: {
             int matrix_layout; int itype; char uplo; int n; c_binary ap; cste_c_binary bp;
             
@@ -4173,7 +3727,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhpgst(matrix_layout, itype, uplo, n, get_ptr(ap), get_cste_ptr(bp));
             }
-        } break;
+        break; }
         case chpgv: {
             int matrix_layout; int itype; char jobz; char uplo; int n; c_binary ap; c_binary bp; c_binary w; c_binary z; int ldz;
             
@@ -4182,7 +3736,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chpgv(matrix_layout, itype, jobz, uplo, n, get_ptr(ap), get_ptr(bp), get_ptr(w), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case zhpgv: {
             int matrix_layout; int itype; char jobz; char uplo; int n; c_binary ap; c_binary bp; c_binary w; c_binary z; int ldz;
             
@@ -4191,7 +3745,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhpgv(matrix_layout, itype, jobz, uplo, n, get_ptr(ap), get_ptr(bp), get_ptr(w), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case chpgvd: {
             int matrix_layout; int itype; char jobz; char uplo; int n; c_binary ap; c_binary bp; c_binary w; c_binary z; int ldz;
             
@@ -4200,7 +3754,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chpgvd(matrix_layout, itype, jobz, uplo, n, get_ptr(ap), get_ptr(bp), get_ptr(w), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case zhpgvd: {
             int matrix_layout; int itype; char jobz; char uplo; int n; c_binary ap; c_binary bp; c_binary w; c_binary z; int ldz;
             
@@ -4209,7 +3763,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhpgvd(matrix_layout, itype, jobz, uplo, n, get_ptr(ap), get_ptr(bp), get_ptr(w), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case chpgvx: {
             int matrix_layout; int itype; char jobz; char range; char uplo; int n; c_binary ap; c_binary bp; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; c_binary m; c_binary w; c_binary z; int ldz; c_binary ifail;
             
@@ -4218,7 +3772,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chpgvx(matrix_layout, itype, jobz, range, uplo, n, get_ptr(ap), get_ptr(bp), get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_ptr(m), get_ptr(w), get_ptr(z), ldz, get_ptr(ifail));
             }
-        } break;
+        break; }
         case zhpgvx: {
             int matrix_layout; int itype; char jobz; char range; char uplo; int n; c_binary ap; c_binary bp; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; c_binary m; c_binary w; c_binary z; int ldz; c_binary ifail;
             
@@ -4227,7 +3781,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhpgvx(matrix_layout, itype, jobz, range, uplo, n, get_ptr(ap), get_ptr(bp), get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_ptr(m), get_ptr(w), get_ptr(z), ldz, get_ptr(ifail));
             }
-        } break;
+        break; }
         case chprfs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary ap; cste_c_binary afp; cste_c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -4236,7 +3790,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chprfs(matrix_layout, uplo, n, nrhs, get_cste_ptr(ap), get_cste_ptr(afp), get_cste_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case zhprfs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary ap; cste_c_binary afp; cste_c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -4245,7 +3799,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhprfs(matrix_layout, uplo, n, nrhs, get_cste_ptr(ap), get_cste_ptr(afp), get_cste_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case chpsv: {
             int matrix_layout; char uplo; int n; int nrhs; c_binary ap; c_binary ipiv; c_binary b; int ldb;
             
@@ -4254,7 +3808,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chpsv(matrix_layout, uplo, n, nrhs, get_ptr(ap), get_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case zhpsv: {
             int matrix_layout; char uplo; int n; int nrhs; c_binary ap; c_binary ipiv; c_binary b; int ldb;
             
@@ -4263,7 +3817,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhpsv(matrix_layout, uplo, n, nrhs, get_ptr(ap), get_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case chpsvx: {
             int matrix_layout; char fact; char uplo; int n; int nrhs; cste_c_binary ap; c_binary afp; c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary ferr; c_binary berr;
             
@@ -4272,7 +3826,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chpsvx(matrix_layout, fact, uplo, n, nrhs, get_cste_ptr(ap), get_ptr(afp), get_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case zhpsvx: {
             int matrix_layout; char fact; char uplo; int n; int nrhs; cste_c_binary ap; c_binary afp; c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary ferr; c_binary berr;
             
@@ -4281,7 +3835,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhpsvx(matrix_layout, fact, uplo, n, nrhs, get_cste_ptr(ap), get_ptr(afp), get_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case chptrd: {
             int matrix_layout; char uplo; int n; c_binary ap; c_binary d; c_binary e; c_binary tau;
             
@@ -4290,7 +3844,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chptrd(matrix_layout, uplo, n, get_ptr(ap), get_ptr(d), get_ptr(e), get_ptr(tau));
             }
-        } break;
+        break; }
         case zhptrd: {
             int matrix_layout; char uplo; int n; c_binary ap; c_binary d; c_binary e; c_binary tau;
             
@@ -4299,7 +3853,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhptrd(matrix_layout, uplo, n, get_ptr(ap), get_ptr(d), get_ptr(e), get_ptr(tau));
             }
-        } break;
+        break; }
         case chptrf: {
             int matrix_layout; char uplo; int n; c_binary ap; c_binary ipiv;
             
@@ -4308,7 +3862,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chptrf(matrix_layout, uplo, n, get_ptr(ap), get_ptr(ipiv));
             }
-        } break;
+        break; }
         case zhptrf: {
             int matrix_layout; char uplo; int n; c_binary ap; c_binary ipiv;
             
@@ -4317,7 +3871,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhptrf(matrix_layout, uplo, n, get_ptr(ap), get_ptr(ipiv));
             }
-        } break;
+        break; }
         case chptri: {
             int matrix_layout; char uplo; int n; c_binary ap; cste_c_binary ipiv;
             
@@ -4326,7 +3880,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chptri(matrix_layout, uplo, n, get_ptr(ap), get_cste_ptr(ipiv));
             }
-        } break;
+        break; }
         case zhptri: {
             int matrix_layout; char uplo; int n; c_binary ap; cste_c_binary ipiv;
             
@@ -4335,7 +3889,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhptri(matrix_layout, uplo, n, get_ptr(ap), get_cste_ptr(ipiv));
             }
-        } break;
+        break; }
         case chptrs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary ap; cste_c_binary ipiv; c_binary b; int ldb;
             
@@ -4344,7 +3898,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chptrs(matrix_layout, uplo, n, nrhs, get_cste_ptr(ap), get_cste_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case zhptrs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary ap; cste_c_binary ipiv; c_binary b; int ldb;
             
@@ -4353,7 +3907,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhptrs(matrix_layout, uplo, n, nrhs, get_cste_ptr(ap), get_cste_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case shsein: {
             int matrix_layout; char job; char eigsrc; char initv; c_binary select; int n; cste_c_binary h; int ldh; c_binary wr; cste_c_binary wi; c_binary vl; int ldvl; c_binary vr; int ldvr; int mm; c_binary m; c_binary ifaill; c_binary ifailr;
             
@@ -4362,7 +3916,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_shsein(matrix_layout, job, eigsrc, initv, get_ptr(select), n, get_cste_ptr(h), ldh, get_ptr(wr), get_cste_ptr(wi), get_ptr(vl), ldvl, get_ptr(vr), ldvr, mm, get_ptr(m), get_ptr(ifaill), get_ptr(ifailr));
             }
-        } break;
+        break; }
         case dhsein: {
             int matrix_layout; char job; char eigsrc; char initv; c_binary select; int n; cste_c_binary h; int ldh; c_binary wr; cste_c_binary wi; c_binary vl; int ldvl; c_binary vr; int ldvr; int mm; c_binary m; c_binary ifaill; c_binary ifailr;
             
@@ -4371,7 +3925,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dhsein(matrix_layout, job, eigsrc, initv, get_ptr(select), n, get_cste_ptr(h), ldh, get_ptr(wr), get_cste_ptr(wi), get_ptr(vl), ldvl, get_ptr(vr), ldvr, mm, get_ptr(m), get_ptr(ifaill), get_ptr(ifailr));
             }
-        } break;
+        break; }
         case chsein: {
             int matrix_layout; char job; char eigsrc; char initv; cste_c_binary select; int n; cste_c_binary h; int ldh; c_binary w; c_binary vl; int ldvl; c_binary vr; int ldvr; int mm; c_binary m; c_binary ifaill; c_binary ifailr;
             
@@ -4380,7 +3934,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chsein(matrix_layout, job, eigsrc, initv, get_cste_ptr(select), n, get_cste_ptr(h), ldh, get_ptr(w), get_ptr(vl), ldvl, get_ptr(vr), ldvr, mm, get_ptr(m), get_ptr(ifaill), get_ptr(ifailr));
             }
-        } break;
+        break; }
         case zhsein: {
             int matrix_layout; char job; char eigsrc; char initv; cste_c_binary select; int n; cste_c_binary h; int ldh; c_binary w; c_binary vl; int ldvl; c_binary vr; int ldvr; int mm; c_binary m; c_binary ifaill; c_binary ifailr;
             
@@ -4389,7 +3943,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhsein(matrix_layout, job, eigsrc, initv, get_cste_ptr(select), n, get_cste_ptr(h), ldh, get_ptr(w), get_ptr(vl), ldvl, get_ptr(vr), ldvr, mm, get_ptr(m), get_ptr(ifaill), get_ptr(ifailr));
             }
-        } break;
+        break; }
         case shseqr: {
             int matrix_layout; char job; char compz; int n; int ilo; int ihi; c_binary h; int ldh; c_binary wr; c_binary wi; c_binary z; int ldz;
             
@@ -4398,7 +3952,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_shseqr(matrix_layout, job, compz, n, ilo, ihi, get_ptr(h), ldh, get_ptr(wr), get_ptr(wi), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case dhseqr: {
             int matrix_layout; char job; char compz; int n; int ilo; int ihi; c_binary h; int ldh; c_binary wr; c_binary wi; c_binary z; int ldz;
             
@@ -4407,7 +3961,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dhseqr(matrix_layout, job, compz, n, ilo, ihi, get_ptr(h), ldh, get_ptr(wr), get_ptr(wi), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case chseqr: {
             int matrix_layout; char job; char compz; int n; int ilo; int ihi; c_binary h; int ldh; c_binary w; c_binary z; int ldz;
             
@@ -4416,7 +3970,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_chseqr(matrix_layout, job, compz, n, ilo, ihi, get_ptr(h), ldh, get_ptr(w), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case zhseqr: {
             int matrix_layout; char job; char compz; int n; int ilo; int ihi; c_binary h; int ldh; c_binary w; c_binary z; int ldz;
             
@@ -4425,7 +3979,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zhseqr(matrix_layout, job, compz, n, ilo, ihi, get_ptr(h), ldh, get_ptr(w), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case sopgtr: {
             int matrix_layout; char uplo; int n; cste_c_binary ap; cste_c_binary tau; c_binary q; int ldq;
             
@@ -4434,7 +3988,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sopgtr(matrix_layout, uplo, n, get_cste_ptr(ap), get_cste_ptr(tau), get_ptr(q), ldq);
             }
-        } break;
+        break; }
         case dopgtr: {
             int matrix_layout; char uplo; int n; cste_c_binary ap; cste_c_binary tau; c_binary q; int ldq;
             
@@ -4443,7 +3997,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dopgtr(matrix_layout, uplo, n, get_cste_ptr(ap), get_cste_ptr(tau), get_ptr(q), ldq);
             }
-        } break;
+        break; }
         case sopmtr: {
             int matrix_layout; char side; char uplo; char trans; int m; int n; cste_c_binary ap; cste_c_binary tau; c_binary c; int ldc;
             
@@ -4452,7 +4006,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sopmtr(matrix_layout, side, uplo, trans, m, n, get_cste_ptr(ap), get_cste_ptr(tau), get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case dopmtr: {
             int matrix_layout; char side; char uplo; char trans; int m; int n; cste_c_binary ap; cste_c_binary tau; c_binary c; int ldc;
             
@@ -4461,7 +4015,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dopmtr(matrix_layout, side, uplo, trans, m, n, get_cste_ptr(ap), get_cste_ptr(tau), get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case sorgbr: {
             int matrix_layout; char vect; int m; int n; int k; c_binary a; int lda; cste_c_binary tau;
             
@@ -4470,7 +4024,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sorgbr(matrix_layout, vect, m, n, k, get_ptr(a), lda, get_cste_ptr(tau));
             }
-        } break;
+        break; }
         case dorgbr: {
             int matrix_layout; char vect; int m; int n; int k; c_binary a; int lda; cste_c_binary tau;
             
@@ -4479,7 +4033,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dorgbr(matrix_layout, vect, m, n, k, get_ptr(a), lda, get_cste_ptr(tau));
             }
-        } break;
+        break; }
         case sorghr: {
             int matrix_layout; int n; int ilo; int ihi; c_binary a; int lda; cste_c_binary tau;
             
@@ -4488,7 +4042,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sorghr(matrix_layout, n, ilo, ihi, get_ptr(a), lda, get_cste_ptr(tau));
             }
-        } break;
+        break; }
         case dorghr: {
             int matrix_layout; int n; int ilo; int ihi; c_binary a; int lda; cste_c_binary tau;
             
@@ -4497,7 +4051,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dorghr(matrix_layout, n, ilo, ihi, get_ptr(a), lda, get_cste_ptr(tau));
             }
-        } break;
+        break; }
         case sorglq: {
             int matrix_layout; int m; int n; int k; c_binary a; int lda; cste_c_binary tau;
             
@@ -4506,7 +4060,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sorglq(matrix_layout, m, n, k, get_ptr(a), lda, get_cste_ptr(tau));
             }
-        } break;
+        break; }
         case dorglq: {
             int matrix_layout; int m; int n; int k; c_binary a; int lda; cste_c_binary tau;
             
@@ -4515,7 +4069,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dorglq(matrix_layout, m, n, k, get_ptr(a), lda, get_cste_ptr(tau));
             }
-        } break;
+        break; }
         case sorgql: {
             int matrix_layout; int m; int n; int k; c_binary a; int lda; cste_c_binary tau;
             
@@ -4524,7 +4078,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sorgql(matrix_layout, m, n, k, get_ptr(a), lda, get_cste_ptr(tau));
             }
-        } break;
+        break; }
         case dorgql: {
             int matrix_layout; int m; int n; int k; c_binary a; int lda; cste_c_binary tau;
             
@@ -4533,7 +4087,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dorgql(matrix_layout, m, n, k, get_ptr(a), lda, get_cste_ptr(tau));
             }
-        } break;
+        break; }
         case sorgqr: {
             int matrix_layout; int m; int n; int k; c_binary a; int lda; cste_c_binary tau;
             
@@ -4542,7 +4096,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sorgqr(matrix_layout, m, n, k, get_ptr(a), lda, get_cste_ptr(tau));
             }
-        } break;
+        break; }
         case dorgqr: {
             int matrix_layout; int m; int n; int k; c_binary a; int lda; cste_c_binary tau;
             
@@ -4551,7 +4105,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dorgqr(matrix_layout, m, n, k, get_ptr(a), lda, get_cste_ptr(tau));
             }
-        } break;
+        break; }
         case sorgrq: {
             int matrix_layout; int m; int n; int k; c_binary a; int lda; cste_c_binary tau;
             
@@ -4560,7 +4114,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sorgrq(matrix_layout, m, n, k, get_ptr(a), lda, get_cste_ptr(tau));
             }
-        } break;
+        break; }
         case dorgrq: {
             int matrix_layout; int m; int n; int k; c_binary a; int lda; cste_c_binary tau;
             
@@ -4569,7 +4123,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dorgrq(matrix_layout, m, n, k, get_ptr(a), lda, get_cste_ptr(tau));
             }
-        } break;
+        break; }
         case sorgtr: {
             int matrix_layout; char uplo; int n; c_binary a; int lda; cste_c_binary tau;
             
@@ -4578,7 +4132,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sorgtr(matrix_layout, uplo, n, get_ptr(a), lda, get_cste_ptr(tau));
             }
-        } break;
+        break; }
         case dorgtr: {
             int matrix_layout; char uplo; int n; c_binary a; int lda; cste_c_binary tau;
             
@@ -4587,7 +4141,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dorgtr(matrix_layout, uplo, n, get_ptr(a), lda, get_cste_ptr(tau));
             }
-        } break;
+        break; }
         case sormbr: {
             int matrix_layout; char vect; char side; char trans; int m; int n; int k; cste_c_binary a; int lda; cste_c_binary tau; c_binary c; int ldc;
             
@@ -4596,7 +4150,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sormbr(matrix_layout, vect, side, trans, m, n, k, get_cste_ptr(a), lda, get_cste_ptr(tau), get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case dormbr: {
             int matrix_layout; char vect; char side; char trans; int m; int n; int k; cste_c_binary a; int lda; cste_c_binary tau; c_binary c; int ldc;
             
@@ -4605,7 +4159,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dormbr(matrix_layout, vect, side, trans, m, n, k, get_cste_ptr(a), lda, get_cste_ptr(tau), get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case sormhr: {
             int matrix_layout; char side; char trans; int m; int n; int ilo; int ihi; cste_c_binary a; int lda; cste_c_binary tau; c_binary c; int ldc;
             
@@ -4614,7 +4168,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sormhr(matrix_layout, side, trans, m, n, ilo, ihi, get_cste_ptr(a), lda, get_cste_ptr(tau), get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case dormhr: {
             int matrix_layout; char side; char trans; int m; int n; int ilo; int ihi; cste_c_binary a; int lda; cste_c_binary tau; c_binary c; int ldc;
             
@@ -4623,7 +4177,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dormhr(matrix_layout, side, trans, m, n, ilo, ihi, get_cste_ptr(a), lda, get_cste_ptr(tau), get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case sormlq: {
             int matrix_layout; char side; char trans; int m; int n; int k; cste_c_binary a; int lda; cste_c_binary tau; c_binary c; int ldc;
             
@@ -4632,7 +4186,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sormlq(matrix_layout, side, trans, m, n, k, get_cste_ptr(a), lda, get_cste_ptr(tau), get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case dormlq: {
             int matrix_layout; char side; char trans; int m; int n; int k; cste_c_binary a; int lda; cste_c_binary tau; c_binary c; int ldc;
             
@@ -4641,7 +4195,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dormlq(matrix_layout, side, trans, m, n, k, get_cste_ptr(a), lda, get_cste_ptr(tau), get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case sormql: {
             int matrix_layout; char side; char trans; int m; int n; int k; cste_c_binary a; int lda; cste_c_binary tau; c_binary c; int ldc;
             
@@ -4650,7 +4204,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sormql(matrix_layout, side, trans, m, n, k, get_cste_ptr(a), lda, get_cste_ptr(tau), get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case dormql: {
             int matrix_layout; char side; char trans; int m; int n; int k; cste_c_binary a; int lda; cste_c_binary tau; c_binary c; int ldc;
             
@@ -4659,7 +4213,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dormql(matrix_layout, side, trans, m, n, k, get_cste_ptr(a), lda, get_cste_ptr(tau), get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case sormqr: {
             int matrix_layout; char side; char trans; int m; int n; int k; cste_c_binary a; int lda; cste_c_binary tau; c_binary c; int ldc;
             
@@ -4668,7 +4222,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sormqr(matrix_layout, side, trans, m, n, k, get_cste_ptr(a), lda, get_cste_ptr(tau), get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case dormqr: {
             int matrix_layout; char side; char trans; int m; int n; int k; cste_c_binary a; int lda; cste_c_binary tau; c_binary c; int ldc;
             
@@ -4677,7 +4231,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dormqr(matrix_layout, side, trans, m, n, k, get_cste_ptr(a), lda, get_cste_ptr(tau), get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case sormrq: {
             int matrix_layout; char side; char trans; int m; int n; int k; cste_c_binary a; int lda; cste_c_binary tau; c_binary c; int ldc;
             
@@ -4686,7 +4240,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sormrq(matrix_layout, side, trans, m, n, k, get_cste_ptr(a), lda, get_cste_ptr(tau), get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case dormrq: {
             int matrix_layout; char side; char trans; int m; int n; int k; cste_c_binary a; int lda; cste_c_binary tau; c_binary c; int ldc;
             
@@ -4695,7 +4249,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dormrq(matrix_layout, side, trans, m, n, k, get_cste_ptr(a), lda, get_cste_ptr(tau), get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case sormrz: {
             int matrix_layout; char side; char trans; int m; int n; int k; int l; cste_c_binary a; int lda; cste_c_binary tau; c_binary c; int ldc;
             
@@ -4704,7 +4258,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sormrz(matrix_layout, side, trans, m, n, k, l, get_cste_ptr(a), lda, get_cste_ptr(tau), get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case dormrz: {
             int matrix_layout; char side; char trans; int m; int n; int k; int l; cste_c_binary a; int lda; cste_c_binary tau; c_binary c; int ldc;
             
@@ -4713,7 +4267,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dormrz(matrix_layout, side, trans, m, n, k, l, get_cste_ptr(a), lda, get_cste_ptr(tau), get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case sormtr: {
             int matrix_layout; char side; char uplo; char trans; int m; int n; cste_c_binary a; int lda; cste_c_binary tau; c_binary c; int ldc;
             
@@ -4722,7 +4276,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sormtr(matrix_layout, side, uplo, trans, m, n, get_cste_ptr(a), lda, get_cste_ptr(tau), get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case dormtr: {
             int matrix_layout; char side; char uplo; char trans; int m; int n; cste_c_binary a; int lda; cste_c_binary tau; c_binary c; int ldc;
             
@@ -4731,7 +4285,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dormtr(matrix_layout, side, uplo, trans, m, n, get_cste_ptr(a), lda, get_cste_ptr(tau), get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case spbcon: {
             int matrix_layout; char uplo; int n; int kd; cste_c_binary ab; int ldab; cste_c_binary anorm; c_binary rcond;
             
@@ -4740,7 +4294,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_spbcon(matrix_layout, uplo, n, kd, get_cste_ptr(ab), ldab, get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case dpbcon: {
             int matrix_layout; char uplo; int n; int kd; cste_c_binary ab; int ldab; cste_c_binary anorm; c_binary rcond;
             
@@ -4749,7 +4303,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dpbcon(matrix_layout, uplo, n, kd, get_cste_ptr(ab), ldab, get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case cpbcon: {
             int matrix_layout; char uplo; int n; int kd; cste_c_binary ab; int ldab; cste_c_binary anorm; c_binary rcond;
             
@@ -4758,7 +4312,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cpbcon(matrix_layout, uplo, n, kd, get_cste_ptr(ab), ldab, get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case zpbcon: {
             int matrix_layout; char uplo; int n; int kd; cste_c_binary ab; int ldab; cste_c_binary anorm; c_binary rcond;
             
@@ -4767,7 +4321,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zpbcon(matrix_layout, uplo, n, kd, get_cste_ptr(ab), ldab, get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case spbequ: {
             int matrix_layout; char uplo; int n; int kd; cste_c_binary ab; int ldab; c_binary s; c_binary scond; c_binary amax;
             
@@ -4776,7 +4330,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_spbequ(matrix_layout, uplo, n, kd, get_cste_ptr(ab), ldab, get_ptr(s), get_ptr(scond), get_ptr(amax));
             }
-        } break;
+        break; }
         case dpbequ: {
             int matrix_layout; char uplo; int n; int kd; cste_c_binary ab; int ldab; c_binary s; c_binary scond; c_binary amax;
             
@@ -4785,7 +4339,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dpbequ(matrix_layout, uplo, n, kd, get_cste_ptr(ab), ldab, get_ptr(s), get_ptr(scond), get_ptr(amax));
             }
-        } break;
+        break; }
         case cpbequ: {
             int matrix_layout; char uplo; int n; int kd; cste_c_binary ab; int ldab; c_binary s; c_binary scond; c_binary amax;
             
@@ -4794,7 +4348,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cpbequ(matrix_layout, uplo, n, kd, get_cste_ptr(ab), ldab, get_ptr(s), get_ptr(scond), get_ptr(amax));
             }
-        } break;
+        break; }
         case zpbequ: {
             int matrix_layout; char uplo; int n; int kd; cste_c_binary ab; int ldab; c_binary s; c_binary scond; c_binary amax;
             
@@ -4803,7 +4357,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zpbequ(matrix_layout, uplo, n, kd, get_cste_ptr(ab), ldab, get_ptr(s), get_ptr(scond), get_ptr(amax));
             }
-        } break;
+        break; }
         case spbrfs: {
             int matrix_layout; char uplo; int n; int kd; int nrhs; cste_c_binary ab; int ldab; cste_c_binary afb; int ldafb; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -4812,7 +4366,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_spbrfs(matrix_layout, uplo, n, kd, nrhs, get_cste_ptr(ab), ldab, get_cste_ptr(afb), ldafb, get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case dpbrfs: {
             int matrix_layout; char uplo; int n; int kd; int nrhs; cste_c_binary ab; int ldab; cste_c_binary afb; int ldafb; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -4821,7 +4375,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dpbrfs(matrix_layout, uplo, n, kd, nrhs, get_cste_ptr(ab), ldab, get_cste_ptr(afb), ldafb, get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case cpbrfs: {
             int matrix_layout; char uplo; int n; int kd; int nrhs; cste_c_binary ab; int ldab; cste_c_binary afb; int ldafb; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -4830,7 +4384,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cpbrfs(matrix_layout, uplo, n, kd, nrhs, get_cste_ptr(ab), ldab, get_cste_ptr(afb), ldafb, get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case zpbrfs: {
             int matrix_layout; char uplo; int n; int kd; int nrhs; cste_c_binary ab; int ldab; cste_c_binary afb; int ldafb; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -4839,7 +4393,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zpbrfs(matrix_layout, uplo, n, kd, nrhs, get_cste_ptr(ab), ldab, get_cste_ptr(afb), ldafb, get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case spbstf: {
             int matrix_layout; char uplo; int n; int kb; c_binary bb; int ldbb;
             
@@ -4848,7 +4402,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_spbstf(matrix_layout, uplo, n, kb, get_ptr(bb), ldbb);
             }
-        } break;
+        break; }
         case dpbstf: {
             int matrix_layout; char uplo; int n; int kb; c_binary bb; int ldbb;
             
@@ -4857,7 +4411,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dpbstf(matrix_layout, uplo, n, kb, get_ptr(bb), ldbb);
             }
-        } break;
+        break; }
         case cpbstf: {
             int matrix_layout; char uplo; int n; int kb; c_binary bb; int ldbb;
             
@@ -4866,7 +4420,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cpbstf(matrix_layout, uplo, n, kb, get_ptr(bb), ldbb);
             }
-        } break;
+        break; }
         case zpbstf: {
             int matrix_layout; char uplo; int n; int kb; c_binary bb; int ldbb;
             
@@ -4875,7 +4429,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zpbstf(matrix_layout, uplo, n, kb, get_ptr(bb), ldbb);
             }
-        } break;
+        break; }
         case spbsv: {
             int matrix_layout; char uplo; int n; int kd; int nrhs; c_binary ab; int ldab; c_binary b; int ldb;
             
@@ -4884,7 +4438,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_spbsv(matrix_layout, uplo, n, kd, nrhs, get_ptr(ab), ldab, get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case dpbsv: {
             int matrix_layout; char uplo; int n; int kd; int nrhs; c_binary ab; int ldab; c_binary b; int ldb;
             
@@ -4893,7 +4447,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dpbsv(matrix_layout, uplo, n, kd, nrhs, get_ptr(ab), ldab, get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case cpbsv: {
             int matrix_layout; char uplo; int n; int kd; int nrhs; c_binary ab; int ldab; c_binary b; int ldb;
             
@@ -4902,7 +4456,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cpbsv(matrix_layout, uplo, n, kd, nrhs, get_ptr(ab), ldab, get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case zpbsv: {
             int matrix_layout; char uplo; int n; int kd; int nrhs; c_binary ab; int ldab; c_binary b; int ldb;
             
@@ -4911,7 +4465,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zpbsv(matrix_layout, uplo, n, kd, nrhs, get_ptr(ab), ldab, get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case spbtrf: {
             int matrix_layout; char uplo; int n; int kd; c_binary ab; int ldab;
             
@@ -4920,7 +4474,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_spbtrf(matrix_layout, uplo, n, kd, get_ptr(ab), ldab);
             }
-        } break;
+        break; }
         case dpbtrf: {
             int matrix_layout; char uplo; int n; int kd; c_binary ab; int ldab;
             
@@ -4929,7 +4483,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dpbtrf(matrix_layout, uplo, n, kd, get_ptr(ab), ldab);
             }
-        } break;
+        break; }
         case cpbtrf: {
             int matrix_layout; char uplo; int n; int kd; c_binary ab; int ldab;
             
@@ -4938,7 +4492,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cpbtrf(matrix_layout, uplo, n, kd, get_ptr(ab), ldab);
             }
-        } break;
+        break; }
         case zpbtrf: {
             int matrix_layout; char uplo; int n; int kd; c_binary ab; int ldab;
             
@@ -4947,7 +4501,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zpbtrf(matrix_layout, uplo, n, kd, get_ptr(ab), ldab);
             }
-        } break;
+        break; }
         case spbtrs: {
             int matrix_layout; char uplo; int n; int kd; int nrhs; cste_c_binary ab; int ldab; c_binary b; int ldb;
             
@@ -4956,7 +4510,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_spbtrs(matrix_layout, uplo, n, kd, nrhs, get_cste_ptr(ab), ldab, get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case dpbtrs: {
             int matrix_layout; char uplo; int n; int kd; int nrhs; cste_c_binary ab; int ldab; c_binary b; int ldb;
             
@@ -4965,7 +4519,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dpbtrs(matrix_layout, uplo, n, kd, nrhs, get_cste_ptr(ab), ldab, get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case cpbtrs: {
             int matrix_layout; char uplo; int n; int kd; int nrhs; cste_c_binary ab; int ldab; c_binary b; int ldb;
             
@@ -4974,7 +4528,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cpbtrs(matrix_layout, uplo, n, kd, nrhs, get_cste_ptr(ab), ldab, get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case zpbtrs: {
             int matrix_layout; char uplo; int n; int kd; int nrhs; cste_c_binary ab; int ldab; c_binary b; int ldb;
             
@@ -4983,7 +4537,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zpbtrs(matrix_layout, uplo, n, kd, nrhs, get_cste_ptr(ab), ldab, get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case spftrf: {
             int matrix_layout; char transr; char uplo; int n; c_binary a;
             
@@ -4992,7 +4546,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_spftrf(matrix_layout, transr, uplo, n, get_ptr(a));
             }
-        } break;
+        break; }
         case dpftrf: {
             int matrix_layout; char transr; char uplo; int n; c_binary a;
             
@@ -5001,7 +4555,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dpftrf(matrix_layout, transr, uplo, n, get_ptr(a));
             }
-        } break;
+        break; }
         case cpftrf: {
             int matrix_layout; char transr; char uplo; int n; c_binary a;
             
@@ -5010,7 +4564,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cpftrf(matrix_layout, transr, uplo, n, get_ptr(a));
             }
-        } break;
+        break; }
         case zpftrf: {
             int matrix_layout; char transr; char uplo; int n; c_binary a;
             
@@ -5019,7 +4573,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zpftrf(matrix_layout, transr, uplo, n, get_ptr(a));
             }
-        } break;
+        break; }
         case spftri: {
             int matrix_layout; char transr; char uplo; int n; c_binary a;
             
@@ -5028,7 +4582,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_spftri(matrix_layout, transr, uplo, n, get_ptr(a));
             }
-        } break;
+        break; }
         case dpftri: {
             int matrix_layout; char transr; char uplo; int n; c_binary a;
             
@@ -5037,7 +4591,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dpftri(matrix_layout, transr, uplo, n, get_ptr(a));
             }
-        } break;
+        break; }
         case cpftri: {
             int matrix_layout; char transr; char uplo; int n; c_binary a;
             
@@ -5046,7 +4600,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cpftri(matrix_layout, transr, uplo, n, get_ptr(a));
             }
-        } break;
+        break; }
         case zpftri: {
             int matrix_layout; char transr; char uplo; int n; c_binary a;
             
@@ -5055,7 +4609,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zpftri(matrix_layout, transr, uplo, n, get_ptr(a));
             }
-        } break;
+        break; }
         case spftrs: {
             int matrix_layout; char transr; char uplo; int n; int nrhs; cste_c_binary a; c_binary b; int ldb;
             
@@ -5064,7 +4618,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_spftrs(matrix_layout, transr, uplo, n, nrhs, get_cste_ptr(a), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case dpftrs: {
             int matrix_layout; char transr; char uplo; int n; int nrhs; cste_c_binary a; c_binary b; int ldb;
             
@@ -5073,7 +4627,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dpftrs(matrix_layout, transr, uplo, n, nrhs, get_cste_ptr(a), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case cpftrs: {
             int matrix_layout; char transr; char uplo; int n; int nrhs; cste_c_binary a; c_binary b; int ldb;
             
@@ -5082,7 +4636,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cpftrs(matrix_layout, transr, uplo, n, nrhs, get_cste_ptr(a), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case zpftrs: {
             int matrix_layout; char transr; char uplo; int n; int nrhs; cste_c_binary a; c_binary b; int ldb;
             
@@ -5091,7 +4645,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zpftrs(matrix_layout, transr, uplo, n, nrhs, get_cste_ptr(a), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case spocon: {
             int matrix_layout; char uplo; int n; cste_c_binary a; int lda; cste_c_binary anorm; c_binary rcond;
             
@@ -5100,7 +4654,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_spocon(matrix_layout, uplo, n, get_cste_ptr(a), lda, get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case dpocon: {
             int matrix_layout; char uplo; int n; cste_c_binary a; int lda; cste_c_binary anorm; c_binary rcond;
             
@@ -5109,7 +4663,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dpocon(matrix_layout, uplo, n, get_cste_ptr(a), lda, get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case cpocon: {
             int matrix_layout; char uplo; int n; cste_c_binary a; int lda; cste_c_binary anorm; c_binary rcond;
             
@@ -5118,7 +4672,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cpocon(matrix_layout, uplo, n, get_cste_ptr(a), lda, get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case zpocon: {
             int matrix_layout; char uplo; int n; cste_c_binary a; int lda; cste_c_binary anorm; c_binary rcond;
             
@@ -5127,7 +4681,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zpocon(matrix_layout, uplo, n, get_cste_ptr(a), lda, get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case spoequ: {
             int matrix_layout; int n; cste_c_binary a; int lda; c_binary s; c_binary scond; c_binary amax;
             
@@ -5136,7 +4690,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_spoequ(matrix_layout, n, get_cste_ptr(a), lda, get_ptr(s), get_ptr(scond), get_ptr(amax));
             }
-        } break;
+        break; }
         case dpoequ: {
             int matrix_layout; int n; cste_c_binary a; int lda; c_binary s; c_binary scond; c_binary amax;
             
@@ -5145,7 +4699,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dpoequ(matrix_layout, n, get_cste_ptr(a), lda, get_ptr(s), get_ptr(scond), get_ptr(amax));
             }
-        } break;
+        break; }
         case cpoequ: {
             int matrix_layout; int n; cste_c_binary a; int lda; c_binary s; c_binary scond; c_binary amax;
             
@@ -5154,7 +4708,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cpoequ(matrix_layout, n, get_cste_ptr(a), lda, get_ptr(s), get_ptr(scond), get_ptr(amax));
             }
-        } break;
+        break; }
         case zpoequ: {
             int matrix_layout; int n; cste_c_binary a; int lda; c_binary s; c_binary scond; c_binary amax;
             
@@ -5163,7 +4717,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zpoequ(matrix_layout, n, get_cste_ptr(a), lda, get_ptr(s), get_ptr(scond), get_ptr(amax));
             }
-        } break;
+        break; }
         case spoequb: {
             int matrix_layout; int n; cste_c_binary a; int lda; c_binary s; c_binary scond; c_binary amax;
             
@@ -5172,7 +4726,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_spoequb(matrix_layout, n, get_cste_ptr(a), lda, get_ptr(s), get_ptr(scond), get_ptr(amax));
             }
-        } break;
+        break; }
         case dpoequb: {
             int matrix_layout; int n; cste_c_binary a; int lda; c_binary s; c_binary scond; c_binary amax;
             
@@ -5181,7 +4735,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dpoequb(matrix_layout, n, get_cste_ptr(a), lda, get_ptr(s), get_ptr(scond), get_ptr(amax));
             }
-        } break;
+        break; }
         case cpoequb: {
             int matrix_layout; int n; cste_c_binary a; int lda; c_binary s; c_binary scond; c_binary amax;
             
@@ -5190,7 +4744,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cpoequb(matrix_layout, n, get_cste_ptr(a), lda, get_ptr(s), get_ptr(scond), get_ptr(amax));
             }
-        } break;
+        break; }
         case zpoequb: {
             int matrix_layout; int n; cste_c_binary a; int lda; c_binary s; c_binary scond; c_binary amax;
             
@@ -5199,7 +4753,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zpoequb(matrix_layout, n, get_cste_ptr(a), lda, get_ptr(s), get_ptr(scond), get_ptr(amax));
             }
-        } break;
+        break; }
         case sporfs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary af; int ldaf; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -5208,7 +4762,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sporfs(matrix_layout, uplo, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(af), ldaf, get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case dporfs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary af; int ldaf; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -5217,7 +4771,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dporfs(matrix_layout, uplo, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(af), ldaf, get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case cporfs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary af; int ldaf; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -5226,7 +4780,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cporfs(matrix_layout, uplo, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(af), ldaf, get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case zporfs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary af; int ldaf; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -5235,7 +4789,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zporfs(matrix_layout, uplo, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(af), ldaf, get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case sposv: {
             int matrix_layout; char uplo; int n; int nrhs; c_binary a; int lda; c_binary b; int ldb;
             
@@ -5244,7 +4798,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sposv(matrix_layout, uplo, n, nrhs, get_ptr(a), lda, get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case dposv: {
             int matrix_layout; char uplo; int n; int nrhs; c_binary a; int lda; c_binary b; int ldb;
             
@@ -5253,7 +4807,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dposv(matrix_layout, uplo, n, nrhs, get_ptr(a), lda, get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case cposv: {
             int matrix_layout; char uplo; int n; int nrhs; c_binary a; int lda; c_binary b; int ldb;
             
@@ -5262,7 +4816,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cposv(matrix_layout, uplo, n, nrhs, get_ptr(a), lda, get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case zposv: {
             int matrix_layout; char uplo; int n; int nrhs; c_binary a; int lda; c_binary b; int ldb;
             
@@ -5271,7 +4825,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zposv(matrix_layout, uplo, n, nrhs, get_ptr(a), lda, get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case spotrf: {
             int matrix_layout; char uplo; int n; c_binary a; int lda;
             
@@ -5280,7 +4834,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_spotrf(matrix_layout, uplo, n, get_ptr(a), lda);
             }
-        } break;
+        break; }
         case dpotrf: {
             int matrix_layout; char uplo; int n; c_binary a; int lda;
             
@@ -5289,7 +4843,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dpotrf(matrix_layout, uplo, n, get_ptr(a), lda);
             }
-        } break;
+        break; }
         case cpotrf: {
             int matrix_layout; char uplo; int n; c_binary a; int lda;
             
@@ -5298,7 +4852,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cpotrf(matrix_layout, uplo, n, get_ptr(a), lda);
             }
-        } break;
+        break; }
         case zpotrf: {
             int matrix_layout; char uplo; int n; c_binary a; int lda;
             
@@ -5307,7 +4861,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zpotrf(matrix_layout, uplo, n, get_ptr(a), lda);
             }
-        } break;
+        break; }
         case spotri: {
             int matrix_layout; char uplo; int n; c_binary a; int lda;
             
@@ -5316,7 +4870,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_spotri(matrix_layout, uplo, n, get_ptr(a), lda);
             }
-        } break;
+        break; }
         case dpotri: {
             int matrix_layout; char uplo; int n; c_binary a; int lda;
             
@@ -5325,7 +4879,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dpotri(matrix_layout, uplo, n, get_ptr(a), lda);
             }
-        } break;
+        break; }
         case cpotri: {
             int matrix_layout; char uplo; int n; c_binary a; int lda;
             
@@ -5334,7 +4888,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cpotri(matrix_layout, uplo, n, get_ptr(a), lda);
             }
-        } break;
+        break; }
         case zpotri: {
             int matrix_layout; char uplo; int n; c_binary a; int lda;
             
@@ -5343,7 +4897,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zpotri(matrix_layout, uplo, n, get_ptr(a), lda);
             }
-        } break;
+        break; }
         case spotrs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary a; int lda; c_binary b; int ldb;
             
@@ -5352,7 +4906,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_spotrs(matrix_layout, uplo, n, nrhs, get_cste_ptr(a), lda, get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case dpotrs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary a; int lda; c_binary b; int ldb;
             
@@ -5361,7 +4915,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dpotrs(matrix_layout, uplo, n, nrhs, get_cste_ptr(a), lda, get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case cpotrs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary a; int lda; c_binary b; int ldb;
             
@@ -5370,7 +4924,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cpotrs(matrix_layout, uplo, n, nrhs, get_cste_ptr(a), lda, get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case zpotrs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary a; int lda; c_binary b; int ldb;
             
@@ -5379,7 +4933,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zpotrs(matrix_layout, uplo, n, nrhs, get_cste_ptr(a), lda, get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case sppcon: {
             int matrix_layout; char uplo; int n; cste_c_binary ap; cste_c_binary anorm; c_binary rcond;
             
@@ -5388,7 +4942,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sppcon(matrix_layout, uplo, n, get_cste_ptr(ap), get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case dppcon: {
             int matrix_layout; char uplo; int n; cste_c_binary ap; cste_c_binary anorm; c_binary rcond;
             
@@ -5397,7 +4951,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dppcon(matrix_layout, uplo, n, get_cste_ptr(ap), get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case cppcon: {
             int matrix_layout; char uplo; int n; cste_c_binary ap; cste_c_binary anorm; c_binary rcond;
             
@@ -5406,7 +4960,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cppcon(matrix_layout, uplo, n, get_cste_ptr(ap), get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case zppcon: {
             int matrix_layout; char uplo; int n; cste_c_binary ap; cste_c_binary anorm; c_binary rcond;
             
@@ -5415,7 +4969,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zppcon(matrix_layout, uplo, n, get_cste_ptr(ap), get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case sppequ: {
             int matrix_layout; char uplo; int n; cste_c_binary ap; c_binary s; c_binary scond; c_binary amax;
             
@@ -5424,7 +4978,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sppequ(matrix_layout, uplo, n, get_cste_ptr(ap), get_ptr(s), get_ptr(scond), get_ptr(amax));
             }
-        } break;
+        break; }
         case dppequ: {
             int matrix_layout; char uplo; int n; cste_c_binary ap; c_binary s; c_binary scond; c_binary amax;
             
@@ -5433,7 +4987,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dppequ(matrix_layout, uplo, n, get_cste_ptr(ap), get_ptr(s), get_ptr(scond), get_ptr(amax));
             }
-        } break;
+        break; }
         case cppequ: {
             int matrix_layout; char uplo; int n; cste_c_binary ap; c_binary s; c_binary scond; c_binary amax;
             
@@ -5442,7 +4996,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cppequ(matrix_layout, uplo, n, get_cste_ptr(ap), get_ptr(s), get_ptr(scond), get_ptr(amax));
             }
-        } break;
+        break; }
         case zppequ: {
             int matrix_layout; char uplo; int n; cste_c_binary ap; c_binary s; c_binary scond; c_binary amax;
             
@@ -5451,7 +5005,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zppequ(matrix_layout, uplo, n, get_cste_ptr(ap), get_ptr(s), get_ptr(scond), get_ptr(amax));
             }
-        } break;
+        break; }
         case spprfs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary ap; cste_c_binary afp; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -5460,7 +5014,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_spprfs(matrix_layout, uplo, n, nrhs, get_cste_ptr(ap), get_cste_ptr(afp), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case dpprfs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary ap; cste_c_binary afp; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -5469,7 +5023,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dpprfs(matrix_layout, uplo, n, nrhs, get_cste_ptr(ap), get_cste_ptr(afp), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case cpprfs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary ap; cste_c_binary afp; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -5478,7 +5032,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cpprfs(matrix_layout, uplo, n, nrhs, get_cste_ptr(ap), get_cste_ptr(afp), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case zpprfs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary ap; cste_c_binary afp; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -5487,7 +5041,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zpprfs(matrix_layout, uplo, n, nrhs, get_cste_ptr(ap), get_cste_ptr(afp), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case sppsv: {
             int matrix_layout; char uplo; int n; int nrhs; c_binary ap; c_binary b; int ldb;
             
@@ -5496,7 +5050,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sppsv(matrix_layout, uplo, n, nrhs, get_ptr(ap), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case dppsv: {
             int matrix_layout; char uplo; int n; int nrhs; c_binary ap; c_binary b; int ldb;
             
@@ -5505,7 +5059,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dppsv(matrix_layout, uplo, n, nrhs, get_ptr(ap), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case cppsv: {
             int matrix_layout; char uplo; int n; int nrhs; c_binary ap; c_binary b; int ldb;
             
@@ -5514,7 +5068,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cppsv(matrix_layout, uplo, n, nrhs, get_ptr(ap), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case zppsv: {
             int matrix_layout; char uplo; int n; int nrhs; c_binary ap; c_binary b; int ldb;
             
@@ -5523,7 +5077,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zppsv(matrix_layout, uplo, n, nrhs, get_ptr(ap), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case spptrf: {
             int matrix_layout; char uplo; int n; c_binary ap;
             
@@ -5532,7 +5086,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_spptrf(matrix_layout, uplo, n, get_ptr(ap));
             }
-        } break;
+        break; }
         case dpptrf: {
             int matrix_layout; char uplo; int n; c_binary ap;
             
@@ -5541,7 +5095,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dpptrf(matrix_layout, uplo, n, get_ptr(ap));
             }
-        } break;
+        break; }
         case cpptrf: {
             int matrix_layout; char uplo; int n; c_binary ap;
             
@@ -5550,7 +5104,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cpptrf(matrix_layout, uplo, n, get_ptr(ap));
             }
-        } break;
+        break; }
         case zpptrf: {
             int matrix_layout; char uplo; int n; c_binary ap;
             
@@ -5559,7 +5113,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zpptrf(matrix_layout, uplo, n, get_ptr(ap));
             }
-        } break;
+        break; }
         case spptri: {
             int matrix_layout; char uplo; int n; c_binary ap;
             
@@ -5568,7 +5122,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_spptri(matrix_layout, uplo, n, get_ptr(ap));
             }
-        } break;
+        break; }
         case dpptri: {
             int matrix_layout; char uplo; int n; c_binary ap;
             
@@ -5577,7 +5131,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dpptri(matrix_layout, uplo, n, get_ptr(ap));
             }
-        } break;
+        break; }
         case cpptri: {
             int matrix_layout; char uplo; int n; c_binary ap;
             
@@ -5586,7 +5140,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cpptri(matrix_layout, uplo, n, get_ptr(ap));
             }
-        } break;
+        break; }
         case zpptri: {
             int matrix_layout; char uplo; int n; c_binary ap;
             
@@ -5595,7 +5149,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zpptri(matrix_layout, uplo, n, get_ptr(ap));
             }
-        } break;
+        break; }
         case spptrs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary ap; c_binary b; int ldb;
             
@@ -5604,7 +5158,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_spptrs(matrix_layout, uplo, n, nrhs, get_cste_ptr(ap), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case dpptrs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary ap; c_binary b; int ldb;
             
@@ -5613,7 +5167,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dpptrs(matrix_layout, uplo, n, nrhs, get_cste_ptr(ap), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case cpptrs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary ap; c_binary b; int ldb;
             
@@ -5622,7 +5176,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cpptrs(matrix_layout, uplo, n, nrhs, get_cste_ptr(ap), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case zpptrs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary ap; c_binary b; int ldb;
             
@@ -5631,7 +5185,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zpptrs(matrix_layout, uplo, n, nrhs, get_cste_ptr(ap), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case spstrf: {
             int matrix_layout; char uplo; int n; c_binary a; int lda; c_binary piv; c_binary rank; cste_c_binary tol;
             
@@ -5640,7 +5194,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_spstrf(matrix_layout, uplo, n, get_ptr(a), lda, get_ptr(piv), get_ptr(rank), get_cste_double(tol));
             }
-        } break;
+        break; }
         case dpstrf: {
             int matrix_layout; char uplo; int n; c_binary a; int lda; c_binary piv; c_binary rank; cste_c_binary tol;
             
@@ -5649,7 +5203,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dpstrf(matrix_layout, uplo, n, get_ptr(a), lda, get_ptr(piv), get_ptr(rank), get_cste_double(tol));
             }
-        } break;
+        break; }
         case cpstrf: {
             int matrix_layout; char uplo; int n; c_binary a; int lda; c_binary piv; c_binary rank; cste_c_binary tol;
             
@@ -5658,7 +5212,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cpstrf(matrix_layout, uplo, n, get_ptr(a), lda, get_ptr(piv), get_ptr(rank), get_cste_double(tol));
             }
-        } break;
+        break; }
         case zpstrf: {
             int matrix_layout; char uplo; int n; c_binary a; int lda; c_binary piv; c_binary rank; cste_c_binary tol;
             
@@ -5667,7 +5221,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zpstrf(matrix_layout, uplo, n, get_ptr(a), lda, get_ptr(piv), get_ptr(rank), get_cste_double(tol));
             }
-        } break;
+        break; }
         case sptcon: {
             int n; cste_c_binary d; cste_c_binary e; cste_c_binary anorm; c_binary rcond;
             
@@ -5676,7 +5230,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sptcon(n, get_cste_ptr(d), get_cste_ptr(e), get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case dptcon: {
             int n; cste_c_binary d; cste_c_binary e; cste_c_binary anorm; c_binary rcond;
             
@@ -5685,7 +5239,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dptcon(n, get_cste_ptr(d), get_cste_ptr(e), get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case cptcon: {
             int n; cste_c_binary d; cste_c_binary e; cste_c_binary anorm; c_binary rcond;
             
@@ -5694,7 +5248,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cptcon(n, get_cste_ptr(d), get_cste_ptr(e), get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case zptcon: {
             int n; cste_c_binary d; cste_c_binary e; cste_c_binary anorm; c_binary rcond;
             
@@ -5703,7 +5257,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zptcon(n, get_cste_ptr(d), get_cste_ptr(e), get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case spteqr: {
             int matrix_layout; char compz; int n; c_binary d; c_binary e; c_binary z; int ldz;
             
@@ -5712,7 +5266,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_spteqr(matrix_layout, compz, n, get_ptr(d), get_ptr(e), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case dpteqr: {
             int matrix_layout; char compz; int n; c_binary d; c_binary e; c_binary z; int ldz;
             
@@ -5721,7 +5275,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dpteqr(matrix_layout, compz, n, get_ptr(d), get_ptr(e), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case cpteqr: {
             int matrix_layout; char compz; int n; c_binary d; c_binary e; c_binary z; int ldz;
             
@@ -5730,7 +5284,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cpteqr(matrix_layout, compz, n, get_ptr(d), get_ptr(e), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case zpteqr: {
             int matrix_layout; char compz; int n; c_binary d; c_binary e; c_binary z; int ldz;
             
@@ -5739,7 +5293,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zpteqr(matrix_layout, compz, n, get_ptr(d), get_ptr(e), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case sptrfs: {
             int matrix_layout; int n; int nrhs; cste_c_binary d; cste_c_binary e; cste_c_binary df; cste_c_binary ef; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -5748,7 +5302,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sptrfs(matrix_layout, n, nrhs, get_cste_ptr(d), get_cste_ptr(e), get_cste_ptr(df), get_cste_ptr(ef), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case dptrfs: {
             int matrix_layout; int n; int nrhs; cste_c_binary d; cste_c_binary e; cste_c_binary df; cste_c_binary ef; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -5757,7 +5311,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dptrfs(matrix_layout, n, nrhs, get_cste_ptr(d), get_cste_ptr(e), get_cste_ptr(df), get_cste_ptr(ef), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case cptrfs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary d; cste_c_binary e; cste_c_binary df; cste_c_binary ef; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -5766,7 +5320,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cptrfs(matrix_layout, uplo, n, nrhs, get_cste_ptr(d), get_cste_ptr(e), get_cste_ptr(df), get_cste_ptr(ef), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case zptrfs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary d; cste_c_binary e; cste_c_binary df; cste_c_binary ef; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -5775,7 +5329,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zptrfs(matrix_layout, uplo, n, nrhs, get_cste_ptr(d), get_cste_ptr(e), get_cste_ptr(df), get_cste_ptr(ef), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case sptsv: {
             int matrix_layout; int n; int nrhs; c_binary d; c_binary e; c_binary b; int ldb;
             
@@ -5784,7 +5338,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sptsv(matrix_layout, n, nrhs, get_ptr(d), get_ptr(e), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case dptsv: {
             int matrix_layout; int n; int nrhs; c_binary d; c_binary e; c_binary b; int ldb;
             
@@ -5793,7 +5347,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dptsv(matrix_layout, n, nrhs, get_ptr(d), get_ptr(e), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case cptsv: {
             int matrix_layout; int n; int nrhs; c_binary d; c_binary e; c_binary b; int ldb;
             
@@ -5802,7 +5356,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cptsv(matrix_layout, n, nrhs, get_ptr(d), get_ptr(e), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case zptsv: {
             int matrix_layout; int n; int nrhs; c_binary d; c_binary e; c_binary b; int ldb;
             
@@ -5811,7 +5365,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zptsv(matrix_layout, n, nrhs, get_ptr(d), get_ptr(e), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case sptsvx: {
             int matrix_layout; char fact; int n; int nrhs; cste_c_binary d; cste_c_binary e; c_binary df; c_binary ef; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary ferr; c_binary berr;
             
@@ -5820,7 +5374,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sptsvx(matrix_layout, fact, n, nrhs, get_cste_ptr(d), get_cste_ptr(e), get_ptr(df), get_ptr(ef), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case dptsvx: {
             int matrix_layout; char fact; int n; int nrhs; cste_c_binary d; cste_c_binary e; c_binary df; c_binary ef; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary ferr; c_binary berr;
             
@@ -5829,7 +5383,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dptsvx(matrix_layout, fact, n, nrhs, get_cste_ptr(d), get_cste_ptr(e), get_ptr(df), get_ptr(ef), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case cptsvx: {
             int matrix_layout; char fact; int n; int nrhs; cste_c_binary d; cste_c_binary e; c_binary df; c_binary ef; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary ferr; c_binary berr;
             
@@ -5838,7 +5392,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cptsvx(matrix_layout, fact, n, nrhs, get_cste_ptr(d), get_cste_ptr(e), get_ptr(df), get_ptr(ef), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case zptsvx: {
             int matrix_layout; char fact; int n; int nrhs; cste_c_binary d; cste_c_binary e; c_binary df; c_binary ef; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary ferr; c_binary berr;
             
@@ -5847,7 +5401,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zptsvx(matrix_layout, fact, n, nrhs, get_cste_ptr(d), get_cste_ptr(e), get_ptr(df), get_ptr(ef), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case spttrf: {
             int n; c_binary d; c_binary e;
             
@@ -5856,7 +5410,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_spttrf(n, get_ptr(d), get_ptr(e));
             }
-        } break;
+        break; }
         case dpttrf: {
             int n; c_binary d; c_binary e;
             
@@ -5865,7 +5419,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dpttrf(n, get_ptr(d), get_ptr(e));
             }
-        } break;
+        break; }
         case cpttrf: {
             int n; c_binary d; c_binary e;
             
@@ -5874,7 +5428,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cpttrf(n, get_ptr(d), get_ptr(e));
             }
-        } break;
+        break; }
         case zpttrf: {
             int n; c_binary d; c_binary e;
             
@@ -5883,7 +5437,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zpttrf(n, get_ptr(d), get_ptr(e));
             }
-        } break;
+        break; }
         case spttrs: {
             int matrix_layout; int n; int nrhs; cste_c_binary d; cste_c_binary e; c_binary b; int ldb;
             
@@ -5892,7 +5446,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_spttrs(matrix_layout, n, nrhs, get_cste_ptr(d), get_cste_ptr(e), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case dpttrs: {
             int matrix_layout; int n; int nrhs; cste_c_binary d; cste_c_binary e; c_binary b; int ldb;
             
@@ -5901,7 +5455,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dpttrs(matrix_layout, n, nrhs, get_cste_ptr(d), get_cste_ptr(e), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case cpttrs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary d; cste_c_binary e; c_binary b; int ldb;
             
@@ -5910,7 +5464,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cpttrs(matrix_layout, uplo, n, nrhs, get_cste_ptr(d), get_cste_ptr(e), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case zpttrs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary d; cste_c_binary e; c_binary b; int ldb;
             
@@ -5919,7 +5473,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zpttrs(matrix_layout, uplo, n, nrhs, get_cste_ptr(d), get_cste_ptr(e), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case ssbev: {
             int matrix_layout; char jobz; char uplo; int n; int kd; c_binary ab; int ldab; c_binary w; c_binary z; int ldz;
             
@@ -5928,7 +5482,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ssbev(matrix_layout, jobz, uplo, n, kd, get_ptr(ab), ldab, get_ptr(w), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case dsbev: {
             int matrix_layout; char jobz; char uplo; int n; int kd; c_binary ab; int ldab; c_binary w; c_binary z; int ldz;
             
@@ -5937,7 +5491,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dsbev(matrix_layout, jobz, uplo, n, kd, get_ptr(ab), ldab, get_ptr(w), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case ssbevd: {
             int matrix_layout; char jobz; char uplo; int n; int kd; c_binary ab; int ldab; c_binary w; c_binary z; int ldz;
             
@@ -5946,7 +5500,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ssbevd(matrix_layout, jobz, uplo, n, kd, get_ptr(ab), ldab, get_ptr(w), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case dsbevd: {
             int matrix_layout; char jobz; char uplo; int n; int kd; c_binary ab; int ldab; c_binary w; c_binary z; int ldz;
             
@@ -5955,7 +5509,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dsbevd(matrix_layout, jobz, uplo, n, kd, get_ptr(ab), ldab, get_ptr(w), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case ssbevx: {
             int matrix_layout; char jobz; char range; char uplo; int n; int kd; c_binary ab; int ldab; c_binary q; int ldq; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; c_binary m; c_binary w; c_binary z; int ldz; c_binary ifail;
             
@@ -5964,7 +5518,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ssbevx(matrix_layout, jobz, range, uplo, n, kd, get_ptr(ab), ldab, get_ptr(q), ldq, get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_ptr(m), get_ptr(w), get_ptr(z), ldz, get_ptr(ifail));
             }
-        } break;
+        break; }
         case dsbevx: {
             int matrix_layout; char jobz; char range; char uplo; int n; int kd; c_binary ab; int ldab; c_binary q; int ldq; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; c_binary m; c_binary w; c_binary z; int ldz; c_binary ifail;
             
@@ -5973,7 +5527,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dsbevx(matrix_layout, jobz, range, uplo, n, kd, get_ptr(ab), ldab, get_ptr(q), ldq, get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_ptr(m), get_ptr(w), get_ptr(z), ldz, get_ptr(ifail));
             }
-        } break;
+        break; }
         case ssbgst: {
             int matrix_layout; char vect; char uplo; int n; int ka; int kb; c_binary ab; int ldab; cste_c_binary bb; int ldbb; c_binary x; int ldx;
             
@@ -5982,7 +5536,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ssbgst(matrix_layout, vect, uplo, n, ka, kb, get_ptr(ab), ldab, get_cste_ptr(bb), ldbb, get_ptr(x), ldx);
             }
-        } break;
+        break; }
         case dsbgst: {
             int matrix_layout; char vect; char uplo; int n; int ka; int kb; c_binary ab; int ldab; cste_c_binary bb; int ldbb; c_binary x; int ldx;
             
@@ -5991,7 +5545,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dsbgst(matrix_layout, vect, uplo, n, ka, kb, get_ptr(ab), ldab, get_cste_ptr(bb), ldbb, get_ptr(x), ldx);
             }
-        } break;
+        break; }
         case ssbgv: {
             int matrix_layout; char jobz; char uplo; int n; int ka; int kb; c_binary ab; int ldab; c_binary bb; int ldbb; c_binary w; c_binary z; int ldz;
             
@@ -6000,7 +5554,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ssbgv(matrix_layout, jobz, uplo, n, ka, kb, get_ptr(ab), ldab, get_ptr(bb), ldbb, get_ptr(w), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case dsbgv: {
             int matrix_layout; char jobz; char uplo; int n; int ka; int kb; c_binary ab; int ldab; c_binary bb; int ldbb; c_binary w; c_binary z; int ldz;
             
@@ -6009,7 +5563,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dsbgv(matrix_layout, jobz, uplo, n, ka, kb, get_ptr(ab), ldab, get_ptr(bb), ldbb, get_ptr(w), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case ssbgvd: {
             int matrix_layout; char jobz; char uplo; int n; int ka; int kb; c_binary ab; int ldab; c_binary bb; int ldbb; c_binary w; c_binary z; int ldz;
             
@@ -6018,7 +5572,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ssbgvd(matrix_layout, jobz, uplo, n, ka, kb, get_ptr(ab), ldab, get_ptr(bb), ldbb, get_ptr(w), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case dsbgvd: {
             int matrix_layout; char jobz; char uplo; int n; int ka; int kb; c_binary ab; int ldab; c_binary bb; int ldbb; c_binary w; c_binary z; int ldz;
             
@@ -6027,7 +5581,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dsbgvd(matrix_layout, jobz, uplo, n, ka, kb, get_ptr(ab), ldab, get_ptr(bb), ldbb, get_ptr(w), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case ssbgvx: {
             int matrix_layout; char jobz; char range; char uplo; int n; int ka; int kb; c_binary ab; int ldab; c_binary bb; int ldbb; c_binary q; int ldq; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; c_binary m; c_binary w; c_binary z; int ldz; c_binary ifail;
             
@@ -6036,7 +5590,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ssbgvx(matrix_layout, jobz, range, uplo, n, ka, kb, get_ptr(ab), ldab, get_ptr(bb), ldbb, get_ptr(q), ldq, get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_ptr(m), get_ptr(w), get_ptr(z), ldz, get_ptr(ifail));
             }
-        } break;
+        break; }
         case dsbgvx: {
             int matrix_layout; char jobz; char range; char uplo; int n; int ka; int kb; c_binary ab; int ldab; c_binary bb; int ldbb; c_binary q; int ldq; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; c_binary m; c_binary w; c_binary z; int ldz; c_binary ifail;
             
@@ -6045,7 +5599,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dsbgvx(matrix_layout, jobz, range, uplo, n, ka, kb, get_ptr(ab), ldab, get_ptr(bb), ldbb, get_ptr(q), ldq, get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_ptr(m), get_ptr(w), get_ptr(z), ldz, get_ptr(ifail));
             }
-        } break;
+        break; }
         case ssbtrd: {
             int matrix_layout; char vect; char uplo; int n; int kd; c_binary ab; int ldab; c_binary d; c_binary e; c_binary q; int ldq;
             
@@ -6054,7 +5608,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ssbtrd(matrix_layout, vect, uplo, n, kd, get_ptr(ab), ldab, get_ptr(d), get_ptr(e), get_ptr(q), ldq);
             }
-        } break;
+        break; }
         case dsbtrd: {
             int matrix_layout; char vect; char uplo; int n; int kd; c_binary ab; int ldab; c_binary d; c_binary e; c_binary q; int ldq;
             
@@ -6063,7 +5617,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dsbtrd(matrix_layout, vect, uplo, n, kd, get_ptr(ab), ldab, get_ptr(d), get_ptr(e), get_ptr(q), ldq);
             }
-        } break;
+        break; }
         case ssfrk: {
             int matrix_layout; char transr; char uplo; char trans; int n; int k; cste_c_binary alpha; cste_c_binary a; int lda; cste_c_binary beta; c_binary c;
             
@@ -6072,7 +5626,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ssfrk(matrix_layout, transr, uplo, trans, n, k, get_cste_double(alpha), get_cste_ptr(a), lda, get_cste_double(beta), get_ptr(c));
             }
-        } break;
+        break; }
         case dsfrk: {
             int matrix_layout; char transr; char uplo; char trans; int n; int k; cste_c_binary alpha; cste_c_binary a; int lda; cste_c_binary beta; c_binary c;
             
@@ -6081,7 +5635,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dsfrk(matrix_layout, transr, uplo, trans, n, k, get_cste_double(alpha), get_cste_ptr(a), lda, get_cste_double(beta), get_ptr(c));
             }
-        } break;
+        break; }
         case sspcon: {
             int matrix_layout; char uplo; int n; cste_c_binary ap; cste_c_binary ipiv; cste_c_binary anorm; c_binary rcond;
             
@@ -6090,7 +5644,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sspcon(matrix_layout, uplo, n, get_cste_ptr(ap), get_cste_ptr(ipiv), get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case dspcon: {
             int matrix_layout; char uplo; int n; cste_c_binary ap; cste_c_binary ipiv; cste_c_binary anorm; c_binary rcond;
             
@@ -6099,7 +5653,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dspcon(matrix_layout, uplo, n, get_cste_ptr(ap), get_cste_ptr(ipiv), get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case cspcon: {
             int matrix_layout; char uplo; int n; cste_c_binary ap; cste_c_binary ipiv; cste_c_binary anorm; c_binary rcond;
             
@@ -6108,7 +5662,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cspcon(matrix_layout, uplo, n, get_cste_ptr(ap), get_cste_ptr(ipiv), get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case zspcon: {
             int matrix_layout; char uplo; int n; cste_c_binary ap; cste_c_binary ipiv; cste_c_binary anorm; c_binary rcond;
             
@@ -6117,7 +5671,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zspcon(matrix_layout, uplo, n, get_cste_ptr(ap), get_cste_ptr(ipiv), get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case sspev: {
             int matrix_layout; char jobz; char uplo; int n; c_binary ap; c_binary w; c_binary z; int ldz;
             
@@ -6126,7 +5680,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sspev(matrix_layout, jobz, uplo, n, get_ptr(ap), get_ptr(w), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case dspev: {
             int matrix_layout; char jobz; char uplo; int n; c_binary ap; c_binary w; c_binary z; int ldz;
             
@@ -6135,7 +5689,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dspev(matrix_layout, jobz, uplo, n, get_ptr(ap), get_ptr(w), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case sspevd: {
             int matrix_layout; char jobz; char uplo; int n; c_binary ap; c_binary w; c_binary z; int ldz;
             
@@ -6144,7 +5698,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sspevd(matrix_layout, jobz, uplo, n, get_ptr(ap), get_ptr(w), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case dspevd: {
             int matrix_layout; char jobz; char uplo; int n; c_binary ap; c_binary w; c_binary z; int ldz;
             
@@ -6153,7 +5707,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dspevd(matrix_layout, jobz, uplo, n, get_ptr(ap), get_ptr(w), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case sspevx: {
             int matrix_layout; char jobz; char range; char uplo; int n; c_binary ap; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; c_binary m; c_binary w; c_binary z; int ldz; c_binary ifail;
             
@@ -6162,7 +5716,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sspevx(matrix_layout, jobz, range, uplo, n, get_ptr(ap), get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_ptr(m), get_ptr(w), get_ptr(z), ldz, get_ptr(ifail));
             }
-        } break;
+        break; }
         case dspevx: {
             int matrix_layout; char jobz; char range; char uplo; int n; c_binary ap; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; c_binary m; c_binary w; c_binary z; int ldz; c_binary ifail;
             
@@ -6171,7 +5725,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dspevx(matrix_layout, jobz, range, uplo, n, get_ptr(ap), get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_ptr(m), get_ptr(w), get_ptr(z), ldz, get_ptr(ifail));
             }
-        } break;
+        break; }
         case sspgst: {
             int matrix_layout; int itype; char uplo; int n; c_binary ap; cste_c_binary bp;
             
@@ -6180,7 +5734,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sspgst(matrix_layout, itype, uplo, n, get_ptr(ap), get_cste_ptr(bp));
             }
-        } break;
+        break; }
         case dspgst: {
             int matrix_layout; int itype; char uplo; int n; c_binary ap; cste_c_binary bp;
             
@@ -6189,7 +5743,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dspgst(matrix_layout, itype, uplo, n, get_ptr(ap), get_cste_ptr(bp));
             }
-        } break;
+        break; }
         case sspgv: {
             int matrix_layout; int itype; char jobz; char uplo; int n; c_binary ap; c_binary bp; c_binary w; c_binary z; int ldz;
             
@@ -6198,7 +5752,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sspgv(matrix_layout, itype, jobz, uplo, n, get_ptr(ap), get_ptr(bp), get_ptr(w), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case dspgv: {
             int matrix_layout; int itype; char jobz; char uplo; int n; c_binary ap; c_binary bp; c_binary w; c_binary z; int ldz;
             
@@ -6207,7 +5761,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dspgv(matrix_layout, itype, jobz, uplo, n, get_ptr(ap), get_ptr(bp), get_ptr(w), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case sspgvd: {
             int matrix_layout; int itype; char jobz; char uplo; int n; c_binary ap; c_binary bp; c_binary w; c_binary z; int ldz;
             
@@ -6216,7 +5770,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sspgvd(matrix_layout, itype, jobz, uplo, n, get_ptr(ap), get_ptr(bp), get_ptr(w), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case dspgvd: {
             int matrix_layout; int itype; char jobz; char uplo; int n; c_binary ap; c_binary bp; c_binary w; c_binary z; int ldz;
             
@@ -6225,7 +5779,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dspgvd(matrix_layout, itype, jobz, uplo, n, get_ptr(ap), get_ptr(bp), get_ptr(w), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case sspgvx: {
             int matrix_layout; int itype; char jobz; char range; char uplo; int n; c_binary ap; c_binary bp; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; c_binary m; c_binary w; c_binary z; int ldz; c_binary ifail;
             
@@ -6234,7 +5788,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sspgvx(matrix_layout, itype, jobz, range, uplo, n, get_ptr(ap), get_ptr(bp), get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_ptr(m), get_ptr(w), get_ptr(z), ldz, get_ptr(ifail));
             }
-        } break;
+        break; }
         case dspgvx: {
             int matrix_layout; int itype; char jobz; char range; char uplo; int n; c_binary ap; c_binary bp; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; c_binary m; c_binary w; c_binary z; int ldz; c_binary ifail;
             
@@ -6243,7 +5797,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dspgvx(matrix_layout, itype, jobz, range, uplo, n, get_ptr(ap), get_ptr(bp), get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_ptr(m), get_ptr(w), get_ptr(z), ldz, get_ptr(ifail));
             }
-        } break;
+        break; }
         case ssprfs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary ap; cste_c_binary afp; cste_c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -6252,7 +5806,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ssprfs(matrix_layout, uplo, n, nrhs, get_cste_ptr(ap), get_cste_ptr(afp), get_cste_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case dsprfs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary ap; cste_c_binary afp; cste_c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -6261,7 +5815,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dsprfs(matrix_layout, uplo, n, nrhs, get_cste_ptr(ap), get_cste_ptr(afp), get_cste_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case csprfs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary ap; cste_c_binary afp; cste_c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -6270,7 +5824,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_csprfs(matrix_layout, uplo, n, nrhs, get_cste_ptr(ap), get_cste_ptr(afp), get_cste_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case zsprfs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary ap; cste_c_binary afp; cste_c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -6279,7 +5833,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zsprfs(matrix_layout, uplo, n, nrhs, get_cste_ptr(ap), get_cste_ptr(afp), get_cste_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case sspsv: {
             int matrix_layout; char uplo; int n; int nrhs; c_binary ap; c_binary ipiv; c_binary b; int ldb;
             
@@ -6288,7 +5842,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sspsv(matrix_layout, uplo, n, nrhs, get_ptr(ap), get_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case dspsv: {
             int matrix_layout; char uplo; int n; int nrhs; c_binary ap; c_binary ipiv; c_binary b; int ldb;
             
@@ -6297,7 +5851,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dspsv(matrix_layout, uplo, n, nrhs, get_ptr(ap), get_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case cspsv: {
             int matrix_layout; char uplo; int n; int nrhs; c_binary ap; c_binary ipiv; c_binary b; int ldb;
             
@@ -6306,7 +5860,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cspsv(matrix_layout, uplo, n, nrhs, get_ptr(ap), get_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case zspsv: {
             int matrix_layout; char uplo; int n; int nrhs; c_binary ap; c_binary ipiv; c_binary b; int ldb;
             
@@ -6315,7 +5869,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zspsv(matrix_layout, uplo, n, nrhs, get_ptr(ap), get_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case sspsvx: {
             int matrix_layout; char fact; char uplo; int n; int nrhs; cste_c_binary ap; c_binary afp; c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary ferr; c_binary berr;
             
@@ -6324,7 +5878,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sspsvx(matrix_layout, fact, uplo, n, nrhs, get_cste_ptr(ap), get_ptr(afp), get_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case dspsvx: {
             int matrix_layout; char fact; char uplo; int n; int nrhs; cste_c_binary ap; c_binary afp; c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary ferr; c_binary berr;
             
@@ -6333,7 +5887,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dspsvx(matrix_layout, fact, uplo, n, nrhs, get_cste_ptr(ap), get_ptr(afp), get_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case cspsvx: {
             int matrix_layout; char fact; char uplo; int n; int nrhs; cste_c_binary ap; c_binary afp; c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary ferr; c_binary berr;
             
@@ -6342,7 +5896,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cspsvx(matrix_layout, fact, uplo, n, nrhs, get_cste_ptr(ap), get_ptr(afp), get_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case zspsvx: {
             int matrix_layout; char fact; char uplo; int n; int nrhs; cste_c_binary ap; c_binary afp; c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary ferr; c_binary berr;
             
@@ -6351,7 +5905,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zspsvx(matrix_layout, fact, uplo, n, nrhs, get_cste_ptr(ap), get_ptr(afp), get_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case ssptrd: {
             int matrix_layout; char uplo; int n; c_binary ap; c_binary d; c_binary e; c_binary tau;
             
@@ -6360,7 +5914,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ssptrd(matrix_layout, uplo, n, get_ptr(ap), get_ptr(d), get_ptr(e), get_ptr(tau));
             }
-        } break;
+        break; }
         case dsptrd: {
             int matrix_layout; char uplo; int n; c_binary ap; c_binary d; c_binary e; c_binary tau;
             
@@ -6369,7 +5923,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dsptrd(matrix_layout, uplo, n, get_ptr(ap), get_ptr(d), get_ptr(e), get_ptr(tau));
             }
-        } break;
+        break; }
         case ssptrf: {
             int matrix_layout; char uplo; int n; c_binary ap; c_binary ipiv;
             
@@ -6378,7 +5932,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ssptrf(matrix_layout, uplo, n, get_ptr(ap), get_ptr(ipiv));
             }
-        } break;
+        break; }
         case dsptrf: {
             int matrix_layout; char uplo; int n; c_binary ap; c_binary ipiv;
             
@@ -6387,7 +5941,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dsptrf(matrix_layout, uplo, n, get_ptr(ap), get_ptr(ipiv));
             }
-        } break;
+        break; }
         case csptrf: {
             int matrix_layout; char uplo; int n; c_binary ap; c_binary ipiv;
             
@@ -6396,7 +5950,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_csptrf(matrix_layout, uplo, n, get_ptr(ap), get_ptr(ipiv));
             }
-        } break;
+        break; }
         case zsptrf: {
             int matrix_layout; char uplo; int n; c_binary ap; c_binary ipiv;
             
@@ -6405,7 +5959,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zsptrf(matrix_layout, uplo, n, get_ptr(ap), get_ptr(ipiv));
             }
-        } break;
+        break; }
         case ssptri: {
             int matrix_layout; char uplo; int n; c_binary ap; cste_c_binary ipiv;
             
@@ -6414,7 +5968,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ssptri(matrix_layout, uplo, n, get_ptr(ap), get_cste_ptr(ipiv));
             }
-        } break;
+        break; }
         case dsptri: {
             int matrix_layout; char uplo; int n; c_binary ap; cste_c_binary ipiv;
             
@@ -6423,7 +5977,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dsptri(matrix_layout, uplo, n, get_ptr(ap), get_cste_ptr(ipiv));
             }
-        } break;
+        break; }
         case csptri: {
             int matrix_layout; char uplo; int n; c_binary ap; cste_c_binary ipiv;
             
@@ -6432,7 +5986,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_csptri(matrix_layout, uplo, n, get_ptr(ap), get_cste_ptr(ipiv));
             }
-        } break;
+        break; }
         case zsptri: {
             int matrix_layout; char uplo; int n; c_binary ap; cste_c_binary ipiv;
             
@@ -6441,7 +5995,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zsptri(matrix_layout, uplo, n, get_ptr(ap), get_cste_ptr(ipiv));
             }
-        } break;
+        break; }
         case ssptrs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary ap; cste_c_binary ipiv; c_binary b; int ldb;
             
@@ -6450,7 +6004,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ssptrs(matrix_layout, uplo, n, nrhs, get_cste_ptr(ap), get_cste_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case dsptrs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary ap; cste_c_binary ipiv; c_binary b; int ldb;
             
@@ -6459,7 +6013,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dsptrs(matrix_layout, uplo, n, nrhs, get_cste_ptr(ap), get_cste_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case csptrs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary ap; cste_c_binary ipiv; c_binary b; int ldb;
             
@@ -6468,7 +6022,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_csptrs(matrix_layout, uplo, n, nrhs, get_cste_ptr(ap), get_cste_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case zsptrs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary ap; cste_c_binary ipiv; c_binary b; int ldb;
             
@@ -6477,7 +6031,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zsptrs(matrix_layout, uplo, n, nrhs, get_cste_ptr(ap), get_cste_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case sstebz: {
             char range; char order; int n; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; cste_c_binary d; cste_c_binary e; c_binary m; c_binary nsplit; c_binary w; c_binary iblock; c_binary isplit;
             
@@ -6486,7 +6040,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sstebz(range, order, n, get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_cste_ptr(d), get_cste_ptr(e), get_ptr(m), get_ptr(nsplit), get_ptr(w), get_ptr(iblock), get_ptr(isplit));
             }
-        } break;
+        break; }
         case dstebz: {
             char range; char order; int n; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; cste_c_binary d; cste_c_binary e; c_binary m; c_binary nsplit; c_binary w; c_binary iblock; c_binary isplit;
             
@@ -6495,7 +6049,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dstebz(range, order, n, get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_cste_ptr(d), get_cste_ptr(e), get_ptr(m), get_ptr(nsplit), get_ptr(w), get_ptr(iblock), get_ptr(isplit));
             }
-        } break;
+        break; }
         case sstedc: {
             int matrix_layout; char compz; int n; c_binary d; c_binary e; c_binary z; int ldz;
             
@@ -6504,7 +6058,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sstedc(matrix_layout, compz, n, get_ptr(d), get_ptr(e), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case dstedc: {
             int matrix_layout; char compz; int n; c_binary d; c_binary e; c_binary z; int ldz;
             
@@ -6513,7 +6067,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dstedc(matrix_layout, compz, n, get_ptr(d), get_ptr(e), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case cstedc: {
             int matrix_layout; char compz; int n; c_binary d; c_binary e; c_binary z; int ldz;
             
@@ -6522,7 +6076,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cstedc(matrix_layout, compz, n, get_ptr(d), get_ptr(e), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case zstedc: {
             int matrix_layout; char compz; int n; c_binary d; c_binary e; c_binary z; int ldz;
             
@@ -6531,7 +6085,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zstedc(matrix_layout, compz, n, get_ptr(d), get_ptr(e), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case sstegr: {
             int matrix_layout; char jobz; char range; int n; c_binary d; c_binary e; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; c_binary m; c_binary w; c_binary z; int ldz; c_binary isuppz;
             
@@ -6540,7 +6094,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sstegr(matrix_layout, jobz, range, n, get_ptr(d), get_ptr(e), get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_ptr(m), get_ptr(w), get_ptr(z), ldz, get_ptr(isuppz));
             }
-        } break;
+        break; }
         case dstegr: {
             int matrix_layout; char jobz; char range; int n; c_binary d; c_binary e; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; c_binary m; c_binary w; c_binary z; int ldz; c_binary isuppz;
             
@@ -6549,7 +6103,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dstegr(matrix_layout, jobz, range, n, get_ptr(d), get_ptr(e), get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_ptr(m), get_ptr(w), get_ptr(z), ldz, get_ptr(isuppz));
             }
-        } break;
+        break; }
         case cstegr: {
             int matrix_layout; char jobz; char range; int n; c_binary d; c_binary e; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; c_binary m; c_binary w; c_binary z; int ldz; c_binary isuppz;
             
@@ -6558,7 +6112,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cstegr(matrix_layout, jobz, range, n, get_ptr(d), get_ptr(e), get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_ptr(m), get_ptr(w), get_ptr(z), ldz, get_ptr(isuppz));
             }
-        } break;
+        break; }
         case zstegr: {
             int matrix_layout; char jobz; char range; int n; c_binary d; c_binary e; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; c_binary m; c_binary w; c_binary z; int ldz; c_binary isuppz;
             
@@ -6567,7 +6121,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zstegr(matrix_layout, jobz, range, n, get_ptr(d), get_ptr(e), get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_ptr(m), get_ptr(w), get_ptr(z), ldz, get_ptr(isuppz));
             }
-        } break;
+        break; }
         case sstein: {
             int matrix_layout; int n; cste_c_binary d; cste_c_binary e; int m; cste_c_binary w; cste_c_binary iblock; cste_c_binary isplit; c_binary z; int ldz; c_binary ifailv;
             
@@ -6576,7 +6130,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sstein(matrix_layout, n, get_cste_ptr(d), get_cste_ptr(e), m, get_cste_ptr(w), get_cste_ptr(iblock), get_cste_ptr(isplit), get_ptr(z), ldz, get_ptr(ifailv));
             }
-        } break;
+        break; }
         case dstein: {
             int matrix_layout; int n; cste_c_binary d; cste_c_binary e; int m; cste_c_binary w; cste_c_binary iblock; cste_c_binary isplit; c_binary z; int ldz; c_binary ifailv;
             
@@ -6585,7 +6139,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dstein(matrix_layout, n, get_cste_ptr(d), get_cste_ptr(e), m, get_cste_ptr(w), get_cste_ptr(iblock), get_cste_ptr(isplit), get_ptr(z), ldz, get_ptr(ifailv));
             }
-        } break;
+        break; }
         case cstein: {
             int matrix_layout; int n; cste_c_binary d; cste_c_binary e; int m; cste_c_binary w; cste_c_binary iblock; cste_c_binary isplit; c_binary z; int ldz; c_binary ifailv;
             
@@ -6594,7 +6148,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cstein(matrix_layout, n, get_cste_ptr(d), get_cste_ptr(e), m, get_cste_ptr(w), get_cste_ptr(iblock), get_cste_ptr(isplit), get_ptr(z), ldz, get_ptr(ifailv));
             }
-        } break;
+        break; }
         case zstein: {
             int matrix_layout; int n; cste_c_binary d; cste_c_binary e; int m; cste_c_binary w; cste_c_binary iblock; cste_c_binary isplit; c_binary z; int ldz; c_binary ifailv;
             
@@ -6603,7 +6157,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zstein(matrix_layout, n, get_cste_ptr(d), get_cste_ptr(e), m, get_cste_ptr(w), get_cste_ptr(iblock), get_cste_ptr(isplit), get_ptr(z), ldz, get_ptr(ifailv));
             }
-        } break;
+        break; }
         case sstemr: {
             int matrix_layout; char jobz; char range; int n; c_binary d; c_binary e; cste_c_binary vl; cste_c_binary vu; int il; int iu; c_binary m; c_binary w; c_binary z; int ldz; int nzc; c_binary isuppz; c_binary tryrac;
             
@@ -6612,7 +6166,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sstemr(matrix_layout, jobz, range, n, get_ptr(d), get_ptr(e), get_cste_double(vl), get_cste_double(vu), il, iu, get_ptr(m), get_ptr(w), get_ptr(z), ldz, nzc, get_ptr(isuppz), get_ptr(tryrac));
             }
-        } break;
+        break; }
         case dstemr: {
             int matrix_layout; char jobz; char range; int n; c_binary d; c_binary e; cste_c_binary vl; cste_c_binary vu; int il; int iu; c_binary m; c_binary w; c_binary z; int ldz; int nzc; c_binary isuppz; c_binary tryrac;
             
@@ -6621,7 +6175,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dstemr(matrix_layout, jobz, range, n, get_ptr(d), get_ptr(e), get_cste_double(vl), get_cste_double(vu), il, iu, get_ptr(m), get_ptr(w), get_ptr(z), ldz, nzc, get_ptr(isuppz), get_ptr(tryrac));
             }
-        } break;
+        break; }
         case cstemr: {
             int matrix_layout; char jobz; char range; int n; c_binary d; c_binary e; cste_c_binary vl; cste_c_binary vu; int il; int iu; c_binary m; c_binary w; c_binary z; int ldz; int nzc; c_binary isuppz; c_binary tryrac;
             
@@ -6630,7 +6184,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cstemr(matrix_layout, jobz, range, n, get_ptr(d), get_ptr(e), get_cste_double(vl), get_cste_double(vu), il, iu, get_ptr(m), get_ptr(w), get_ptr(z), ldz, nzc, get_ptr(isuppz), get_ptr(tryrac));
             }
-        } break;
+        break; }
         case zstemr: {
             int matrix_layout; char jobz; char range; int n; c_binary d; c_binary e; cste_c_binary vl; cste_c_binary vu; int il; int iu; c_binary m; c_binary w; c_binary z; int ldz; int nzc; c_binary isuppz; c_binary tryrac;
             
@@ -6639,7 +6193,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zstemr(matrix_layout, jobz, range, n, get_ptr(d), get_ptr(e), get_cste_double(vl), get_cste_double(vu), il, iu, get_ptr(m), get_ptr(w), get_ptr(z), ldz, nzc, get_ptr(isuppz), get_ptr(tryrac));
             }
-        } break;
+        break; }
         case ssteqr: {
             int matrix_layout; char compz; int n; c_binary d; c_binary e; c_binary z; int ldz;
             
@@ -6648,7 +6202,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ssteqr(matrix_layout, compz, n, get_ptr(d), get_ptr(e), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case dsteqr: {
             int matrix_layout; char compz; int n; c_binary d; c_binary e; c_binary z; int ldz;
             
@@ -6657,7 +6211,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dsteqr(matrix_layout, compz, n, get_ptr(d), get_ptr(e), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case csteqr: {
             int matrix_layout; char compz; int n; c_binary d; c_binary e; c_binary z; int ldz;
             
@@ -6666,7 +6220,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_csteqr(matrix_layout, compz, n, get_ptr(d), get_ptr(e), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case zsteqr: {
             int matrix_layout; char compz; int n; c_binary d; c_binary e; c_binary z; int ldz;
             
@@ -6675,7 +6229,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zsteqr(matrix_layout, compz, n, get_ptr(d), get_ptr(e), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case ssterf: {
             int n; c_binary d; c_binary e;
             
@@ -6684,7 +6238,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ssterf(n, get_ptr(d), get_ptr(e));
             }
-        } break;
+        break; }
         case dsterf: {
             int n; c_binary d; c_binary e;
             
@@ -6693,7 +6247,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dsterf(n, get_ptr(d), get_ptr(e));
             }
-        } break;
+        break; }
         case sstev: {
             int matrix_layout; char jobz; int n; c_binary d; c_binary e; c_binary z; int ldz;
             
@@ -6702,7 +6256,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sstev(matrix_layout, jobz, n, get_ptr(d), get_ptr(e), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case dstev: {
             int matrix_layout; char jobz; int n; c_binary d; c_binary e; c_binary z; int ldz;
             
@@ -6711,7 +6265,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dstev(matrix_layout, jobz, n, get_ptr(d), get_ptr(e), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case sstevd: {
             int matrix_layout; char jobz; int n; c_binary d; c_binary e; c_binary z; int ldz;
             
@@ -6720,7 +6274,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sstevd(matrix_layout, jobz, n, get_ptr(d), get_ptr(e), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case dstevd: {
             int matrix_layout; char jobz; int n; c_binary d; c_binary e; c_binary z; int ldz;
             
@@ -6729,7 +6283,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dstevd(matrix_layout, jobz, n, get_ptr(d), get_ptr(e), get_ptr(z), ldz);
             }
-        } break;
+        break; }
         case sstevr: {
             int matrix_layout; char jobz; char range; int n; c_binary d; c_binary e; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; c_binary m; c_binary w; c_binary z; int ldz; c_binary isuppz;
             
@@ -6738,7 +6292,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sstevr(matrix_layout, jobz, range, n, get_ptr(d), get_ptr(e), get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_ptr(m), get_ptr(w), get_ptr(z), ldz, get_ptr(isuppz));
             }
-        } break;
+        break; }
         case dstevr: {
             int matrix_layout; char jobz; char range; int n; c_binary d; c_binary e; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; c_binary m; c_binary w; c_binary z; int ldz; c_binary isuppz;
             
@@ -6747,7 +6301,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dstevr(matrix_layout, jobz, range, n, get_ptr(d), get_ptr(e), get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_ptr(m), get_ptr(w), get_ptr(z), ldz, get_ptr(isuppz));
             }
-        } break;
+        break; }
         case sstevx: {
             int matrix_layout; char jobz; char range; int n; c_binary d; c_binary e; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; c_binary m; c_binary w; c_binary z; int ldz; c_binary ifail;
             
@@ -6756,7 +6310,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_sstevx(matrix_layout, jobz, range, n, get_ptr(d), get_ptr(e), get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_ptr(m), get_ptr(w), get_ptr(z), ldz, get_ptr(ifail));
             }
-        } break;
+        break; }
         case dstevx: {
             int matrix_layout; char jobz; char range; int n; c_binary d; c_binary e; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; c_binary m; c_binary w; c_binary z; int ldz; c_binary ifail;
             
@@ -6765,7 +6319,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dstevx(matrix_layout, jobz, range, n, get_ptr(d), get_ptr(e), get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_ptr(m), get_ptr(w), get_ptr(z), ldz, get_ptr(ifail));
             }
-        } break;
+        break; }
         case ssycon: {
             int matrix_layout; char uplo; int n; cste_c_binary a; int lda; cste_c_binary ipiv; cste_c_binary anorm; c_binary rcond;
             
@@ -6774,7 +6328,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ssycon(matrix_layout, uplo, n, get_cste_ptr(a), lda, get_cste_ptr(ipiv), get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case dsycon: {
             int matrix_layout; char uplo; int n; cste_c_binary a; int lda; cste_c_binary ipiv; cste_c_binary anorm; c_binary rcond;
             
@@ -6783,7 +6337,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dsycon(matrix_layout, uplo, n, get_cste_ptr(a), lda, get_cste_ptr(ipiv), get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case csycon: {
             int matrix_layout; char uplo; int n; cste_c_binary a; int lda; cste_c_binary ipiv; cste_c_binary anorm; c_binary rcond;
             
@@ -6792,7 +6346,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_csycon(matrix_layout, uplo, n, get_cste_ptr(a), lda, get_cste_ptr(ipiv), get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case zsycon: {
             int matrix_layout; char uplo; int n; cste_c_binary a; int lda; cste_c_binary ipiv; cste_c_binary anorm; c_binary rcond;
             
@@ -6801,7 +6355,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zsycon(matrix_layout, uplo, n, get_cste_ptr(a), lda, get_cste_ptr(ipiv), get_cste_double(anorm), get_ptr(rcond));
             }
-        } break;
+        break; }
         case ssyequb: {
             int matrix_layout; char uplo; int n; cste_c_binary a; int lda; c_binary s; c_binary scond; c_binary amax;
             
@@ -6810,7 +6364,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ssyequb(matrix_layout, uplo, n, get_cste_ptr(a), lda, get_ptr(s), get_ptr(scond), get_ptr(amax));
             }
-        } break;
+        break; }
         case dsyequb: {
             int matrix_layout; char uplo; int n; cste_c_binary a; int lda; c_binary s; c_binary scond; c_binary amax;
             
@@ -6819,7 +6373,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dsyequb(matrix_layout, uplo, n, get_cste_ptr(a), lda, get_ptr(s), get_ptr(scond), get_ptr(amax));
             }
-        } break;
+        break; }
         case csyequb: {
             int matrix_layout; char uplo; int n; cste_c_binary a; int lda; c_binary s; c_binary scond; c_binary amax;
             
@@ -6828,7 +6382,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_csyequb(matrix_layout, uplo, n, get_cste_ptr(a), lda, get_ptr(s), get_ptr(scond), get_ptr(amax));
             }
-        } break;
+        break; }
         case zsyequb: {
             int matrix_layout; char uplo; int n; cste_c_binary a; int lda; c_binary s; c_binary scond; c_binary amax;
             
@@ -6837,7 +6391,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zsyequb(matrix_layout, uplo, n, get_cste_ptr(a), lda, get_ptr(s), get_ptr(scond), get_ptr(amax));
             }
-        } break;
+        break; }
         case ssyev: {
             int matrix_layout; char jobz; char uplo; int n; c_binary a; int lda; c_binary w;
             
@@ -6846,7 +6400,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ssyev(matrix_layout, jobz, uplo, n, get_ptr(a), lda, get_ptr(w));
             }
-        } break;
+        break; }
         case dsyev: {
             int matrix_layout; char jobz; char uplo; int n; c_binary a; int lda; c_binary w;
             
@@ -6855,7 +6409,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dsyev(matrix_layout, jobz, uplo, n, get_ptr(a), lda, get_ptr(w));
             }
-        } break;
+        break; }
         case ssyevd: {
             int matrix_layout; char jobz; char uplo; int n; c_binary a; int lda; c_binary w;
             
@@ -6864,7 +6418,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ssyevd(matrix_layout, jobz, uplo, n, get_ptr(a), lda, get_ptr(w));
             }
-        } break;
+        break; }
         case dsyevd: {
             int matrix_layout; char jobz; char uplo; int n; c_binary a; int lda; c_binary w;
             
@@ -6873,7 +6427,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dsyevd(matrix_layout, jobz, uplo, n, get_ptr(a), lda, get_ptr(w));
             }
-        } break;
+        break; }
         case ssyevr: {
             int matrix_layout; char jobz; char range; char uplo; int n; c_binary a; int lda; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; c_binary m; c_binary w; c_binary z; int ldz; c_binary isuppz;
             
@@ -6882,7 +6436,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ssyevr(matrix_layout, jobz, range, uplo, n, get_ptr(a), lda, get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_ptr(m), get_ptr(w), get_ptr(z), ldz, get_ptr(isuppz));
             }
-        } break;
+        break; }
         case dsyevr: {
             int matrix_layout; char jobz; char range; char uplo; int n; c_binary a; int lda; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; c_binary m; c_binary w; c_binary z; int ldz; c_binary isuppz;
             
@@ -6891,7 +6445,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dsyevr(matrix_layout, jobz, range, uplo, n, get_ptr(a), lda, get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_ptr(m), get_ptr(w), get_ptr(z), ldz, get_ptr(isuppz));
             }
-        } break;
+        break; }
         case ssyevx: {
             int matrix_layout; char jobz; char range; char uplo; int n; c_binary a; int lda; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; c_binary m; c_binary w; c_binary z; int ldz; c_binary ifail;
             
@@ -6900,7 +6454,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ssyevx(matrix_layout, jobz, range, uplo, n, get_ptr(a), lda, get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_ptr(m), get_ptr(w), get_ptr(z), ldz, get_ptr(ifail));
             }
-        } break;
+        break; }
         case dsyevx: {
             int matrix_layout; char jobz; char range; char uplo; int n; c_binary a; int lda; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; c_binary m; c_binary w; c_binary z; int ldz; c_binary ifail;
             
@@ -6909,7 +6463,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dsyevx(matrix_layout, jobz, range, uplo, n, get_ptr(a), lda, get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_ptr(m), get_ptr(w), get_ptr(z), ldz, get_ptr(ifail));
             }
-        } break;
+        break; }
         case ssygst: {
             int matrix_layout; int itype; char uplo; int n; c_binary a; int lda; cste_c_binary b; int ldb;
             
@@ -6918,7 +6472,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ssygst(matrix_layout, itype, uplo, n, get_ptr(a), lda, get_cste_ptr(b), ldb);
             }
-        } break;
+        break; }
         case dsygst: {
             int matrix_layout; int itype; char uplo; int n; c_binary a; int lda; cste_c_binary b; int ldb;
             
@@ -6927,7 +6481,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dsygst(matrix_layout, itype, uplo, n, get_ptr(a), lda, get_cste_ptr(b), ldb);
             }
-        } break;
+        break; }
         case ssygv: {
             int matrix_layout; int itype; char jobz; char uplo; int n; c_binary a; int lda; c_binary b; int ldb; c_binary w;
             
@@ -6936,7 +6490,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ssygv(matrix_layout, itype, jobz, uplo, n, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(w));
             }
-        } break;
+        break; }
         case dsygv: {
             int matrix_layout; int itype; char jobz; char uplo; int n; c_binary a; int lda; c_binary b; int ldb; c_binary w;
             
@@ -6945,7 +6499,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dsygv(matrix_layout, itype, jobz, uplo, n, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(w));
             }
-        } break;
+        break; }
         case ssygvd: {
             int matrix_layout; int itype; char jobz; char uplo; int n; c_binary a; int lda; c_binary b; int ldb; c_binary w;
             
@@ -6954,7 +6508,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ssygvd(matrix_layout, itype, jobz, uplo, n, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(w));
             }
-        } break;
+        break; }
         case dsygvd: {
             int matrix_layout; int itype; char jobz; char uplo; int n; c_binary a; int lda; c_binary b; int ldb; c_binary w;
             
@@ -6963,7 +6517,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dsygvd(matrix_layout, itype, jobz, uplo, n, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(w));
             }
-        } break;
+        break; }
         case ssygvx: {
             int matrix_layout; int itype; char jobz; char range; char uplo; int n; c_binary a; int lda; c_binary b; int ldb; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; c_binary m; c_binary w; c_binary z; int ldz; c_binary ifail;
             
@@ -6972,7 +6526,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ssygvx(matrix_layout, itype, jobz, range, uplo, n, get_ptr(a), lda, get_ptr(b), ldb, get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_ptr(m), get_ptr(w), get_ptr(z), ldz, get_ptr(ifail));
             }
-        } break;
+        break; }
         case dsygvx: {
             int matrix_layout; int itype; char jobz; char range; char uplo; int n; c_binary a; int lda; c_binary b; int ldb; cste_c_binary vl; cste_c_binary vu; int il; int iu; cste_c_binary abstol; c_binary m; c_binary w; c_binary z; int ldz; c_binary ifail;
             
@@ -6981,7 +6535,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dsygvx(matrix_layout, itype, jobz, range, uplo, n, get_ptr(a), lda, get_ptr(b), ldb, get_cste_double(vl), get_cste_double(vu), il, iu, get_cste_double(abstol), get_ptr(m), get_ptr(w), get_ptr(z), ldz, get_ptr(ifail));
             }
-        } break;
+        break; }
         case ssyrfs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary af; int ldaf; cste_c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -6990,7 +6544,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ssyrfs(matrix_layout, uplo, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(af), ldaf, get_cste_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case dsyrfs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary af; int ldaf; cste_c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -6999,7 +6553,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dsyrfs(matrix_layout, uplo, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(af), ldaf, get_cste_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case csyrfs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary af; int ldaf; cste_c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -7008,7 +6562,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_csyrfs(matrix_layout, uplo, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(af), ldaf, get_cste_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case zsyrfs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary af; int ldaf; cste_c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -7017,7 +6571,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zsyrfs(matrix_layout, uplo, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(af), ldaf, get_cste_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case ssysv: {
             int matrix_layout; char uplo; int n; int nrhs; c_binary a; int lda; c_binary ipiv; c_binary b; int ldb;
             
@@ -7026,7 +6580,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ssysv(matrix_layout, uplo, n, nrhs, get_ptr(a), lda, get_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case dsysv: {
             int matrix_layout; char uplo; int n; int nrhs; c_binary a; int lda; c_binary ipiv; c_binary b; int ldb;
             
@@ -7035,7 +6589,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dsysv(matrix_layout, uplo, n, nrhs, get_ptr(a), lda, get_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case csysv: {
             int matrix_layout; char uplo; int n; int nrhs; c_binary a; int lda; c_binary ipiv; c_binary b; int ldb;
             
@@ -7044,7 +6598,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_csysv(matrix_layout, uplo, n, nrhs, get_ptr(a), lda, get_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case zsysv: {
             int matrix_layout; char uplo; int n; int nrhs; c_binary a; int lda; c_binary ipiv; c_binary b; int ldb;
             
@@ -7053,7 +6607,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zsysv(matrix_layout, uplo, n, nrhs, get_ptr(a), lda, get_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case ssysvx: {
             int matrix_layout; char fact; char uplo; int n; int nrhs; cste_c_binary a; int lda; c_binary af; int ldaf; c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary ferr; c_binary berr;
             
@@ -7062,7 +6616,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ssysvx(matrix_layout, fact, uplo, n, nrhs, get_cste_ptr(a), lda, get_ptr(af), ldaf, get_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case dsysvx: {
             int matrix_layout; char fact; char uplo; int n; int nrhs; cste_c_binary a; int lda; c_binary af; int ldaf; c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary ferr; c_binary berr;
             
@@ -7071,7 +6625,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dsysvx(matrix_layout, fact, uplo, n, nrhs, get_cste_ptr(a), lda, get_ptr(af), ldaf, get_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case csysvx: {
             int matrix_layout; char fact; char uplo; int n; int nrhs; cste_c_binary a; int lda; c_binary af; int ldaf; c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary ferr; c_binary berr;
             
@@ -7080,7 +6634,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_csysvx(matrix_layout, fact, uplo, n, nrhs, get_cste_ptr(a), lda, get_ptr(af), ldaf, get_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case zsysvx: {
             int matrix_layout; char fact; char uplo; int n; int nrhs; cste_c_binary a; int lda; c_binary af; int ldaf; c_binary ipiv; cste_c_binary b; int ldb; c_binary x; int ldx; c_binary rcond; c_binary ferr; c_binary berr;
             
@@ -7089,7 +6643,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zsysvx(matrix_layout, fact, uplo, n, nrhs, get_cste_ptr(a), lda, get_ptr(af), ldaf, get_ptr(ipiv), get_cste_ptr(b), ldb, get_ptr(x), ldx, get_ptr(rcond), get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case ssytrd: {
             int matrix_layout; char uplo; int n; c_binary a; int lda; c_binary d; c_binary e; c_binary tau;
             
@@ -7098,7 +6652,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ssytrd(matrix_layout, uplo, n, get_ptr(a), lda, get_ptr(d), get_ptr(e), get_ptr(tau));
             }
-        } break;
+        break; }
         case dsytrd: {
             int matrix_layout; char uplo; int n; c_binary a; int lda; c_binary d; c_binary e; c_binary tau;
             
@@ -7107,7 +6661,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dsytrd(matrix_layout, uplo, n, get_ptr(a), lda, get_ptr(d), get_ptr(e), get_ptr(tau));
             }
-        } break;
+        break; }
         case ssytrf: {
             int matrix_layout; char uplo; int n; c_binary a; int lda; c_binary ipiv;
             
@@ -7116,7 +6670,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ssytrf(matrix_layout, uplo, n, get_ptr(a), lda, get_ptr(ipiv));
             }
-        } break;
+        break; }
         case dsytrf: {
             int matrix_layout; char uplo; int n; c_binary a; int lda; c_binary ipiv;
             
@@ -7125,7 +6679,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dsytrf(matrix_layout, uplo, n, get_ptr(a), lda, get_ptr(ipiv));
             }
-        } break;
+        break; }
         case csytrf: {
             int matrix_layout; char uplo; int n; c_binary a; int lda; c_binary ipiv;
             
@@ -7134,7 +6688,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_csytrf(matrix_layout, uplo, n, get_ptr(a), lda, get_ptr(ipiv));
             }
-        } break;
+        break; }
         case zsytrf: {
             int matrix_layout; char uplo; int n; c_binary a; int lda; c_binary ipiv;
             
@@ -7143,7 +6697,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zsytrf(matrix_layout, uplo, n, get_ptr(a), lda, get_ptr(ipiv));
             }
-        } break;
+        break; }
         case ssytri: {
             int matrix_layout; char uplo; int n; c_binary a; int lda; cste_c_binary ipiv;
             
@@ -7152,7 +6706,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ssytri(matrix_layout, uplo, n, get_ptr(a), lda, get_cste_ptr(ipiv));
             }
-        } break;
+        break; }
         case dsytri: {
             int matrix_layout; char uplo; int n; c_binary a; int lda; cste_c_binary ipiv;
             
@@ -7161,7 +6715,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dsytri(matrix_layout, uplo, n, get_ptr(a), lda, get_cste_ptr(ipiv));
             }
-        } break;
+        break; }
         case csytri: {
             int matrix_layout; char uplo; int n; c_binary a; int lda; cste_c_binary ipiv;
             
@@ -7170,7 +6724,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_csytri(matrix_layout, uplo, n, get_ptr(a), lda, get_cste_ptr(ipiv));
             }
-        } break;
+        break; }
         case zsytri: {
             int matrix_layout; char uplo; int n; c_binary a; int lda; cste_c_binary ipiv;
             
@@ -7179,7 +6733,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zsytri(matrix_layout, uplo, n, get_ptr(a), lda, get_cste_ptr(ipiv));
             }
-        } break;
+        break; }
         case ssytrs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary ipiv; c_binary b; int ldb;
             
@@ -7188,7 +6742,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ssytrs(matrix_layout, uplo, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case dsytrs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary ipiv; c_binary b; int ldb;
             
@@ -7197,7 +6751,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dsytrs(matrix_layout, uplo, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case csytrs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary ipiv; c_binary b; int ldb;
             
@@ -7206,7 +6760,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_csytrs(matrix_layout, uplo, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case zsytrs: {
             int matrix_layout; char uplo; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary ipiv; c_binary b; int ldb;
             
@@ -7215,7 +6769,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zsytrs(matrix_layout, uplo, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(ipiv), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case stbcon: {
             int matrix_layout; char norm; char uplo; char diag; int n; int kd; cste_c_binary ab; int ldab; c_binary rcond;
             
@@ -7224,7 +6778,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_stbcon(matrix_layout, norm, uplo, diag, n, kd, get_cste_ptr(ab), ldab, get_ptr(rcond));
             }
-        } break;
+        break; }
         case dtbcon: {
             int matrix_layout; char norm; char uplo; char diag; int n; int kd; cste_c_binary ab; int ldab; c_binary rcond;
             
@@ -7233,7 +6787,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dtbcon(matrix_layout, norm, uplo, diag, n, kd, get_cste_ptr(ab), ldab, get_ptr(rcond));
             }
-        } break;
+        break; }
         case ctbcon: {
             int matrix_layout; char norm; char uplo; char diag; int n; int kd; cste_c_binary ab; int ldab; c_binary rcond;
             
@@ -7242,7 +6796,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ctbcon(matrix_layout, norm, uplo, diag, n, kd, get_cste_ptr(ab), ldab, get_ptr(rcond));
             }
-        } break;
+        break; }
         case ztbcon: {
             int matrix_layout; char norm; char uplo; char diag; int n; int kd; cste_c_binary ab; int ldab; c_binary rcond;
             
@@ -7251,7 +6805,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ztbcon(matrix_layout, norm, uplo, diag, n, kd, get_cste_ptr(ab), ldab, get_ptr(rcond));
             }
-        } break;
+        break; }
         case stbrfs: {
             int matrix_layout; char uplo; char trans; char diag; int n; int kd; int nrhs; cste_c_binary ab; int ldab; cste_c_binary b; int ldb; cste_c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -7260,7 +6814,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_stbrfs(matrix_layout, uplo, trans, diag, n, kd, nrhs, get_cste_ptr(ab), ldab, get_cste_ptr(b), ldb, get_cste_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case dtbrfs: {
             int matrix_layout; char uplo; char trans; char diag; int n; int kd; int nrhs; cste_c_binary ab; int ldab; cste_c_binary b; int ldb; cste_c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -7269,7 +6823,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dtbrfs(matrix_layout, uplo, trans, diag, n, kd, nrhs, get_cste_ptr(ab), ldab, get_cste_ptr(b), ldb, get_cste_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case ctbrfs: {
             int matrix_layout; char uplo; char trans; char diag; int n; int kd; int nrhs; cste_c_binary ab; int ldab; cste_c_binary b; int ldb; cste_c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -7278,7 +6832,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ctbrfs(matrix_layout, uplo, trans, diag, n, kd, nrhs, get_cste_ptr(ab), ldab, get_cste_ptr(b), ldb, get_cste_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case ztbrfs: {
             int matrix_layout; char uplo; char trans; char diag; int n; int kd; int nrhs; cste_c_binary ab; int ldab; cste_c_binary b; int ldb; cste_c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -7287,7 +6841,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ztbrfs(matrix_layout, uplo, trans, diag, n, kd, nrhs, get_cste_ptr(ab), ldab, get_cste_ptr(b), ldb, get_cste_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case stbtrs: {
             int matrix_layout; char uplo; char trans; char diag; int n; int kd; int nrhs; cste_c_binary ab; int ldab; c_binary b; int ldb;
             
@@ -7296,7 +6850,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_stbtrs(matrix_layout, uplo, trans, diag, n, kd, nrhs, get_cste_ptr(ab), ldab, get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case dtbtrs: {
             int matrix_layout; char uplo; char trans; char diag; int n; int kd; int nrhs; cste_c_binary ab; int ldab; c_binary b; int ldb;
             
@@ -7305,7 +6859,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dtbtrs(matrix_layout, uplo, trans, diag, n, kd, nrhs, get_cste_ptr(ab), ldab, get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case ctbtrs: {
             int matrix_layout; char uplo; char trans; char diag; int n; int kd; int nrhs; cste_c_binary ab; int ldab; c_binary b; int ldb;
             
@@ -7314,7 +6868,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ctbtrs(matrix_layout, uplo, trans, diag, n, kd, nrhs, get_cste_ptr(ab), ldab, get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case ztbtrs: {
             int matrix_layout; char uplo; char trans; char diag; int n; int kd; int nrhs; cste_c_binary ab; int ldab; c_binary b; int ldb;
             
@@ -7323,7 +6877,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ztbtrs(matrix_layout, uplo, trans, diag, n, kd, nrhs, get_cste_ptr(ab), ldab, get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case stfsm: {
             int matrix_layout; char transr; char side; char uplo; char trans; char diag; int m; int n; cste_c_binary alpha; cste_c_binary a; c_binary b; int ldb;
             
@@ -7332,7 +6886,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_stfsm(matrix_layout, transr, side, uplo, trans, diag, m, n, get_cste_double(alpha), get_cste_ptr(a), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case dtfsm: {
             int matrix_layout; char transr; char side; char uplo; char trans; char diag; int m; int n; cste_c_binary alpha; cste_c_binary a; c_binary b; int ldb;
             
@@ -7341,7 +6895,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dtfsm(matrix_layout, transr, side, uplo, trans, diag, m, n, get_cste_double(alpha), get_cste_ptr(a), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case ctfsm: {
             int matrix_layout; char transr; char side; char uplo; char trans; char diag; int m; int n; c_binary alpha; cste_c_binary a; c_binary b; int ldb;
             
@@ -7350,7 +6904,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ctfsm(matrix_layout, transr, side, uplo, trans, diag, m, n, lapack_make_complex_float(*(float*)get_ptr(alpha), *(((float*)get_ptr(alpha))+1)), get_cste_ptr(a), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case ztfsm: {
             int matrix_layout; char transr; char side; char uplo; char trans; char diag; int m; int n; c_binary alpha; cste_c_binary a; c_binary b; int ldb;
             
@@ -7359,7 +6913,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ztfsm(matrix_layout, transr, side, uplo, trans, diag, m, n, lapack_make_complex_double(*(double*)get_ptr(alpha), *(((double*)get_ptr(alpha))+1)), get_cste_ptr(a), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case stftri: {
             int matrix_layout; char transr; char uplo; char diag; int n; c_binary a;
             
@@ -7368,7 +6922,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_stftri(matrix_layout, transr, uplo, diag, n, get_ptr(a));
             }
-        } break;
+        break; }
         case dtftri: {
             int matrix_layout; char transr; char uplo; char diag; int n; c_binary a;
             
@@ -7377,7 +6931,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dtftri(matrix_layout, transr, uplo, diag, n, get_ptr(a));
             }
-        } break;
+        break; }
         case ctftri: {
             int matrix_layout; char transr; char uplo; char diag; int n; c_binary a;
             
@@ -7386,7 +6940,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ctftri(matrix_layout, transr, uplo, diag, n, get_ptr(a));
             }
-        } break;
+        break; }
         case ztftri: {
             int matrix_layout; char transr; char uplo; char diag; int n; c_binary a;
             
@@ -7395,7 +6949,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ztftri(matrix_layout, transr, uplo, diag, n, get_ptr(a));
             }
-        } break;
+        break; }
         case stfttp: {
             int matrix_layout; char transr; char uplo; int n; cste_c_binary arf; c_binary ap;
             
@@ -7404,7 +6958,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_stfttp(matrix_layout, transr, uplo, n, get_cste_ptr(arf), get_ptr(ap));
             }
-        } break;
+        break; }
         case dtfttp: {
             int matrix_layout; char transr; char uplo; int n; cste_c_binary arf; c_binary ap;
             
@@ -7413,7 +6967,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dtfttp(matrix_layout, transr, uplo, n, get_cste_ptr(arf), get_ptr(ap));
             }
-        } break;
+        break; }
         case ctfttp: {
             int matrix_layout; char transr; char uplo; int n; cste_c_binary arf; c_binary ap;
             
@@ -7422,7 +6976,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ctfttp(matrix_layout, transr, uplo, n, get_cste_ptr(arf), get_ptr(ap));
             }
-        } break;
+        break; }
         case ztfttp: {
             int matrix_layout; char transr; char uplo; int n; cste_c_binary arf; c_binary ap;
             
@@ -7431,7 +6985,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ztfttp(matrix_layout, transr, uplo, n, get_cste_ptr(arf), get_ptr(ap));
             }
-        } break;
+        break; }
         case stfttr: {
             int matrix_layout; char transr; char uplo; int n; cste_c_binary arf; c_binary a; int lda;
             
@@ -7440,7 +6994,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_stfttr(matrix_layout, transr, uplo, n, get_cste_ptr(arf), get_ptr(a), lda);
             }
-        } break;
+        break; }
         case dtfttr: {
             int matrix_layout; char transr; char uplo; int n; cste_c_binary arf; c_binary a; int lda;
             
@@ -7449,7 +7003,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dtfttr(matrix_layout, transr, uplo, n, get_cste_ptr(arf), get_ptr(a), lda);
             }
-        } break;
+        break; }
         case ctfttr: {
             int matrix_layout; char transr; char uplo; int n; cste_c_binary arf; c_binary a; int lda;
             
@@ -7458,7 +7012,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ctfttr(matrix_layout, transr, uplo, n, get_cste_ptr(arf), get_ptr(a), lda);
             }
-        } break;
+        break; }
         case ztfttr: {
             int matrix_layout; char transr; char uplo; int n; cste_c_binary arf; c_binary a; int lda;
             
@@ -7467,7 +7021,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ztfttr(matrix_layout, transr, uplo, n, get_cste_ptr(arf), get_ptr(a), lda);
             }
-        } break;
+        break; }
         case stgevc: {
             int matrix_layout; char side; char howmny; cste_c_binary select; int n; cste_c_binary s; int lds; cste_c_binary p; int ldp; c_binary vl; int ldvl; c_binary vr; int ldvr; int mm; c_binary m;
             
@@ -7476,7 +7030,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_stgevc(matrix_layout, side, howmny, get_cste_ptr(select), n, get_cste_ptr(s), lds, get_cste_ptr(p), ldp, get_ptr(vl), ldvl, get_ptr(vr), ldvr, mm, get_ptr(m));
             }
-        } break;
+        break; }
         case dtgevc: {
             int matrix_layout; char side; char howmny; cste_c_binary select; int n; cste_c_binary s; int lds; cste_c_binary p; int ldp; c_binary vl; int ldvl; c_binary vr; int ldvr; int mm; c_binary m;
             
@@ -7485,7 +7039,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dtgevc(matrix_layout, side, howmny, get_cste_ptr(select), n, get_cste_ptr(s), lds, get_cste_ptr(p), ldp, get_ptr(vl), ldvl, get_ptr(vr), ldvr, mm, get_ptr(m));
             }
-        } break;
+        break; }
         case ctgevc: {
             int matrix_layout; char side; char howmny; cste_c_binary select; int n; cste_c_binary s; int lds; cste_c_binary p; int ldp; c_binary vl; int ldvl; c_binary vr; int ldvr; int mm; c_binary m;
             
@@ -7494,7 +7048,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ctgevc(matrix_layout, side, howmny, get_cste_ptr(select), n, get_cste_ptr(s), lds, get_cste_ptr(p), ldp, get_ptr(vl), ldvl, get_ptr(vr), ldvr, mm, get_ptr(m));
             }
-        } break;
+        break; }
         case ztgevc: {
             int matrix_layout; char side; char howmny; cste_c_binary select; int n; cste_c_binary s; int lds; cste_c_binary p; int ldp; c_binary vl; int ldvl; c_binary vr; int ldvr; int mm; c_binary m;
             
@@ -7503,7 +7057,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ztgevc(matrix_layout, side, howmny, get_cste_ptr(select), n, get_cste_ptr(s), lds, get_cste_ptr(p), ldp, get_ptr(vl), ldvl, get_ptr(vr), ldvr, mm, get_ptr(m));
             }
-        } break;
+        break; }
         case stgexc: {
             int matrix_layout; int wantq; int wantz; int n; c_binary a; int lda; c_binary b; int ldb; c_binary q; int ldq; c_binary z; int ldz; c_binary ifst; c_binary ilst;
             
@@ -7512,7 +7066,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_stgexc(matrix_layout, wantq, wantz, n, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(q), ldq, get_ptr(z), ldz, get_ptr(ifst), get_ptr(ilst));
             }
-        } break;
+        break; }
         case dtgexc: {
             int matrix_layout; int wantq; int wantz; int n; c_binary a; int lda; c_binary b; int ldb; c_binary q; int ldq; c_binary z; int ldz; c_binary ifst; c_binary ilst;
             
@@ -7521,7 +7075,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dtgexc(matrix_layout, wantq, wantz, n, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(q), ldq, get_ptr(z), ldz, get_ptr(ifst), get_ptr(ilst));
             }
-        } break;
+        break; }
         case ctgexc: {
             int matrix_layout; int wantq; int wantz; int n; c_binary a; int lda; c_binary b; int ldb; c_binary q; int ldq; c_binary z; int ldz; int ifst; int ilst;
             
@@ -7530,7 +7084,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ctgexc(matrix_layout, wantq, wantz, n, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(q), ldq, get_ptr(z), ldz, ifst, ilst);
             }
-        } break;
+        break; }
         case ztgexc: {
             int matrix_layout; int wantq; int wantz; int n; c_binary a; int lda; c_binary b; int ldb; c_binary q; int ldq; c_binary z; int ldz; int ifst; int ilst;
             
@@ -7539,7 +7093,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ztgexc(matrix_layout, wantq, wantz, n, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(q), ldq, get_ptr(z), ldz, ifst, ilst);
             }
-        } break;
+        break; }
         case stgsen: {
             int matrix_layout; int ijob; int wantq; int wantz; cste_c_binary select; int n; c_binary a; int lda; c_binary b; int ldb; c_binary alphar; c_binary alphai; c_binary beta; c_binary q; int ldq; c_binary z; int ldz; c_binary m; c_binary pl; c_binary pr; c_binary dif;
             
@@ -7548,7 +7102,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_stgsen(matrix_layout, ijob, wantq, wantz, get_cste_ptr(select), n, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(alphar), get_ptr(alphai), get_ptr(beta), get_ptr(q), ldq, get_ptr(z), ldz, get_ptr(m), get_ptr(pl), get_ptr(pr), get_ptr(dif));
             }
-        } break;
+        break; }
         case dtgsen: {
             int matrix_layout; int ijob; int wantq; int wantz; cste_c_binary select; int n; c_binary a; int lda; c_binary b; int ldb; c_binary alphar; c_binary alphai; c_binary beta; c_binary q; int ldq; c_binary z; int ldz; c_binary m; c_binary pl; c_binary pr; c_binary dif;
             
@@ -7557,7 +7111,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dtgsen(matrix_layout, ijob, wantq, wantz, get_cste_ptr(select), n, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(alphar), get_ptr(alphai), get_ptr(beta), get_ptr(q), ldq, get_ptr(z), ldz, get_ptr(m), get_ptr(pl), get_ptr(pr), get_ptr(dif));
             }
-        } break;
+        break; }
         case ctgsen: {
             int matrix_layout; int ijob; int wantq; int wantz; cste_c_binary select; int n; c_binary a; int lda; c_binary b; int ldb; c_binary alpha; c_binary beta; c_binary q; int ldq; c_binary z; int ldz; c_binary m; c_binary pl; c_binary pr; c_binary dif;
             
@@ -7566,7 +7120,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ctgsen(matrix_layout, ijob, wantq, wantz, get_cste_ptr(select), n, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(alpha), get_ptr(beta), get_ptr(q), ldq, get_ptr(z), ldz, get_ptr(m), get_ptr(pl), get_ptr(pr), get_ptr(dif));
             }
-        } break;
+        break; }
         case ztgsen: {
             int matrix_layout; int ijob; int wantq; int wantz; cste_c_binary select; int n; c_binary a; int lda; c_binary b; int ldb; c_binary alpha; c_binary beta; c_binary q; int ldq; c_binary z; int ldz; c_binary m; c_binary pl; c_binary pr; c_binary dif;
             
@@ -7575,7 +7129,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ztgsen(matrix_layout, ijob, wantq, wantz, get_cste_ptr(select), n, get_ptr(a), lda, get_ptr(b), ldb, get_ptr(alpha), get_ptr(beta), get_ptr(q), ldq, get_ptr(z), ldz, get_ptr(m), get_ptr(pl), get_ptr(pr), get_ptr(dif));
             }
-        } break;
+        break; }
         case stgsja: {
             int matrix_layout; char jobu; char jobv; char jobq; int m; int p; int n; int k; int l; c_binary a; int lda; c_binary b; int ldb; cste_c_binary tola; cste_c_binary tolb; c_binary alpha; c_binary beta; c_binary u; int ldu; c_binary v; int ldv; c_binary q; int ldq; c_binary ncycle;
             
@@ -7584,7 +7138,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_stgsja(matrix_layout, jobu, jobv, jobq, m, p, n, k, l, get_ptr(a), lda, get_ptr(b), ldb, get_cste_double(tola), get_cste_double(tolb), get_ptr(alpha), get_ptr(beta), get_ptr(u), ldu, get_ptr(v), ldv, get_ptr(q), ldq, get_ptr(ncycle));
             }
-        } break;
+        break; }
         case dtgsja: {
             int matrix_layout; char jobu; char jobv; char jobq; int m; int p; int n; int k; int l; c_binary a; int lda; c_binary b; int ldb; cste_c_binary tola; cste_c_binary tolb; c_binary alpha; c_binary beta; c_binary u; int ldu; c_binary v; int ldv; c_binary q; int ldq; c_binary ncycle;
             
@@ -7593,7 +7147,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dtgsja(matrix_layout, jobu, jobv, jobq, m, p, n, k, l, get_ptr(a), lda, get_ptr(b), ldb, get_cste_double(tola), get_cste_double(tolb), get_ptr(alpha), get_ptr(beta), get_ptr(u), ldu, get_ptr(v), ldv, get_ptr(q), ldq, get_ptr(ncycle));
             }
-        } break;
+        break; }
         case ctgsja: {
             int matrix_layout; char jobu; char jobv; char jobq; int m; int p; int n; int k; int l; c_binary a; int lda; c_binary b; int ldb; cste_c_binary tola; cste_c_binary tolb; c_binary alpha; c_binary beta; c_binary u; int ldu; c_binary v; int ldv; c_binary q; int ldq; c_binary ncycle;
             
@@ -7602,7 +7156,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ctgsja(matrix_layout, jobu, jobv, jobq, m, p, n, k, l, get_ptr(a), lda, get_ptr(b), ldb, get_cste_double(tola), get_cste_double(tolb), get_ptr(alpha), get_ptr(beta), get_ptr(u), ldu, get_ptr(v), ldv, get_ptr(q), ldq, get_ptr(ncycle));
             }
-        } break;
+        break; }
         case ztgsja: {
             int matrix_layout; char jobu; char jobv; char jobq; int m; int p; int n; int k; int l; c_binary a; int lda; c_binary b; int ldb; cste_c_binary tola; cste_c_binary tolb; c_binary alpha; c_binary beta; c_binary u; int ldu; c_binary v; int ldv; c_binary q; int ldq; c_binary ncycle;
             
@@ -7611,7 +7165,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ztgsja(matrix_layout, jobu, jobv, jobq, m, p, n, k, l, get_ptr(a), lda, get_ptr(b), ldb, get_cste_double(tola), get_cste_double(tolb), get_ptr(alpha), get_ptr(beta), get_ptr(u), ldu, get_ptr(v), ldv, get_ptr(q), ldq, get_ptr(ncycle));
             }
-        } break;
+        break; }
         case stgsna: {
             int matrix_layout; char job; char howmny; cste_c_binary select; int n; cste_c_binary a; int lda; cste_c_binary b; int ldb; cste_c_binary vl; int ldvl; cste_c_binary vr; int ldvr; c_binary s; c_binary dif; int mm; c_binary m;
             
@@ -7620,7 +7174,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_stgsna(matrix_layout, job, howmny, get_cste_ptr(select), n, get_cste_ptr(a), lda, get_cste_ptr(b), ldb, get_cste_ptr(vl), ldvl, get_cste_ptr(vr), ldvr, get_ptr(s), get_ptr(dif), mm, get_ptr(m));
             }
-        } break;
+        break; }
         case dtgsna: {
             int matrix_layout; char job; char howmny; cste_c_binary select; int n; cste_c_binary a; int lda; cste_c_binary b; int ldb; cste_c_binary vl; int ldvl; cste_c_binary vr; int ldvr; c_binary s; c_binary dif; int mm; c_binary m;
             
@@ -7629,7 +7183,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dtgsna(matrix_layout, job, howmny, get_cste_ptr(select), n, get_cste_ptr(a), lda, get_cste_ptr(b), ldb, get_cste_ptr(vl), ldvl, get_cste_ptr(vr), ldvr, get_ptr(s), get_ptr(dif), mm, get_ptr(m));
             }
-        } break;
+        break; }
         case ctgsna: {
             int matrix_layout; char job; char howmny; cste_c_binary select; int n; cste_c_binary a; int lda; cste_c_binary b; int ldb; cste_c_binary vl; int ldvl; cste_c_binary vr; int ldvr; c_binary s; c_binary dif; int mm; c_binary m;
             
@@ -7638,7 +7192,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ctgsna(matrix_layout, job, howmny, get_cste_ptr(select), n, get_cste_ptr(a), lda, get_cste_ptr(b), ldb, get_cste_ptr(vl), ldvl, get_cste_ptr(vr), ldvr, get_ptr(s), get_ptr(dif), mm, get_ptr(m));
             }
-        } break;
+        break; }
         case ztgsna: {
             int matrix_layout; char job; char howmny; cste_c_binary select; int n; cste_c_binary a; int lda; cste_c_binary b; int ldb; cste_c_binary vl; int ldvl; cste_c_binary vr; int ldvr; c_binary s; c_binary dif; int mm; c_binary m;
             
@@ -7647,7 +7201,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ztgsna(matrix_layout, job, howmny, get_cste_ptr(select), n, get_cste_ptr(a), lda, get_cste_ptr(b), ldb, get_cste_ptr(vl), ldvl, get_cste_ptr(vr), ldvr, get_ptr(s), get_ptr(dif), mm, get_ptr(m));
             }
-        } break;
+        break; }
         case stgsyl: {
             int matrix_layout; char trans; int ijob; int m; int n; cste_c_binary a; int lda; cste_c_binary b; int ldb; c_binary c; int ldc; cste_c_binary d; int ldd; cste_c_binary e; int lde; c_binary f; int ldf; c_binary scale; c_binary dif;
             
@@ -7656,7 +7210,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_stgsyl(matrix_layout, trans, ijob, m, n, get_cste_ptr(a), lda, get_cste_ptr(b), ldb, get_ptr(c), ldc, get_cste_ptr(d), ldd, get_cste_ptr(e), lde, get_ptr(f), ldf, get_ptr(scale), get_ptr(dif));
             }
-        } break;
+        break; }
         case dtgsyl: {
             int matrix_layout; char trans; int ijob; int m; int n; cste_c_binary a; int lda; cste_c_binary b; int ldb; c_binary c; int ldc; cste_c_binary d; int ldd; cste_c_binary e; int lde; c_binary f; int ldf; c_binary scale; c_binary dif;
             
@@ -7665,7 +7219,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dtgsyl(matrix_layout, trans, ijob, m, n, get_cste_ptr(a), lda, get_cste_ptr(b), ldb, get_ptr(c), ldc, get_cste_ptr(d), ldd, get_cste_ptr(e), lde, get_ptr(f), ldf, get_ptr(scale), get_ptr(dif));
             }
-        } break;
+        break; }
         case ctgsyl: {
             int matrix_layout; char trans; int ijob; int m; int n; cste_c_binary a; int lda; cste_c_binary b; int ldb; c_binary c; int ldc; cste_c_binary d; int ldd; cste_c_binary e; int lde; c_binary f; int ldf; c_binary scale; c_binary dif;
             
@@ -7674,7 +7228,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ctgsyl(matrix_layout, trans, ijob, m, n, get_cste_ptr(a), lda, get_cste_ptr(b), ldb, get_ptr(c), ldc, get_cste_ptr(d), ldd, get_cste_ptr(e), lde, get_ptr(f), ldf, get_ptr(scale), get_ptr(dif));
             }
-        } break;
+        break; }
         case ztgsyl: {
             int matrix_layout; char trans; int ijob; int m; int n; cste_c_binary a; int lda; cste_c_binary b; int ldb; c_binary c; int ldc; cste_c_binary d; int ldd; cste_c_binary e; int lde; c_binary f; int ldf; c_binary scale; c_binary dif;
             
@@ -7683,7 +7237,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ztgsyl(matrix_layout, trans, ijob, m, n, get_cste_ptr(a), lda, get_cste_ptr(b), ldb, get_ptr(c), ldc, get_cste_ptr(d), ldd, get_cste_ptr(e), lde, get_ptr(f), ldf, get_ptr(scale), get_ptr(dif));
             }
-        } break;
+        break; }
         case stpcon: {
             int matrix_layout; char norm; char uplo; char diag; int n; cste_c_binary ap; c_binary rcond;
             
@@ -7692,7 +7246,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_stpcon(matrix_layout, norm, uplo, diag, n, get_cste_ptr(ap), get_ptr(rcond));
             }
-        } break;
+        break; }
         case dtpcon: {
             int matrix_layout; char norm; char uplo; char diag; int n; cste_c_binary ap; c_binary rcond;
             
@@ -7701,7 +7255,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dtpcon(matrix_layout, norm, uplo, diag, n, get_cste_ptr(ap), get_ptr(rcond));
             }
-        } break;
+        break; }
         case ctpcon: {
             int matrix_layout; char norm; char uplo; char diag; int n; cste_c_binary ap; c_binary rcond;
             
@@ -7710,7 +7264,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ctpcon(matrix_layout, norm, uplo, diag, n, get_cste_ptr(ap), get_ptr(rcond));
             }
-        } break;
+        break; }
         case ztpcon: {
             int matrix_layout; char norm; char uplo; char diag; int n; cste_c_binary ap; c_binary rcond;
             
@@ -7719,7 +7273,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ztpcon(matrix_layout, norm, uplo, diag, n, get_cste_ptr(ap), get_ptr(rcond));
             }
-        } break;
+        break; }
         case stprfs: {
             int matrix_layout; char uplo; char trans; char diag; int n; int nrhs; cste_c_binary ap; cste_c_binary b; int ldb; cste_c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -7728,7 +7282,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_stprfs(matrix_layout, uplo, trans, diag, n, nrhs, get_cste_ptr(ap), get_cste_ptr(b), ldb, get_cste_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case dtprfs: {
             int matrix_layout; char uplo; char trans; char diag; int n; int nrhs; cste_c_binary ap; cste_c_binary b; int ldb; cste_c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -7737,7 +7291,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dtprfs(matrix_layout, uplo, trans, diag, n, nrhs, get_cste_ptr(ap), get_cste_ptr(b), ldb, get_cste_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case ctprfs: {
             int matrix_layout; char uplo; char trans; char diag; int n; int nrhs; cste_c_binary ap; cste_c_binary b; int ldb; cste_c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -7746,7 +7300,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ctprfs(matrix_layout, uplo, trans, diag, n, nrhs, get_cste_ptr(ap), get_cste_ptr(b), ldb, get_cste_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case ztprfs: {
             int matrix_layout; char uplo; char trans; char diag; int n; int nrhs; cste_c_binary ap; cste_c_binary b; int ldb; cste_c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -7755,7 +7309,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ztprfs(matrix_layout, uplo, trans, diag, n, nrhs, get_cste_ptr(ap), get_cste_ptr(b), ldb, get_cste_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case stptri: {
             int matrix_layout; char uplo; char diag; int n; c_binary ap;
             
@@ -7764,7 +7318,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_stptri(matrix_layout, uplo, diag, n, get_ptr(ap));
             }
-        } break;
+        break; }
         case dtptri: {
             int matrix_layout; char uplo; char diag; int n; c_binary ap;
             
@@ -7773,7 +7327,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dtptri(matrix_layout, uplo, diag, n, get_ptr(ap));
             }
-        } break;
+        break; }
         case ctptri: {
             int matrix_layout; char uplo; char diag; int n; c_binary ap;
             
@@ -7782,7 +7336,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ctptri(matrix_layout, uplo, diag, n, get_ptr(ap));
             }
-        } break;
+        break; }
         case ztptri: {
             int matrix_layout; char uplo; char diag; int n; c_binary ap;
             
@@ -7791,7 +7345,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ztptri(matrix_layout, uplo, diag, n, get_ptr(ap));
             }
-        } break;
+        break; }
         case stptrs: {
             int matrix_layout; char uplo; char trans; char diag; int n; int nrhs; cste_c_binary ap; c_binary b; int ldb;
             
@@ -7800,7 +7354,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_stptrs(matrix_layout, uplo, trans, diag, n, nrhs, get_cste_ptr(ap), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case dtptrs: {
             int matrix_layout; char uplo; char trans; char diag; int n; int nrhs; cste_c_binary ap; c_binary b; int ldb;
             
@@ -7809,7 +7363,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dtptrs(matrix_layout, uplo, trans, diag, n, nrhs, get_cste_ptr(ap), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case ctptrs: {
             int matrix_layout; char uplo; char trans; char diag; int n; int nrhs; cste_c_binary ap; c_binary b; int ldb;
             
@@ -7818,7 +7372,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ctptrs(matrix_layout, uplo, trans, diag, n, nrhs, get_cste_ptr(ap), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case ztptrs: {
             int matrix_layout; char uplo; char trans; char diag; int n; int nrhs; cste_c_binary ap; c_binary b; int ldb;
             
@@ -7827,7 +7381,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ztptrs(matrix_layout, uplo, trans, diag, n, nrhs, get_cste_ptr(ap), get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case stpttf: {
             int matrix_layout; char transr; char uplo; int n; cste_c_binary ap; c_binary arf;
             
@@ -7836,7 +7390,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_stpttf(matrix_layout, transr, uplo, n, get_cste_ptr(ap), get_ptr(arf));
             }
-        } break;
+        break; }
         case dtpttf: {
             int matrix_layout; char transr; char uplo; int n; cste_c_binary ap; c_binary arf;
             
@@ -7845,7 +7399,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dtpttf(matrix_layout, transr, uplo, n, get_cste_ptr(ap), get_ptr(arf));
             }
-        } break;
+        break; }
         case ctpttf: {
             int matrix_layout; char transr; char uplo; int n; cste_c_binary ap; c_binary arf;
             
@@ -7854,7 +7408,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ctpttf(matrix_layout, transr, uplo, n, get_cste_ptr(ap), get_ptr(arf));
             }
-        } break;
+        break; }
         case ztpttf: {
             int matrix_layout; char transr; char uplo; int n; cste_c_binary ap; c_binary arf;
             
@@ -7863,7 +7417,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ztpttf(matrix_layout, transr, uplo, n, get_cste_ptr(ap), get_ptr(arf));
             }
-        } break;
+        break; }
         case stpttr: {
             int matrix_layout; char uplo; int n; cste_c_binary ap; c_binary a; int lda;
             
@@ -7872,7 +7426,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_stpttr(matrix_layout, uplo, n, get_cste_ptr(ap), get_ptr(a), lda);
             }
-        } break;
+        break; }
         case dtpttr: {
             int matrix_layout; char uplo; int n; cste_c_binary ap; c_binary a; int lda;
             
@@ -7881,7 +7435,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dtpttr(matrix_layout, uplo, n, get_cste_ptr(ap), get_ptr(a), lda);
             }
-        } break;
+        break; }
         case ctpttr: {
             int matrix_layout; char uplo; int n; cste_c_binary ap; c_binary a; int lda;
             
@@ -7890,7 +7444,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ctpttr(matrix_layout, uplo, n, get_cste_ptr(ap), get_ptr(a), lda);
             }
-        } break;
+        break; }
         case ztpttr: {
             int matrix_layout; char uplo; int n; cste_c_binary ap; c_binary a; int lda;
             
@@ -7899,7 +7453,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ztpttr(matrix_layout, uplo, n, get_cste_ptr(ap), get_ptr(a), lda);
             }
-        } break;
+        break; }
         case strcon: {
             int matrix_layout; char norm; char uplo; char diag; int n; cste_c_binary a; int lda; c_binary rcond;
             
@@ -7908,7 +7462,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_strcon(matrix_layout, norm, uplo, diag, n, get_cste_ptr(a), lda, get_ptr(rcond));
             }
-        } break;
+        break; }
         case dtrcon: {
             int matrix_layout; char norm; char uplo; char diag; int n; cste_c_binary a; int lda; c_binary rcond;
             
@@ -7917,7 +7471,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dtrcon(matrix_layout, norm, uplo, diag, n, get_cste_ptr(a), lda, get_ptr(rcond));
             }
-        } break;
+        break; }
         case ctrcon: {
             int matrix_layout; char norm; char uplo; char diag; int n; cste_c_binary a; int lda; c_binary rcond;
             
@@ -7926,7 +7480,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ctrcon(matrix_layout, norm, uplo, diag, n, get_cste_ptr(a), lda, get_ptr(rcond));
             }
-        } break;
+        break; }
         case ztrcon: {
             int matrix_layout; char norm; char uplo; char diag; int n; cste_c_binary a; int lda; c_binary rcond;
             
@@ -7935,7 +7489,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ztrcon(matrix_layout, norm, uplo, diag, n, get_cste_ptr(a), lda, get_ptr(rcond));
             }
-        } break;
+        break; }
         case strevc: {
             int matrix_layout; char side; char howmny; c_binary select; int n; cste_c_binary t; int ldt; c_binary vl; int ldvl; c_binary vr; int ldvr; int mm; c_binary m;
             
@@ -7944,7 +7498,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_strevc(matrix_layout, side, howmny, get_ptr(select), n, get_cste_ptr(t), ldt, get_ptr(vl), ldvl, get_ptr(vr), ldvr, mm, get_ptr(m));
             }
-        } break;
+        break; }
         case dtrevc: {
             int matrix_layout; char side; char howmny; c_binary select; int n; cste_c_binary t; int ldt; c_binary vl; int ldvl; c_binary vr; int ldvr; int mm; c_binary m;
             
@@ -7953,7 +7507,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dtrevc(matrix_layout, side, howmny, get_ptr(select), n, get_cste_ptr(t), ldt, get_ptr(vl), ldvl, get_ptr(vr), ldvr, mm, get_ptr(m));
             }
-        } break;
+        break; }
         case ctrevc: {
             int matrix_layout; char side; char howmny; cste_c_binary select; int n; c_binary t; int ldt; c_binary vl; int ldvl; c_binary vr; int ldvr; int mm; c_binary m;
             
@@ -7962,7 +7516,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ctrevc(matrix_layout, side, howmny, get_cste_ptr(select), n, get_ptr(t), ldt, get_ptr(vl), ldvl, get_ptr(vr), ldvr, mm, get_ptr(m));
             }
-        } break;
+        break; }
         case ztrevc: {
             int matrix_layout; char side; char howmny; cste_c_binary select; int n; c_binary t; int ldt; c_binary vl; int ldvl; c_binary vr; int ldvr; int mm; c_binary m;
             
@@ -7971,7 +7525,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ztrevc(matrix_layout, side, howmny, get_cste_ptr(select), n, get_ptr(t), ldt, get_ptr(vl), ldvl, get_ptr(vr), ldvr, mm, get_ptr(m));
             }
-        } break;
+        break; }
         case strexc: {
             int matrix_layout; char compq; int n; c_binary t; int ldt; c_binary q; int ldq; c_binary ifst; c_binary ilst;
             
@@ -7980,7 +7534,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_strexc(matrix_layout, compq, n, get_ptr(t), ldt, get_ptr(q), ldq, get_ptr(ifst), get_ptr(ilst));
             }
-        } break;
+        break; }
         case dtrexc: {
             int matrix_layout; char compq; int n; c_binary t; int ldt; c_binary q; int ldq; c_binary ifst; c_binary ilst;
             
@@ -7989,7 +7543,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dtrexc(matrix_layout, compq, n, get_ptr(t), ldt, get_ptr(q), ldq, get_ptr(ifst), get_ptr(ilst));
             }
-        } break;
+        break; }
         case ctrexc: {
             int matrix_layout; char compq; int n; c_binary t; int ldt; c_binary q; int ldq; int ifst; int ilst;
             
@@ -7998,7 +7552,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ctrexc(matrix_layout, compq, n, get_ptr(t), ldt, get_ptr(q), ldq, ifst, ilst);
             }
-        } break;
+        break; }
         case ztrexc: {
             int matrix_layout; char compq; int n; c_binary t; int ldt; c_binary q; int ldq; int ifst; int ilst;
             
@@ -8007,7 +7561,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ztrexc(matrix_layout, compq, n, get_ptr(t), ldt, get_ptr(q), ldq, ifst, ilst);
             }
-        } break;
+        break; }
         case strrfs: {
             int matrix_layout; char uplo; char trans; char diag; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary b; int ldb; cste_c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -8016,7 +7570,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_strrfs(matrix_layout, uplo, trans, diag, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(b), ldb, get_cste_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case dtrrfs: {
             int matrix_layout; char uplo; char trans; char diag; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary b; int ldb; cste_c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -8025,7 +7579,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dtrrfs(matrix_layout, uplo, trans, diag, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(b), ldb, get_cste_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case ctrrfs: {
             int matrix_layout; char uplo; char trans; char diag; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary b; int ldb; cste_c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -8034,7 +7588,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ctrrfs(matrix_layout, uplo, trans, diag, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(b), ldb, get_cste_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case ztrrfs: {
             int matrix_layout; char uplo; char trans; char diag; int n; int nrhs; cste_c_binary a; int lda; cste_c_binary b; int ldb; cste_c_binary x; int ldx; c_binary ferr; c_binary berr;
             
@@ -8043,7 +7597,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ztrrfs(matrix_layout, uplo, trans, diag, n, nrhs, get_cste_ptr(a), lda, get_cste_ptr(b), ldb, get_cste_ptr(x), ldx, get_ptr(ferr), get_ptr(berr));
             }
-        } break;
+        break; }
         case strsen: {
             int matrix_layout; char job; char compq; cste_c_binary select; int n; c_binary t; int ldt; c_binary q; int ldq; c_binary wr; c_binary wi; c_binary m; c_binary s; c_binary sep;
             
@@ -8052,7 +7606,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_strsen(matrix_layout, job, compq, get_cste_ptr(select), n, get_ptr(t), ldt, get_ptr(q), ldq, get_ptr(wr), get_ptr(wi), get_ptr(m), get_ptr(s), get_ptr(sep));
             }
-        } break;
+        break; }
         case dtrsen: {
             int matrix_layout; char job; char compq; cste_c_binary select; int n; c_binary t; int ldt; c_binary q; int ldq; c_binary wr; c_binary wi; c_binary m; c_binary s; c_binary sep;
             
@@ -8061,7 +7615,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dtrsen(matrix_layout, job, compq, get_cste_ptr(select), n, get_ptr(t), ldt, get_ptr(q), ldq, get_ptr(wr), get_ptr(wi), get_ptr(m), get_ptr(s), get_ptr(sep));
             }
-        } break;
+        break; }
         case ctrsen: {
             int matrix_layout; char job; char compq; cste_c_binary select; int n; c_binary t; int ldt; c_binary q; int ldq; c_binary w; c_binary m; c_binary s; c_binary sep;
             
@@ -8070,7 +7624,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ctrsen(matrix_layout, job, compq, get_cste_ptr(select), n, get_ptr(t), ldt, get_ptr(q), ldq, get_ptr(w), get_ptr(m), get_ptr(s), get_ptr(sep));
             }
-        } break;
+        break; }
         case ztrsen: {
             int matrix_layout; char job; char compq; cste_c_binary select; int n; c_binary t; int ldt; c_binary q; int ldq; c_binary w; c_binary m; c_binary s; c_binary sep;
             
@@ -8079,7 +7633,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ztrsen(matrix_layout, job, compq, get_cste_ptr(select), n, get_ptr(t), ldt, get_ptr(q), ldq, get_ptr(w), get_ptr(m), get_ptr(s), get_ptr(sep));
             }
-        } break;
+        break; }
         case strsna: {
             int matrix_layout; char job; char howmny; cste_c_binary select; int n; cste_c_binary t; int ldt; cste_c_binary vl; int ldvl; cste_c_binary vr; int ldvr; c_binary s; c_binary sep; int mm; c_binary m;
             
@@ -8088,7 +7642,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_strsna(matrix_layout, job, howmny, get_cste_ptr(select), n, get_cste_ptr(t), ldt, get_cste_ptr(vl), ldvl, get_cste_ptr(vr), ldvr, get_ptr(s), get_ptr(sep), mm, get_ptr(m));
             }
-        } break;
+        break; }
         case dtrsna: {
             int matrix_layout; char job; char howmny; cste_c_binary select; int n; cste_c_binary t; int ldt; cste_c_binary vl; int ldvl; cste_c_binary vr; int ldvr; c_binary s; c_binary sep; int mm; c_binary m;
             
@@ -8097,7 +7651,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dtrsna(matrix_layout, job, howmny, get_cste_ptr(select), n, get_cste_ptr(t), ldt, get_cste_ptr(vl), ldvl, get_cste_ptr(vr), ldvr, get_ptr(s), get_ptr(sep), mm, get_ptr(m));
             }
-        } break;
+        break; }
         case ctrsna: {
             int matrix_layout; char job; char howmny; cste_c_binary select; int n; cste_c_binary t; int ldt; cste_c_binary vl; int ldvl; cste_c_binary vr; int ldvr; c_binary s; c_binary sep; int mm; c_binary m;
             
@@ -8106,7 +7660,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ctrsna(matrix_layout, job, howmny, get_cste_ptr(select), n, get_cste_ptr(t), ldt, get_cste_ptr(vl), ldvl, get_cste_ptr(vr), ldvr, get_ptr(s), get_ptr(sep), mm, get_ptr(m));
             }
-        } break;
+        break; }
         case ztrsna: {
             int matrix_layout; char job; char howmny; cste_c_binary select; int n; cste_c_binary t; int ldt; cste_c_binary vl; int ldvl; cste_c_binary vr; int ldvr; c_binary s; c_binary sep; int mm; c_binary m;
             
@@ -8115,7 +7669,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ztrsna(matrix_layout, job, howmny, get_cste_ptr(select), n, get_cste_ptr(t), ldt, get_cste_ptr(vl), ldvl, get_cste_ptr(vr), ldvr, get_ptr(s), get_ptr(sep), mm, get_ptr(m));
             }
-        } break;
+        break; }
         case strsyl: {
             int matrix_layout; char trana; char tranb; int isgn; int m; int n; cste_c_binary a; int lda; cste_c_binary b; int ldb; c_binary c; int ldc; c_binary scale;
             
@@ -8124,7 +7678,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_strsyl(matrix_layout, trana, tranb, isgn, m, n, get_cste_ptr(a), lda, get_cste_ptr(b), ldb, get_ptr(c), ldc, get_ptr(scale));
             }
-        } break;
+        break; }
         case dtrsyl: {
             int matrix_layout; char trana; char tranb; int isgn; int m; int n; cste_c_binary a; int lda; cste_c_binary b; int ldb; c_binary c; int ldc; c_binary scale;
             
@@ -8133,7 +7687,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dtrsyl(matrix_layout, trana, tranb, isgn, m, n, get_cste_ptr(a), lda, get_cste_ptr(b), ldb, get_ptr(c), ldc, get_ptr(scale));
             }
-        } break;
+        break; }
         case ctrsyl: {
             int matrix_layout; char trana; char tranb; int isgn; int m; int n; cste_c_binary a; int lda; cste_c_binary b; int ldb; c_binary c; int ldc; c_binary scale;
             
@@ -8142,7 +7696,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ctrsyl(matrix_layout, trana, tranb, isgn, m, n, get_cste_ptr(a), lda, get_cste_ptr(b), ldb, get_ptr(c), ldc, get_ptr(scale));
             }
-        } break;
+        break; }
         case ztrsyl: {
             int matrix_layout; char trana; char tranb; int isgn; int m; int n; cste_c_binary a; int lda; cste_c_binary b; int ldb; c_binary c; int ldc; c_binary scale;
             
@@ -8151,7 +7705,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ztrsyl(matrix_layout, trana, tranb, isgn, m, n, get_cste_ptr(a), lda, get_cste_ptr(b), ldb, get_ptr(c), ldc, get_ptr(scale));
             }
-        } break;
+        break; }
         case strtri: {
             int matrix_layout; char uplo; char diag; int n; c_binary a; int lda;
             
@@ -8160,7 +7714,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_strtri(matrix_layout, uplo, diag, n, get_ptr(a), lda);
             }
-        } break;
+        break; }
         case dtrtri: {
             int matrix_layout; char uplo; char diag; int n; c_binary a; int lda;
             
@@ -8169,7 +7723,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dtrtri(matrix_layout, uplo, diag, n, get_ptr(a), lda);
             }
-        } break;
+        break; }
         case ctrtri: {
             int matrix_layout; char uplo; char diag; int n; c_binary a; int lda;
             
@@ -8178,7 +7732,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ctrtri(matrix_layout, uplo, diag, n, get_ptr(a), lda);
             }
-        } break;
+        break; }
         case ztrtri: {
             int matrix_layout; char uplo; char diag; int n; c_binary a; int lda;
             
@@ -8187,7 +7741,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ztrtri(matrix_layout, uplo, diag, n, get_ptr(a), lda);
             }
-        } break;
+        break; }
         case strtrs: {
             int matrix_layout; char uplo; char trans; char diag; int n; int nrhs; cste_c_binary a; int lda; c_binary b; int ldb;
             
@@ -8196,7 +7750,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_strtrs(matrix_layout, uplo, trans, diag, n, nrhs, get_cste_ptr(a), lda, get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case dtrtrs: {
             int matrix_layout; char uplo; char trans; char diag; int n; int nrhs; cste_c_binary a; int lda; c_binary b; int ldb;
             
@@ -8205,7 +7759,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dtrtrs(matrix_layout, uplo, trans, diag, n, nrhs, get_cste_ptr(a), lda, get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case ctrtrs: {
             int matrix_layout; char uplo; char trans; char diag; int n; int nrhs; cste_c_binary a; int lda; c_binary b; int ldb;
             
@@ -8214,7 +7768,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ctrtrs(matrix_layout, uplo, trans, diag, n, nrhs, get_cste_ptr(a), lda, get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case ztrtrs: {
             int matrix_layout; char uplo; char trans; char diag; int n; int nrhs; cste_c_binary a; int lda; c_binary b; int ldb;
             
@@ -8223,7 +7777,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ztrtrs(matrix_layout, uplo, trans, diag, n, nrhs, get_cste_ptr(a), lda, get_ptr(b), ldb);
             }
-        } break;
+        break; }
         case strttf: {
             int matrix_layout; char transr; char uplo; int n; cste_c_binary a; int lda; c_binary arf;
             
@@ -8232,7 +7786,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_strttf(matrix_layout, transr, uplo, n, get_cste_ptr(a), lda, get_ptr(arf));
             }
-        } break;
+        break; }
         case dtrttf: {
             int matrix_layout; char transr; char uplo; int n; cste_c_binary a; int lda; c_binary arf;
             
@@ -8241,7 +7795,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dtrttf(matrix_layout, transr, uplo, n, get_cste_ptr(a), lda, get_ptr(arf));
             }
-        } break;
+        break; }
         case ctrttf: {
             int matrix_layout; char transr; char uplo; int n; cste_c_binary a; int lda; c_binary arf;
             
@@ -8250,7 +7804,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ctrttf(matrix_layout, transr, uplo, n, get_cste_ptr(a), lda, get_ptr(arf));
             }
-        } break;
+        break; }
         case ztrttf: {
             int matrix_layout; char transr; char uplo; int n; cste_c_binary a; int lda; c_binary arf;
             
@@ -8259,7 +7813,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ztrttf(matrix_layout, transr, uplo, n, get_cste_ptr(a), lda, get_ptr(arf));
             }
-        } break;
+        break; }
         case strttp: {
             int matrix_layout; char uplo; int n; cste_c_binary a; int lda; c_binary ap;
             
@@ -8268,7 +7822,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_strttp(matrix_layout, uplo, n, get_cste_ptr(a), lda, get_ptr(ap));
             }
-        } break;
+        break; }
         case dtrttp: {
             int matrix_layout; char uplo; int n; cste_c_binary a; int lda; c_binary ap;
             
@@ -8277,7 +7831,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dtrttp(matrix_layout, uplo, n, get_cste_ptr(a), lda, get_ptr(ap));
             }
-        } break;
+        break; }
         case ctrttp: {
             int matrix_layout; char uplo; int n; cste_c_binary a; int lda; c_binary ap;
             
@@ -8286,7 +7840,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ctrttp(matrix_layout, uplo, n, get_cste_ptr(a), lda, get_ptr(ap));
             }
-        } break;
+        break; }
         case ztrttp: {
             int matrix_layout; char uplo; int n; cste_c_binary a; int lda; c_binary ap;
             
@@ -8295,7 +7849,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ztrttp(matrix_layout, uplo, n, get_cste_ptr(a), lda, get_ptr(ap));
             }
-        } break;
+        break; }
         case stzrzf: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary tau;
             
@@ -8304,7 +7858,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_stzrzf(matrix_layout, m, n, get_ptr(a), lda, get_ptr(tau));
             }
-        } break;
+        break; }
         case dtzrzf: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary tau;
             
@@ -8313,7 +7867,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_dtzrzf(matrix_layout, m, n, get_ptr(a), lda, get_ptr(tau));
             }
-        } break;
+        break; }
         case ctzrzf: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary tau;
             
@@ -8322,7 +7876,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ctzrzf(matrix_layout, m, n, get_ptr(a), lda, get_ptr(tau));
             }
-        } break;
+        break; }
         case ztzrzf: {
             int matrix_layout; int m; int n; c_binary a; int lda; c_binary tau;
             
@@ -8331,7 +7885,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_ztzrzf(matrix_layout, m, n, get_ptr(a), lda, get_ptr(tau));
             }
-        } break;
+        break; }
         case cungbr: {
             int matrix_layout; char vect; int m; int n; int k; c_binary a; int lda; cste_c_binary tau;
             
@@ -8340,7 +7894,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cungbr(matrix_layout, vect, m, n, k, get_ptr(a), lda, get_cste_ptr(tau));
             }
-        } break;
+        break; }
         case zungbr: {
             int matrix_layout; char vect; int m; int n; int k; c_binary a; int lda; cste_c_binary tau;
             
@@ -8349,7 +7903,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zungbr(matrix_layout, vect, m, n, k, get_ptr(a), lda, get_cste_ptr(tau));
             }
-        } break;
+        break; }
         case cunghr: {
             int matrix_layout; int n; int ilo; int ihi; c_binary a; int lda; cste_c_binary tau;
             
@@ -8358,7 +7912,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cunghr(matrix_layout, n, ilo, ihi, get_ptr(a), lda, get_cste_ptr(tau));
             }
-        } break;
+        break; }
         case zunghr: {
             int matrix_layout; int n; int ilo; int ihi; c_binary a; int lda; cste_c_binary tau;
             
@@ -8367,7 +7921,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zunghr(matrix_layout, n, ilo, ihi, get_ptr(a), lda, get_cste_ptr(tau));
             }
-        } break;
+        break; }
         case cunglq: {
             int matrix_layout; int m; int n; int k; c_binary a; int lda; cste_c_binary tau;
             
@@ -8376,7 +7930,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cunglq(matrix_layout, m, n, k, get_ptr(a), lda, get_cste_ptr(tau));
             }
-        } break;
+        break; }
         case zunglq: {
             int matrix_layout; int m; int n; int k; c_binary a; int lda; cste_c_binary tau;
             
@@ -8385,7 +7939,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zunglq(matrix_layout, m, n, k, get_ptr(a), lda, get_cste_ptr(tau));
             }
-        } break;
+        break; }
         case cungql: {
             int matrix_layout; int m; int n; int k; c_binary a; int lda; cste_c_binary tau;
             
@@ -8394,7 +7948,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cungql(matrix_layout, m, n, k, get_ptr(a), lda, get_cste_ptr(tau));
             }
-        } break;
+        break; }
         case zungql: {
             int matrix_layout; int m; int n; int k; c_binary a; int lda; cste_c_binary tau;
             
@@ -8403,7 +7957,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zungql(matrix_layout, m, n, k, get_ptr(a), lda, get_cste_ptr(tau));
             }
-        } break;
+        break; }
         case cungqr: {
             int matrix_layout; int m; int n; int k; c_binary a; int lda; cste_c_binary tau;
             
@@ -8412,7 +7966,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cungqr(matrix_layout, m, n, k, get_ptr(a), lda, get_cste_ptr(tau));
             }
-        } break;
+        break; }
         case zungqr: {
             int matrix_layout; int m; int n; int k; c_binary a; int lda; cste_c_binary tau;
             
@@ -8421,7 +7975,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zungqr(matrix_layout, m, n, k, get_ptr(a), lda, get_cste_ptr(tau));
             }
-        } break;
+        break; }
         case cungrq: {
             int matrix_layout; int m; int n; int k; c_binary a; int lda; cste_c_binary tau;
             
@@ -8430,7 +7984,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cungrq(matrix_layout, m, n, k, get_ptr(a), lda, get_cste_ptr(tau));
             }
-        } break;
+        break; }
         case zungrq: {
             int matrix_layout; int m; int n; int k; c_binary a; int lda; cste_c_binary tau;
             
@@ -8439,7 +7993,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zungrq(matrix_layout, m, n, k, get_ptr(a), lda, get_cste_ptr(tau));
             }
-        } break;
+        break; }
         case cungtr: {
             int matrix_layout; char uplo; int n; c_binary a; int lda; cste_c_binary tau;
             
@@ -8448,7 +8002,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cungtr(matrix_layout, uplo, n, get_ptr(a), lda, get_cste_ptr(tau));
             }
-        } break;
+        break; }
         case zungtr: {
             int matrix_layout; char uplo; int n; c_binary a; int lda; cste_c_binary tau;
             
@@ -8457,7 +8011,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zungtr(matrix_layout, uplo, n, get_ptr(a), lda, get_cste_ptr(tau));
             }
-        } break;
+        break; }
         case cunmbr: {
             int matrix_layout; char vect; char side; char trans; int m; int n; int k; cste_c_binary a; int lda; cste_c_binary tau; c_binary c; int ldc;
             
@@ -8466,7 +8020,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cunmbr(matrix_layout, vect, side, trans, m, n, k, get_cste_ptr(a), lda, get_cste_ptr(tau), get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case zunmbr: {
             int matrix_layout; char vect; char side; char trans; int m; int n; int k; cste_c_binary a; int lda; cste_c_binary tau; c_binary c; int ldc;
             
@@ -8475,7 +8029,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zunmbr(matrix_layout, vect, side, trans, m, n, k, get_cste_ptr(a), lda, get_cste_ptr(tau), get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case cunmhr: {
             int matrix_layout; char side; char trans; int m; int n; int ilo; int ihi; cste_c_binary a; int lda; cste_c_binary tau; c_binary c; int ldc;
             
@@ -8484,7 +8038,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cunmhr(matrix_layout, side, trans, m, n, ilo, ihi, get_cste_ptr(a), lda, get_cste_ptr(tau), get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case zunmhr: {
             int matrix_layout; char side; char trans; int m; int n; int ilo; int ihi; cste_c_binary a; int lda; cste_c_binary tau; c_binary c; int ldc;
             
@@ -8493,7 +8047,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zunmhr(matrix_layout, side, trans, m, n, ilo, ihi, get_cste_ptr(a), lda, get_cste_ptr(tau), get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case cunmlq: {
             int matrix_layout; char side; char trans; int m; int n; int k; cste_c_binary a; int lda; cste_c_binary tau; c_binary c; int ldc;
             
@@ -8502,7 +8056,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cunmlq(matrix_layout, side, trans, m, n, k, get_cste_ptr(a), lda, get_cste_ptr(tau), get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case zunmlq: {
             int matrix_layout; char side; char trans; int m; int n; int k; cste_c_binary a; int lda; cste_c_binary tau; c_binary c; int ldc;
             
@@ -8511,7 +8065,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zunmlq(matrix_layout, side, trans, m, n, k, get_cste_ptr(a), lda, get_cste_ptr(tau), get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case cunmql: {
             int matrix_layout; char side; char trans; int m; int n; int k; cste_c_binary a; int lda; cste_c_binary tau; c_binary c; int ldc;
             
@@ -8520,7 +8074,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cunmql(matrix_layout, side, trans, m, n, k, get_cste_ptr(a), lda, get_cste_ptr(tau), get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case zunmql: {
             int matrix_layout; char side; char trans; int m; int n; int k; cste_c_binary a; int lda; cste_c_binary tau; c_binary c; int ldc;
             
@@ -8529,7 +8083,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zunmql(matrix_layout, side, trans, m, n, k, get_cste_ptr(a), lda, get_cste_ptr(tau), get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case cunmqr: {
             int matrix_layout; char side; char trans; int m; int n; int k; cste_c_binary a; int lda; cste_c_binary tau; c_binary c; int ldc;
             
@@ -8538,7 +8092,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cunmqr(matrix_layout, side, trans, m, n, k, get_cste_ptr(a), lda, get_cste_ptr(tau), get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case zunmqr: {
             int matrix_layout; char side; char trans; int m; int n; int k; cste_c_binary a; int lda; cste_c_binary tau; c_binary c; int ldc;
             
@@ -8547,7 +8101,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zunmqr(matrix_layout, side, trans, m, n, k, get_cste_ptr(a), lda, get_cste_ptr(tau), get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case cunmrq: {
             int matrix_layout; char side; char trans; int m; int n; int k; cste_c_binary a; int lda; cste_c_binary tau; c_binary c; int ldc;
             
@@ -8556,7 +8110,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cunmrq(matrix_layout, side, trans, m, n, k, get_cste_ptr(a), lda, get_cste_ptr(tau), get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case zunmrq: {
             int matrix_layout; char side; char trans; int m; int n; int k; cste_c_binary a; int lda; cste_c_binary tau; c_binary c; int ldc;
             
@@ -8565,7 +8119,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zunmrq(matrix_layout, side, trans, m, n, k, get_cste_ptr(a), lda, get_cste_ptr(tau), get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case cunmrz: {
             int matrix_layout; char side; char trans; int m; int n; int k; int l; cste_c_binary a; int lda; cste_c_binary tau; c_binary c; int ldc;
             
@@ -8574,7 +8128,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cunmrz(matrix_layout, side, trans, m, n, k, l, get_cste_ptr(a), lda, get_cste_ptr(tau), get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case zunmrz: {
             int matrix_layout; char side; char trans; int m; int n; int k; int l; cste_c_binary a; int lda; cste_c_binary tau; c_binary c; int ldc;
             
@@ -8583,7 +8137,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zunmrz(matrix_layout, side, trans, m, n, k, l, get_cste_ptr(a), lda, get_cste_ptr(tau), get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case cunmtr: {
             int matrix_layout; char side; char uplo; char trans; int m; int n; cste_c_binary a; int lda; cste_c_binary tau; c_binary c; int ldc;
             
@@ -8592,7 +8146,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cunmtr(matrix_layout, side, uplo, trans, m, n, get_cste_ptr(a), lda, get_cste_ptr(tau), get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case zunmtr: {
             int matrix_layout; char side; char uplo; char trans; int m; int n; cste_c_binary a; int lda; cste_c_binary tau; c_binary c; int ldc;
             
@@ -8601,7 +8155,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zunmtr(matrix_layout, side, uplo, trans, m, n, get_cste_ptr(a), lda, get_cste_ptr(tau), get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case cupgtr: {
             int matrix_layout; char uplo; int n; cste_c_binary ap; cste_c_binary tau; c_binary q; int ldq;
             
@@ -8610,7 +8164,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cupgtr(matrix_layout, uplo, n, get_cste_ptr(ap), get_cste_ptr(tau), get_ptr(q), ldq);
             }
-        } break;
+        break; }
         case zupgtr: {
             int matrix_layout; char uplo; int n; cste_c_binary ap; cste_c_binary tau; c_binary q; int ldq;
             
@@ -8619,7 +8173,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zupgtr(matrix_layout, uplo, n, get_cste_ptr(ap), get_cste_ptr(tau), get_ptr(q), ldq);
             }
-        } break;
+        break; }
         case cupmtr: {
             int matrix_layout; char side; char uplo; char trans; int m; int n; cste_c_binary ap; cste_c_binary tau; c_binary c; int ldc;
             
@@ -8628,7 +8182,7 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_cupmtr(matrix_layout, side, uplo, trans, m, n, get_cste_ptr(ap), get_cste_ptr(tau), get_ptr(c), ldc);
             }
-        } break;
+        break; }
         case zupmtr: {
             int matrix_layout; char side; char uplo; char trans; int m; int n; cste_c_binary ap; cste_c_binary tau; c_binary c; int ldc;
             
@@ -8637,11 +8191,11 @@ ERL_NIF_TERM unwrapper(ErlNifEnv* env, int argc, const ERL_NIF_TERM* argv){
             ){
                 LAPACKE_zupmtr(matrix_layout, side, uplo, trans, m, n, get_cste_ptr(ap), get_cste_ptr(tau), get_ptr(c), ldc);
             }
-        } break;
+        break; }
 
         default:
             error = ERROR_NO_BLAS;
-            debug_write("Error: blas %s of hash %u does not exist.\n", name, hash(name));
+            debug_write("Error: blas %s of hash %lu does not exist.\n", name, hash(name));
         break;
     }
 

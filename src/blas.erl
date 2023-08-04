@@ -62,7 +62,7 @@ bin_nif(_,_)->
 
 predictor()->
     MaxSize = timeEst:benchmark(),
-    fun(BlasOp) -> T = round(100*timeEst:n_elements(BlasOp) / MaxSize), io:format("~w~n", [T]), T end.
+    fun(BlasOp) -> T = round(100*timeEst:n_elements(BlasOp) / MaxSize), io:format("Predicted complexity: ~w~n", [T]), T end.
 
 run(Wrapped)->
     % For some reason, using Predictor in on_load cause a crash. It seems nifs cannot be used that early.
