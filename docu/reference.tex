@@ -2,7 +2,6 @@
 \usepackage{graphicx} % Required for inserting images
 
 \title{Erlang BLAS 1.1.0 Documentation}
-\author{Tanguy Losseau}
 \date{August 2023}
 
 \begin{document}
@@ -12,12 +11,13 @@
 
 \includegraphics[scale=0.5]{Erlang_logo.png}
 
+\newpage
+\tableofcontents
+\newpage
 
 \section{Introduction}
 This project, funded by the Erlang Ecosystem Foundation (https://erlef.org/), was made possible thanks to Peerst Stritzinger (https://www.stritzinger.com/)
 and aims to bring the efficiency of the BLAS-LAPACKE library to Erlang.\newline
-
-It can be used by any platform providing a BLAS-LAPACKE library, such as the GRISP platform (https://www.grisp.org/).\newline
 
 This document is a reference for the Erlang BLAS wrapper, and is not a reference of BLAS-LAPACKE. Such references can be found at:
 \begin{itemize}
@@ -26,7 +26,11 @@ This document is a reference for the Erlang BLAS wrapper, and is not a reference
     \item intel: https://www.intel.com/content/www/us/en/content-details/671183/developer-reference-for-intel-math-kernel-library-intel-mkl-11-3-c.html?wapkw=BLAS\%20mlk
 \end{itemize}
 
+Thanks to the help of Luca Succi and Peerst Stritzinger, it is supported on the GRISP embedded device (https://www.grisp.org/).\newline
+
 Finally, the project maintainer can be contacted at losseautanguy@gmail.com.
+
+\newpage
 
 \section{Reference}
 The BLAS library exports the following functions:
@@ -70,7 +74,7 @@ run(Tuple, Scheduling)
             \item "Unknown blas." if the blas\_name is not recognised.
             \item "Array overflow." if one of the inputs arrays is too small. Currently, only BLAS functions check for arrays overflow.
             \item "Invalid number of arguments." if too many arguments are present in the Tuple.
-            \item "Could not translate argument I." if ArgI of Tuple not be read.
+            \item "Could not translate argument I." if ArgI of Tuple could not be read.
         \end{itemize}
     
 
@@ -149,7 +153,7 @@ to_bin(Size, C_binary)
 to_list(Encoding, Binary)
      Encoding: int32 | int64 | s | float32 | d |float64
                  | c | complex64 | z | complex128
-    Binary: binary
+    C_binary: c_binary
         \end{verbatim}
         Encoding indicates how the numbers should be encoded:
         \begin{itemize}
@@ -160,8 +164,9 @@ to_list(Encoding, Binary)
             \item c, complex64: pair number of float of 32 bits.
             \item z, complex128: pair number of floats of 64 bits.
         \end{itemize}
-        Returns a list of numbers contained by the Binary.
+        Returns a list of numbers contained by the c\_binary.
 
+\newpage
 \section{Representing BLAS-LAPACKE types in Erlang}
 This projects provide a complete interface to all BLAS-LAPACKE variables-types.
 
@@ -191,6 +196,7 @@ CBLAS_DIAG         n, blasNonUnit, u, blasUnit
 CBLAS_SIDE         l, blasLeft, r, blasRight
 \end{verbatim}
 
+\newpage
 \section{Examples}
 \subsection{dscal}
 Double type, SCALe a vector.\newline
@@ -250,7 +256,7 @@ Erlang code:
 
 
 \section{Supported BLAS functions}
-
+\subsection{By default}
 The following blas\_atom are supported:
 
 saxpy,    daxpy,    caxpy,    zaxpy,    scopy,    dcopy,    ccopy,    zcopy,    sswap,    dswap,    cswap,    zswap,    sscal,    dscal,    cscal,    csscal,    zscal,    zdscal,    sdot,    ddot,    cdotu,    zdotu,    cdotc,    zdotc,    dsdot,    sdsdot,    snrm2,    dnrm2,    scnrm2,    dznrm2,    sasum,    dasum,    scasum,    dzasum,    isamax,    idamax,    icamax,    izamax,    srot,    drot,    csrot,    zdrot,    srotg,    drotg,    crotg,    zrotg,    srotmg,    drotmg,    srotm,    drotm,    isamin,    idamin,    icamin,    izamin,    ismax,    idmax,    icmax,    izmax,    ismin,    idmin,    icmin,    izmin,    sgemv,    dgemv,    cgemv,    zgemv,    sgbmv,    dgbmv,    cgbmv,    zgbmv,    ssbmv,    dsbmv,    sger,    dger,    strmv,    dtrmv,    ctrmv,    ztrmv,    strsv,    dtrsv,    ctrsv,    ztrsv,    strsm,    dtrsm,    ctrsm,    ztrsm,    cgeru,    cgerc,    zgeru,    zgerc,    sgemm,    dgemm,    cgemm,    cgemm3m,    zgemm,    zgemm3m,    stbmv,    dtbmv,    ctbmv,    ztbmv,    stbsv,    dtbsv,    ctbsv,    ztbsv,    stpmv,    dtpmv,    ctpmv,    ztpmv,    stpsv,    dtpsv,    ctpsv,    ztpsv,    ssymv,    dsymv,    chemv,    zhemv,    sspmv,    dspmv,    sspr,    dspr,    chpr,    zhpr,    sspr2,    dspr2,    chpr2,    zhpr2,    chbmv,    zhbmv,    chpmv,    zhpmv,    cher,    zher,    chemm,    zhemm,    cherk,    zherk,    cher2k,    zher2k,    ssymm,    dsymm,    csymm,    zsymm,    ssyrk,    dsyrk,    csyrk,    zsyrk,    ssyr2k,    dsyr2k,    csyr2k,    zsyr2k,    ssum,    dsum,    dzsum,    scsum,    cher2,    zher2,    strmm,    dtrmm,    ctrmm,    ztrmm,    ssyr,    dsyr,    ssyr2,    dsyr2, sbdsdc , dbdsdc , sbdsqr , dbdsqr , cbdsqr , zbdsqr , sdisna , ddisna , sgbbrd , dgbbrd , cgbbrd , zgbbrd , sgbcon , dgbcon , cgbcon , zgbcon , sgbequ , dgbequ , cgbequ , zgbequ , sgbequb , dgbequb , cgbequb , zgbequb , sgbrfs , dgbrfs , cgbrfs , zgbrfs , sgbsv , dgbsv , cgbsv , zgbsv , sgbtrf , dgbtrf , cgbtrf , zgbtrf , sgbtrs , dgbtrs , cgbtrs , zgbtrs , sgebak , dgebak , cgebak , zgebak , sgebal , dgebal , cgebal , zgebal , sgebrd , dgebrd , cgebrd , zgebrd , sgecon , dgecon , cgecon , zgecon , sgeequ , dgeequ , cgeequ , zgeequ , sgeequb , dgeequb , cgeequb , zgeequb , sgeev , dgeev , cgeev , zgeev , sgeevx , dgeevx , cgeevx , zgeevx , sgehrd , dgehrd , cgehrd , zgehrd , sgejsv , dgejsv , sgelqf , dgelqf , cgelqf , zgelqf , sgels , dgels , cgels , zgels , sgelsd , dgelsd , cgelsd , zgelsd , sgelss , dgelss , cgelss , zgelss , sgelsy , dgelsy , cgelsy , zgelsy , sgeqlf , dgeqlf , cgeqlf , zgeqlf , sgeqp3 , dgeqp3 , cgeqp3 , zgeqp3 , sgeqpf , dgeqpf , cgeqpf , zgeqpf , sgeqrf , dgeqrf , cgeqrf , zgeqrf , sgeqrfp , dgeqrfp , cgeqrfp , zgeqrfp , sgerfs , dgerfs , cgerfs , zgerfs , sgerqf , dgerqf , cgerqf , zgerqf , sgesdd , dgesdd , cgesdd , zgesdd , sgesv , dgesv , cgesv , zgesv , sgesvd , dgesvd , cgesvd , zgesvd , sgesvj , dgesvj , sgetrf , dgetrf , cgetrf , zgetrf , sgetri , dgetri , cgetri , zgetri , sgetrs , dgetrs , cgetrs , zgetrs , sggbak , dggbak , cggbak , zggbak , sggbal , dggbal , cggbal , zggbal , sggev , dggev , cggev , zggev , sggevx , dggevx , cggevx , zggevx , sggglm , dggglm , cggglm , zggglm , sgghrd , dgghrd , cgghrd , zgghrd , sgglse , dgglse , cgglse , zgglse , sggqrf , dggqrf , cggqrf , zggqrf , sggrqf , dggrqf , cggrqf , zggrqf , sggsvd , dggsvd , cggsvd , zggsvd , sggsvp , dggsvp , cggsvp , zggsvp , sgtcon , dgtcon , cgtcon , zgtcon , sgtrfs , dgtrfs , cgtrfs , zgtrfs , sgtsv , dgtsv , cgtsv , zgtsv , sgtsvx , dgtsvx , cgtsvx , zgtsvx , sgttrf , dgttrf , cgttrf , zgttrf , sgttrs , dgttrs , cgttrs , zgttrs , chbev , zhbev , chbevd , zhbevd , chbevx , zhbevx , chbgst , zhbgst , chbgv , zhbgv , chbgvd , zhbgvd , chbgvx , zhbgvx , chbtrd , zhbtrd , checon , zhecon , cheequb , zheequb , cheev , zheev , cheevd , zheevd , cheevr , zheevr , cheevx , zheevx , chegst , zhegst , chegv , zhegv , chegvd , zhegvd , chegvx , zhegvx , cherfs , zherfs , chesv , zhesv , chesvx , zhesvx , chetrd , zhetrd , chetrf , zhetrf , chetri , zhetri , chetrs , zhetrs , chfrk , zhfrk , shgeqz , dhgeqz , chgeqz , zhgeqz , chpcon , zhpcon , chpev , zhpev , chpevd , zhpevd , chpevx , zhpevx , chpgst , zhpgst , chpgv , zhpgv , chpgvd , zhpgvd , chpgvx , zhpgvx , chprfs , zhprfs , chpsv , zhpsv , chpsvx , zhpsvx , chptrd , zhptrd , chptrf , zhptrf , chptri , zhptri , chptrs , zhptrs , shsein , dhsein , chsein , zhsein , shseqr , dhseqr , chseqr , zhseqr , sopgtr , dopgtr , sopmtr , dopmtr , sorgbr , dorgbr , sorghr , dorghr , sorglq , dorglq , sorgql , dorgql , sorgqr , dorgqr , sorgrq , dorgrq , sorgtr , dorgtr , sormbr , dormbr , sormhr , dormhr , sormlq , dormlq , sormql , dormql , sormqr , dormqr , sormrq , dormrq , sormrz , dormrz , sormtr , dormtr , spbcon , dpbcon , cpbcon , zpbcon , spbequ , dpbequ , cpbequ , zpbequ , spbrfs , dpbrfs , cpbrfs , zpbrfs , spbstf , dpbstf , cpbstf , zpbstf , spbsv , dpbsv , cpbsv , zpbsv , spbtrf , dpbtrf , cpbtrf , zpbtrf , spbtrs , dpbtrs , cpbtrs , zpbtrs , spftrf , dpftrf , cpftrf , zpftrf , spftri , dpftri , cpftri , zpftri , spftrs , dpftrs , cpftrs , zpftrs , spocon , dpocon , cpocon , zpocon , spoequ , dpoequ , cpoequ , zpoequ , spoequb , dpoequb , cpoequb , zpoequb , sporfs , dporfs , cporfs , zporfs , sposv , dposv , cposv , zposv , spotrf , dpotrf , cpotrf , zpotrf , spotri , dpotri , cpotri , zpotri , spotrs , dpotrs , cpotrs , zpotrs , sppcon , dppcon , cppcon , zppcon , sppequ , dppequ , cppequ , zppequ , spprfs , dpprfs , cpprfs , zpprfs , sppsv , dppsv , cppsv , zppsv , spptrf , dpptrf , cpptrf , zpptrf , spptri , dpptri , cpptri , zpptri , spptrs , dpptrs , cpptrs , zpptrs , spstrf , dpstrf , cpstrf , zpstrf , sptcon , dptcon , cptcon , zptcon , spteqr , dpteqr , cpteqr , zpteqr , sptrfs , dptrfs , cptrfs , zptrfs , sptsv , dptsv , cptsv , zptsv , sptsvx , dptsvx , cptsvx , zptsvx , spttrf , dpttrf , cpttrf , zpttrf , spttrs , dpttrs , cpttrs , zpttrs , ssbev , dsbev , ssbevd , dsbevd , ssbevx , dsbevx , ssbgst , dsbgst , ssbgv , dsbgv , ssbgvd , dsbgvd , ssbgvx , dsbgvx , ssbtrd , dsbtrd , ssfrk , dsfrk , sspcon , dspcon , cspcon , zspcon , sspev , dspev , sspevd , dspevd , sspevx , dspevx , sspgst , dspgst , sspgv , dspgv , sspgvd , dspgvd , sspgvx , dspgvx , ssprfs , dsprfs , csprfs , zsprfs , sspsv , dspsv , cspsv , zspsv , sspsvx , dspsvx , cspsvx , zspsvx , ssptrd , dsptrd , ssptrf , dsptrf , csptrf , zsptrf , ssptri , dsptri , csptri , zsptri , ssptrs , dsptrs , csptrs , zsptrs , sstebz , dstebz , sstedc , dstedc , cstedc , zstedc , sstegr , dstegr , cstegr , zstegr , sstein , dstein , cstein , zstein , sstemr , dstemr , cstemr , zstemr , ssteqr , dsteqr , csteqr , zsteqr , ssterf , dsterf , sstev , dstev , sstevd , dstevd , sstevr , dstevr , sstevx , dstevx , ssycon , dsycon , csycon , zsycon , ssyequb , dsyequb , csyequb , zsyequb , ssyev , dsyev , ssyevd , dsyevd , ssyevr , dsyevr , ssyevx , dsyevx , ssygst , dsygst , ssygv , dsygv , ssygvd , dsygvd , ssygvx , dsygvx , ssyrfs , dsyrfs , csyrfs , zsyrfs , ssysv , dsysv , csysv , zsysv , ssysvx , dsysvx , csysvx , zsysvx , ssytrd , dsytrd , ssytrf , dsytrf , csytrf , zsytrf , ssytri , dsytri , csytri , zsytri , ssytrs , dsytrs , csytrs , zsytrs , stbcon , dtbcon , ctbcon , ztbcon , stbrfs , dtbrfs , ctbrfs , ztbrfs , stbtrs , dtbtrs , ctbtrs , ztbtrs , stfsm , dtfsm , ctfsm , ztfsm , stftri , dtftri , ctftri , ztftri , stfttp , dtfttp , ctfttp , ztfttp , stfttr , dtfttr , ctfttr , ztfttr , stgevc , dtgevc , ctgevc , ztgevc , stgexc , dtgexc , ctgexc , ztgexc , stgsen , dtgsen , ctgsen , ztgsen , stgsja , dtgsja , ctgsja , ztgsja , stgsna , dtgsna , ctgsna , ztgsna , stgsyl , dtgsyl , ctgsyl , ztgsyl , stpcon , dtpcon , ctpcon , ztpcon , stprfs , dtprfs , ctprfs , ztprfs , stptri , dtptri , ctptri , ztptri , stptrs , dtptrs , ctptrs , ztptrs , stpttf , dtpttf , ctpttf , ztpttf , stpttr , dtpttr , ctpttr , ztpttr , strcon , dtrcon , ctrcon , ztrcon , strevc , dtrevc , ctrevc , ztrevc , strexc , dtrexc , ctrexc , ztrexc , strrfs , dtrrfs , ctrrfs , ztrrfs , strsen , dtrsen , ctrsen , ztrsen , strsna , dtrsna , ctrsna , ztrsna , strsyl , dtrsyl , ctrsyl , ztrsyl , strtri , dtrtri , ctrtri , ztrtri , strtrs , dtrtrs , ctrtrs , ztrtrs , strttf , dtrttf , ctrttf , ztrttf , strttp , dtrttp , ctrttp , ztrttp , stzrzf , dtzrzf , ctzrzf , ztzrzf , cungbr , zungbr , cunghr , zunghr , cunglq , zunglq , cungql , zungql , cungqr , zungqr , cungrq , zungrq , cungtr , zungtr , cunmbr , zunmbr , cunmhr , zunmhr , cunmlq , zunmlq , cunmql , zunmql , cunmqr , zunmqr , cunmrq , zunmrq , cunmrz , zunmrz , cunmtr , zunmtr , cupgtr , zupgtr , cupmtr , zupmtr 
