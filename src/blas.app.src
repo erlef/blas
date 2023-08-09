@@ -5,4 +5,4 @@
               {registered,[]},
               {applications,[kernel, stdlib, grisp]},
               {licenses,["Apache2.0"]},
-              {links,[{"Github",https://github.com/erlef/blas"}]}]}.
+              {links,[{"Github","https://github.com/erlef/blas"}]}]}.
