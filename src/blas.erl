@@ -12,7 +12,7 @@ on_load()->
     LibBaseName = "eblas_nif",
     PrivDir = code:priv_dir(blas),
     Lib = filename:join([PrivDir, LibBaseName]),
-    erlang:load_nif(Lib, {1.1.0}).
+    erlang:load_nif(Lib, {1.1}).
 
 ltb(Type, List)->
     chain:ltb(Type, List).
