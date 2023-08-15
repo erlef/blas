@@ -62,7 +62,7 @@ bin_nif(_,_)->
 
 predictor()->
     MaxSize = timeEst:benchmark(),
-    fun(BlasOp) -> T = round(100*timeEst:n_elements(BlasOp) / MaxSize), io:format("Predicted complexity: ~w~n", [T]), T end.
+    fun(BlasOp) -> round(100*timeEst:n_elements(BlasOp) / MaxSize) end.
 
 run(Wrapped)->
     % For some reason, using Predictor in on_load cause a crash. It seems nifs cannot be used that early.
@@ -84,7 +84,7 @@ run(Wrapped)->
 run(Wrapped, dirty) when is_tuple(Wrapped) -> dirty_unwrapper(Wrapped, 100);
 run(Wrapped, clean) when is_tuple(Wrapped) -> clean_unwrapper(Wrapped, 50);
 run(Wrapped, T) when T < 0   -> dirty_unwrapper(Wrapped, 100); %LAPACKE function.
-run(Wrapped, T) when T < 100 -> io:format("~w~n", [T]), clean_unwrapper(Wrapped, T);
+run(Wrapped, T) when T < 100 -> clean_unwrapper(Wrapped, T);
 run(Wrapped, T)              -> dirty_unwrapper(Wrapped, T).
 
 dirty_unwrapper(_,_) -> nif_not_loaded.
