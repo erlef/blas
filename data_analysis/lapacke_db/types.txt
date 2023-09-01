@@ -1,0 +1,113 @@
+int
+{'names': array(['matrix_layout'], dtype=object), 'pos': array([0]), 'ocs': 3328}
+char
+{'names': array(['uplo', 'compq', 'job', 'vect', 'norm', 'trans', 'equed', 'fact',
+       'side', 'jobvs', 'sort', 'sense', 'jobvl', 'jobvr', 'balanc',
+       'joba', 'jobu', 'jobv', 'jobr', 'jobt', 'jobp', 'jobz', 'jobvt',
+       'jobvsl', 'jobvsr', 'compz', 'jobq', 'range', 'transr', 'eigsrc',
+       'initv', 'order', 'diag', 'howmny', 'trana', 'tranb'], dtype=object), 'pos': array([1, 2, 0, 4, 3, 5, 6]), 'ocs': 4936}
+lapack_int
+{'names': array(['n', 'ldu', 'ldvt', 'ncvt', 'nru', 'ncc', 'ldc', 'm', 'kl', 'ku',
+       'ldab', 'ldq', 'ldpt', 'nrhs', 'ldafb', 'ldb', 'ldx', 'n_err_bnds',
+       'nparams', 'ilo', 'ihi', 'ldv', 'lda', 'ldvs', 'ldvl', 'ldvr',
+       'ldaf', 'mv', 'ldvsl', 'ldvsr', 'p', 'ldz', 'kd', 'il', 'iu', 'ka',
+       'kb', 'ldbb', 'itype', 'k', 'ldh', 'ldt', 'mm', 'l', 'nzc', 'lds',
+       'ldp', 'ifst', 'ilst', 'ijob', 'ldd', 'lde', 'ldf', 'isgn'],
+      dtype=object), 'pos': array([ 3,  7,  9,  2,  4,  5, 11, 13,  1,  6,  8, 12, 14, 16, 10, 15, 17,
+       20, 23, 18, 22, 25, 21,  0, 19]), 'ocs': 13760}
+float*
+{'names': array(['d', 'e', 'u', 'vt', 'q', 'c', 'sep', 'ab', 'pt', 'rcond', 'r',
+       'rowcnd', 'colcnd', 'amax', 'x', 'ferr', 'berr', 'err_bnds_norm',
+       'err_bnds_comp', 'params', 'b', 'afb', 'rpivot', 'rpvgrw', 'v',
+       'a', 'scale', 'tauq', 'taup', 'wr', 'wi', 'vs', 'rconde', 'rcondv',
+       'vl', 'vr', 'abnrm', 'tau', 'sva', 'stat', 's', 'superb', 'af',
+       'lscale', 'rscale', 'alphar', 'alphai', 'beta', 'vsl', 'vsr',
+       'bbnrm', 'y', 'z', 'taua', 'taub', 'alpha', 'dl', 'du', 'dlf',
+       'df', 'duf', 'du2', 'w', 'scond', 'h', 't', 'bb', 'ap', 'afp',
+       'ef', 'bp', 'pl', 'pr', 'dif', 'f', 'arf'], dtype=object), 'pos': array([ 4,  5,  6,  8, 10,  7, 12,  9, 11, 13, 15, 16, 18, 19, 21, 22, 24,
+       14, 17, 20, 23, 26,  3,  2,  1]), 'ocs': 3648}
+lapack_int*
+{'names': array(['iq', 'ipiv', 'ilo', 'ihi', 'sdim', 'istat', 'rank', 'jpvt', 'k',
+       'l', 'iwork', 'm', 'ifail', 'isuppz', 'ifaill', 'ifailr', 'piv',
+       'nsplit', 'iblock', 'isplit', 'ifailv', 'ifst', 'ilst', 'ncycle'],
+      dtype=object), 'pos': array([11,  7,  5,  6,  8, 14, 15, 13, 17, 10,  9, 18, 16, 21, 12, 19, 22,
+        4, 23]), 'ocs': 1304}
+double*
+{'names': array(['d', 'e', 'u', 'vt', 'q', 'c', 'sep', 'ab', 'pt', 'rcond', 'r',
+       'rowcnd', 'colcnd', 'amax', 'x', 'ferr', 'berr', 'err_bnds_norm',
+       'err_bnds_comp', 'params', 'b', 'afb', 'rpivot', 'rpvgrw', 'v',
+       'a', 'scale', 'tauq', 'taup', 'wr', 'wi', 'vs', 'rconde', 'rcondv',
+       'vl', 'vr', 'abnrm', 'tau', 'sva', 'stat', 's', 'superb', 'af',
+       'lscale', 'rscale', 'alphar', 'alphai', 'beta', 'vsl', 'vsr',
+       'bbnrm', 'y', 'z', 'taua', 'taub', 'alpha', 'dl', 'du', 'dlf',
+       'df', 'duf', 'du2', 'w', 'scond', 'h', 't', 'bb', 'ap', 'afp',
+       'ef', 'bp', 'pl', 'pr', 'dif', 'f', 'arf'], dtype=object), 'pos': array([ 4,  5,  6,  8, 10,  7, 12,  9, 11, 13, 15, 16, 18, 19, 21, 22, 24,
+       14, 17, 20, 23, 26,  3,  2,  1]), 'ocs': 3648}
+lapack_complex_float*
+{'names': array(['vt', 'u', 'c', 'ab', 'q', 'pt', 'x', 'b', 'afb', 'v', 'a', 'tauq',
+       'taup', 'w', 'vs', 'vl', 'vr', 'tau', 'af', 'alpha', 'beta', 'vsl',
+       'vsr', 'd', 'y', 'z', 'taua', 'taub', 'dl', 'du', 'dlf', 'df',
+       'duf', 'du2', 'bb', 'h', 't', 'ap', 'bp', 'afp', 'e', 'ef', 'f',
+       'arf'], dtype=object), 'pos': array([ 8, 10, 12,  7, 11, 13, 15, 16,  5,  9, 17,  3,  6,  4, 14,  2, 19,
+        1, 20, 21]), 'ocs': 1524}
+lapack_complex_double*
+{'names': array(['vt', 'u', 'c', 'ab', 'q', 'pt', 'x', 'b', 'afb', 'v', 'a', 'tauq',
+       'taup', 'w', 'vs', 'vl', 'vr', 'tau', 'af', 'alpha', 'beta', 'vsl',
+       'vsr', 'd', 'y', 'z', 'taua', 'taub', 'dl', 'du', 'dlf', 'df',
+       'duf', 'du2', 'bb', 'h', 't', 'ap', 'bp', 'afp', 'e', 'ef', 'f',
+       'arf'], dtype=object), 'pos': array([ 8, 10, 12,  7, 11, 13, 15, 16,  5,  9, 17,  3,  6,  4, 14,  2, 19,
+        1, 20, 21]), 'ocs': 1524}
+const float*
+{'names': array(['d', 'ab', 'afb', 'b', 'r', 'c', 'scale', 'a', 'af', 'lscale',
+       'rscale', 'dl', 'du', 'du2', 'dlf', 'df', 'duf', 's', 'h', 'wi',
+       'ap', 'tau', 'afp', 'e', 'ef', 'bb', 'bp', 'w', 'x', 'arf', 'p',
+       'vl', 'vr', 't'], dtype=object), 'pos': array([ 3,  5,  6,  8, 11,  7,  9, 12, 13, 14,  4, 10,  2,  1]), 'ocs': 788}
+const double*
+{'names': array(['d', 'ab', 'afb', 'b', 'r', 'c', 'scale', 'a', 'af', 'lscale',
+       'rscale', 'dl', 'du', 'du2', 'dlf', 'df', 'duf', 's', 'h', 'wi',
+       'ap', 'tau', 'afp', 'e', 'ef', 'bb', 'bp', 'w', 'x', 'arf', 'p',
+       'vl', 'vr', 't'], dtype=object), 'pos': array([ 3,  5,  6,  8, 11,  7,  9, 12, 13, 14,  4, 10,  2,  1]), 'ocs': 788}
+const lapack_int*
+{'names': array(['ipiv', 'iblock', 'isplit'], dtype=object), 'pos': array([ 7, 10, 11,  8,  9,  4,  6,  5]), 'ocs': 424}
+float
+{'names': array(['anorm', 'rcond', 'tola', 'tolb', 'vl', 'vu', 'abstol', 'alpha',
+       'beta', 'tol'], dtype=object), 'pos': array([ 8,  5,  9, 11, 12,  7, 10, 14, 13, 17,  6,  4,  3]), 'ocs': 408}
+double
+{'names': array(['anorm', 'rcond', 'tola', 'tolb', 'vl', 'vu', 'abstol', 'alpha',
+       'beta', 'tol'], dtype=object), 'pos': array([ 8,  5,  9, 11, 12,  7, 10, 14, 13, 17,  6,  4,  3]), 'ocs': 408}
+const lapack_complex_float*
+{'names': array(['ab', 'afb', 'b', 'a', 'af', 'dl', 'd', 'du', 'du2', 'dlf', 'df',
+       'duf', 'bb', 'ap', 'bp', 'afp', 'h', 'e', 'ef', 'x', 'arf', 's',
+       'p', 'vl', 'vr', 't', 'tau'], dtype=object), 'pos': array([ 5,  6,  8, 11,  7,  9, 14,  3,  4, 12,  2, 10, 13]), 'ocs': 700}
+const lapack_complex_double*
+{'names': array(['ab', 'afb', 'b', 'a', 'af', 'dl', 'd', 'du', 'du2', 'dlf', 'df',
+       'duf', 'bb', 'ap', 'bp', 'afp', 'h', 'e', 'ef', 'x', 'arf', 's',
+       'p', 'vl', 'vr', 't', 'tau'], dtype=object), 'pos': array([ 5,  6,  8, 11,  7,  9, 14,  3,  4, 12,  2, 10, 13]), 'ocs': 700}
+char*
+{'names': array(['equed'], dtype=object), 'pos': array([12, 10,  9,  7]), 'ocs': 152}
+LAPACK_S_SELECT2
+{'names': array(['select'], dtype=object), 'pos': array([3]), 'ocs': 8}
+LAPACK_D_SELECT2
+{'names': array(['select'], dtype=object), 'pos': array([3]), 'ocs': 8}
+LAPACK_C_SELECT1
+{'names': array(['select'], dtype=object), 'pos': array([3]), 'ocs': 8}
+LAPACK_Z_SELECT1
+{'names': array(['select'], dtype=object), 'pos': array([3]), 'ocs': 8}
+LAPACK_S_SELECT3
+{'names': array(['selctg'], dtype=object), 'pos': array([4]), 'ocs': 8}
+LAPACK_D_SELECT3
+{'names': array(['selctg'], dtype=object), 'pos': array([4]), 'ocs': 8}
+LAPACK_C_SELECT2
+{'names': array(['selctg'], dtype=object), 'pos': array([4]), 'ocs': 8}
+LAPACK_Z_SELECT2
+{'names': array(['selctg'], dtype=object), 'pos': array([4]), 'ocs': 8}
+lapack_logical*
+{'names': array(['select', 'tryrac'], dtype=object), 'pos': array([ 4, 16,  3]), 'ocs': 32}
+const lapack_logical*
+{'names': array(['select'], dtype=object), 'pos': array([4, 3]), 'ocs': 96}
+lapack_complex_float
+{'names': array(['alpha'], dtype=object), 'pos': array([8]), 'ocs': 4}
+lapack_complex_double
+{'names': array(['alpha'], dtype=object), 'pos': array([8]), 'ocs': 4}
+lapack_logical
+{'names': array(['wantq', 'wantz'], dtype=object), 'pos': array([1, 2, 3]), 'ocs': 64}

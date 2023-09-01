@@ -1,7 +1,7 @@
 -module(blas).
 
 -export([run/1, run/2, hash/1]).
--export([new/1, new/2, shift/2, copy/2, to_bin/1, to_bin/2, to_list/2, ltb/2, btl/2]).
+-export([new/1, new/2, shift/2, copy/2, to_bin/1, to_bin/2, to_list/2, ltb/2, btl/2, predictor/0]).
 
 
 -record(c_binary, {size, offset, resource}).
@@ -12,7 +12,7 @@ on_load()->
     LibBaseName = "eblas_nif",
     PrivDir = code:priv_dir(blas),
     Lib = filename:join([PrivDir, LibBaseName]),
-    erlang:load_nif(Lib, {0.1}).
+    erlang:load_nif(Lib, {1.1}).
 
 ltb(Type, List)->
     chain:ltb(Type, List).
@@ -60,14 +60,33 @@ bin_nif(_,_)->
     nif_not_loaded.
 
 
+predictor()->
+    MaxSize = timeEst:benchmark(),
+    fun(BlasOp) -> round(100*timeEst:n_elements(BlasOp) / MaxSize) end.
+
 run(Wrapped)->
-    dirty_unwrapper(Wrapped).
+    % For some reason, using Predictor in on_load cause a crash. It seems nifs cannot be used that early.
+    Predictor = 
+        try persistent_term:get({?MODULE, pred}) of 
+            B -> B
+        catch 
+            _:_ ->
+                predictor(), 
+                B = predictor(),
+                persistent_term:put({?MODULE, pred}, B),
+                B
+    end,
+
+    T = Predictor(Wrapped),
+    run(Wrapped, T).
 
 
-run(Wrapped, dirty) when is_tuple(Wrapped) -> dirty_unwrapper(Wrapped);
-run(Wrapped, clean) when is_tuple(Wrapped) -> clean_unwrapper(Wrapped).
+run(Wrapped, dirty) when is_tuple(Wrapped) -> dirty_unwrapper(Wrapped, 100);
+run(Wrapped, clean) when is_tuple(Wrapped) -> clean_unwrapper(Wrapped, 50);
+run(Wrapped, T) when T < 0   -> dirty_unwrapper(Wrapped, 100); %LAPACKE function.
+run(Wrapped, T) when T < 100 -> clean_unwrapper(Wrapped, T);
+run(Wrapped, T)              -> dirty_unwrapper(Wrapped, T).
 
-dirty_unwrapper(_) -> nif_not_loaded.
-clean_unwrapper(_) -> nif_not_loaded.
-hash(_)->nif_not_loaded.
-
+dirty_unwrapper(_,_) -> nif_not_loaded.
+clean_unwrapper(_,_) -> nif_not_loaded.
+hash(_) -> nif_not_loaded.
