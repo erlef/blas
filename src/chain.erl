@@ -7,17 +7,21 @@
 -define(IS_PAIR_ELEMENTS(Binary, ElementSize), (round(size(Binary)/ElementSize) band 1) == 0).
 
 ltb(Type, List)->
-    case Type of 
-        s -> << <<V:32/native-float>> || V <- List >>;
-        d -> << <<V:64/native-float>> || V <- List >>;
-        c when ?IS_PAIR_LENGTH(List) -> ltb(s, List); % Two elements per items
-        z when ?IS_PAIR_LENGTH(List) -> ltb(d, List)  % Two elements per items
+    case Type of
+        int32 -> << <<V:32/native-integer>> || V <- List >>;
+        int64 -> << <<V:32/native-integer>> || V <- List >>;
+        S when S==s orelse S==float32 -> << <<V:32/native-float>> || V <- List >>;
+        D when D==d orelse D==float64 -> << <<V:64/native-float>> || V <- List >>;
+        C when (C==c orelse C==complex64)  andalso ?IS_PAIR_LENGTH(List) -> ltb(s, List); % Two elements per items
+        Z when (Z==z orelse Z==complex128) andalso ?IS_PAIR_LENGTH(List) -> ltb(d, List)  % Two elements per items
     end.
 
 btl(Type, Binary)->
     case Type of 
-        s when ?IS_SIZE_ALIGNED(Binary, 4)  -> [ V || <<V:32/native-float>> <= Binary ];
-        d when ?IS_SIZE_ALIGNED(Binary, 8)  -> [ V || <<V:64/native-float>> <= Binary ];
-        c when ?IS_PAIR_ELEMENTS(Binary, 4) -> btl(s, Binary);
-        z when ?IS_PAIR_ELEMENTS(Binary, 8) -> btl(d, Binary)
+        int32 when ?IS_SIZE_ALIGNED(Binary, 4) -> [ V || <<V:32/native-integer>> <= Binary ];
+        int64 when ?IS_SIZE_ALIGNED(Binary, 4) -> [ V || <<V:32/native-integer>> <= Binary ];
+        S when (S==s orelse S==float32) andalso ?IS_SIZE_ALIGNED(Binary, 4) -> [ V || <<V:32/native-float>> <= Binary ];
+        D when (D==d orelse D==float64) andalso ?IS_SIZE_ALIGNED(Binary, 8) -> [ V || <<V:64/native-float>> <= Binary ];
+        C when (C==c orelse C==complex64)  andalso ?IS_PAIR_ELEMENTS(Binary, 4) -> btl(s, Binary);
+        Z when (Z==z orelse Z==complex128) andalso ?IS_PAIR_ELEMENTS(Binary, 8) -> btl(d, Binary)
     end.

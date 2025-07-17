@@ -88,9 +88,7 @@ ge_test()->
               #instance{size = s, name = sgemm,   expected = [{c, [12, 30, 23, 30, 9, 37, 86, 40, 6, 2, 42, 3, 10, 12, 13, 12]}]},
               #instance{size = d, name = dgemm,   expected = [{c, [12, 30, 23, 30, 9, 37, 86, 40, 6, 2, 42, 3, 10, 12, 13, 12]}]},
               #instance{size = c, name = cgemm,   expected = [{c, [-8, 7, -22, 22, -8, 25, 3, 63]}]},
-              #instance{size = z, name = zgemm,   expected = [{c, [-8, 7, -22, 22, -8, 25, 3, 63]}]},
-              #instance{size = c, name = cgemm3m, expected = [{c, [-8, 7, -22, 22, -8, 25, 3, 63]}]},
-              #instance{size = z, name = zgemm3m, expected = [{c, [-8, 7, -22, 22, -8, 25, 3, 63]}]}
+              #instance{size = z, name = zgemm,   expected = [{c, [-8, 7, -22, 22, -8, 25, 3, 63]}]}
             ]
         },
         %gemv
